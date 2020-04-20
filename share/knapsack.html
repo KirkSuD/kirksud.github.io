@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        
+        <title>Knapsack Visualization</title>
+
+        <style>
+            main {
+                margin: 3% 3%;
+            }
+
+            table {
+                border-collapse: collapse;
+            }
+
+            th, td {
+                border: 1px solid black;
+                width: 20px;
+            }
+
+            #vis_table th {
+                border: 1px dotted black;
+            }
+        </style>
+    </head>
+    <body>
+
+        <main>
+            <h1>A visualization of knapsack 0-1 problem</h1>
+
+            <div id="info" style="display: none;">
+                <h2>What's this? How to use?</h2>
+                <p>
+                    This is a visualization of the knapsack 0-1 problem,
+                    the traditional one and the one of exact weight sum.
+                </p>
+                <p>
+                    Enter weight, weight & cost of each item.
+                </p>
+                <p>
+                    Enter delay in ms, 200ms may be good.
+                </p>
+                <p>
+                    Check "recursive", if you want to use the top down, recursive & memoization algo;
+                    otherwise, it'll use the bottom up, for loop algo.
+                </p>
+                <p>
+                    Check "exact", if you want the answer of weight sum == given weight;
+                    otherwise, weight sum &lt;= given eight.
+                </p>
+                <p>
+                    Press "Set" to initialize the visualization.
+                </p>
+                <p>
+                    Press "Next", "Pause", "Play" to play the visualization.
+                </p>
+                <br>
+            </div>
+
+            <label for="max_weight">Max / exact weight: </label>
+            <input id="max_weight" type="number" min="0">
+            <br>
+            <br>
+
+            <table id="input_table">
+                <thead>
+                    <tr>
+                        <th>Weight</th>
+                        <th>Value</th>
+                        <th><button id="add_item"> + </button></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input class="weight_input" type="number" min="0"></td>
+                        <td><input class="value_input" type="number" min="0"></td>
+                        <td><button class="del_item"> X </button></td>
+                    </tr>
+                </tbody>
+            </table>
+            <br>
+
+            <label for="vis_delay">Delay:</label><input id="vis_delay" type="number" min="1" value="200">
+            <input id="is_recursive" type="checkbox" value="Recursive"><label for="is_recursive">Recursive</label>
+            <input id="is_exact" type="checkbox" value="Exact"><label for="is_exact">Exact</label>
+            <button id="set_btn"> Set </button>
+            <br>
+            <br>
+            <button id="next_btn">Next</button>
+            <button id="pause_btn">Pause</button>
+            <button id="play_btn">Play</button>
+            <br>
+            <br>
+
+            <table id="vis_table">
+                <!-- <tr><th></th><th></th><th>Weight</th><th>0</th><th>1</th><th>2</th></tr>
+                <tr><th>Index</th><th>Weight</th><th>Value</th><th>0</th><th>1</th><th>2</th></tr> -->
+            </table>
+        </main>
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script>
+$(document).ready(function() {
+  let weight=[], value=[], items=0, max_weight=0, dp=[], is_exact=true, is_recursive=true;
+  let vis_move=0, vis_playing=false, vis_delay=20;
+
+  function remove_input_row() {
+    $(this).parent().parent().remove();
+  };
+
+  function get_td(i, j) {
+    return $("#vis_table").children("tr").eq(i+1).children("td").eq(j);
+  }
+
+  function set_td(i, j, val) {
+    if (val == Number.NEGATIVE_INFINITY) {
+      val = "-∞";
+    }
+    return get_td(i, j).text(val);
+  }
+
+  function set_th(i,j) {
+    $("#vis_table").children("tr").eq(i+1).children("th").eq(0).css("background-color", "aqua");
+    $("#vis_table").children("tr").eq(0).children("th").eq(j+3).css("background-color", "aqua");
+  }
+
+  function unset_th(i,j) {
+    $("#vis_table").children("tr").eq(i+1).children("th").eq(0).css("background-color", "white");
+    $("#vis_table").children("tr").eq(0).children("th").eq(j+3).css("background-color", "white");
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function play_vis_recursive() {
+    vis_playing = true;
+
+    async function knapsack_recursive(n, w) {
+      get_td(n,w).css("background-color", "lime");
+      set_th(n,w);
+      await sleep(vis_delay);
+      while (vis_move <= 0 && vis_playing) {
+        await sleep(vis_delay);
+      }
+      if (!vis_playing) {
+        return;
+      }
+      vis_move -= 1;
+      if (w == 0) {
+        get_td(n,w).css("background-color", "white");
+        set_td(n,w,0);
+        unset_th(n,w);
+        return 0;
+      }
+      if (n == 0) {
+        get_td(n,w).css("background-color", "white");
+        unset_th(n,w);
+        if (is_exact) {
+          set_td(n,w,Number.NEGATIVE_INFINITY);
+          return Number.NEGATIVE_INFINITY;
+        }
+        else{
+          set_td(n,w,0);
+          return 0;
+        }
+      }
+      if (dp[n][w] != 0) { // memoization
+        get_td(n,w).css("background-color", "white");
+        set_td(n,w,dp[n][w]);
+        unset_th(n,w);
+        return dp[n][w];
+      }
+      get_td(n,w).css("background-color", "rgb(143, 188, 143)");
+      unset_th(n,w);
+      if (w < weight[n-1]) {
+        dp[n][w] = await knapsack_recursive(n-1, w, dp);
+      }
+      else {
+        dp[n][w] = Math.max(await knapsack_recursive(n-1, w), // don't take (n-1)th item
+                            await knapsack_recursive(n-1, w-weight[n-1]) + value[n-1]) // take (n-1)th item
+      }
+      get_td(n,w).css("background-color", "white");
+      set_td(n,w,dp[n][w]);
+      unset_th(n,w);
+      return dp[n][w];
+    }
+    await knapsack_recursive(items, max_weight);
+    vis_playing = false;
+  }
+
+  async function play_vis() {    
+    vis_playing = true;
+    for (let i=1; i<=items; ++i) {
+      for (let j=1; j<=max_weight; ++j) {
+        if (j < weight[i-1]) { // j - weight[i-1] < 0
+          dp[i][j] = dp[i-1][j]; // can't take the (i-1)th item
+        }
+        else {
+          dp[i][j] = Math.max(dp[i-1][j], // don't take the (i-1)th item
+                              dp[i-1][j - weight[i-1]] + value[i-1]); // take the (i-1)th item
+          get_td(i-1,j - weight[i-1]).css("background-color", "rgb(143, 188, 143)");
+        }
+        get_td(i-1,j).css("background-color", "rgb(143, 188, 143)");
+        get_td(i,j).css("background-color", "lime");
+        set_th(i,j);
+        set_td(i,j,dp[i][j]);
+        await sleep(vis_delay);
+        while (vis_move <= 0 && vis_playing) {
+          await sleep(vis_delay);
+        }
+        if (!vis_playing) {
+          return;
+        }
+        vis_move -= 1;
+        get_td(i-1,j).css("background-color", "white");
+        get_td(i,j).css("background-color", "white");
+        unset_th(i,j);
+        if (j >= weight[i-1]) {
+          get_td(i-1,j - weight[i-1]).css("background-color", "white");
+        }
+      }
+    }
+    vis_playing = false;
+  }
+
+  $("h1").on("click", function() {
+    $("#info").toggle();
+  });
+
+  $("#add_item").on("click", function() {
+    let new_tr = $("<tr>").html(
+      '<td><input class="weight_input" type="number" min="0"></td>' +
+      '<td><input class="value_input" type="number" min="0"></td>' +
+      '<td><button class="del_item"> X </button></td>');
+    new_tr.find(".del_item").on("click", remove_input_row);
+    $("#input_table").append(new_tr);
+  });
+
+  $(".del_item").on("click", remove_input_row);
+
+  $("#set_btn").on("click", function() {
+    vis_playing = false;
+    // load data
+    weight = $(".weight_input").map( (i, element) => parseInt(element.value) );
+    value = $(".value_input").map( (i, element) => parseFloat(element.value) );
+    items = $(".value_input").length;
+    max_weight = parseInt($("#max_weight").val());
+    vis_delay = parseInt($("#vis_delay").val());
+    is_recursive = $("#is_recursive").prop("checked");
+    is_exact = $("#is_exact").prop("checked");
+    dp = new Array(items+1); // new Array(items+1).fill(new Array(max_weight+1).fill(0)); // wrong!!! same reference
+    for (let i=0; i<=items; ++i) {
+      dp[i] = new Array(max_weight+1).fill(0);
+    }
+    console.log("Set: info:");
+    console.log("Weight:", weight);
+    console.log("Value:", value);
+    console.log("Items:", items);
+    console.log("Max weight:", max_weight);
+    console.log(dp);
+  
+    let vis = $("#vis_table").html("");
+    let new_tr;
+    // first row
+    new_tr = $("<tr>").html("<th></th><th></th><th>Weight</th>");
+    for (let i=0; i<=max_weight; ++i) {
+      new_tr.append($("<th>").text(i));
+    }
+    vis.append(new_tr);
+    // second row for n = 0
+    new_tr = $("<tr>").html("<th>0</th><th>Weight</th><th>Value</th>");
+    for (let i=0; i<=max_weight; ++i) {
+      new_tr.append($("<td>").text(0));
+    }
+    vis.append(new_tr);
+    // one row for each item
+    for (let i=0; i<items; ++i) {
+      new_tr = $("<tr>").append($("<th>").text(i+1))
+                        .append($("<th>").text(weight[i]))
+                        .append($("<th>").text(value[i]));
+      for (let j=0; j<=max_weight; ++j) {
+        new_tr.append($("<td>").text(0));
+      }
+      vis.append(new_tr);
+    }
+
+    if (is_exact) {
+      for (let i=1; i<=max_weight; ++i) { // border / initail condition
+        dp[0][i] = Number.NEGATIVE_INFINITY; // No solution when n==0 but w!=0, use no items but weight != 0
+        set_td(0, i, Number.NEGATIVE_INFINITY);
+      }
+    }
+  });
+
+  $("#pause_btn").on("click", function() {
+    vis_move = 0;
+  });
+  
+  $("#next_btn").on("click", function() {
+    vis_move = 1;
+    if (vis_playing) {
+      return;
+    }
+    if (is_recursive) {
+      play_vis_recursive();
+    }
+    else {
+      play_vis();
+    }
+  });
+  
+  $("#play_btn").on("click", function() {
+    vis_move = Number.POSITIVE_INFINITY;
+    if (vis_playing) {
+      return;
+    }
+    if (is_recursive) {
+      play_vis_recursive();
+    }
+    else {
+      play_vis();
+    }
+  });
+});
+
+  function getURLParameter(url, name) {
+    return (RegExp(name + '=' + '(.+?)(&|$)').exec(url)||[,null])[1];
+  }
+  
+  if (getURLParameter(window.location.href, "recursive") !== null) {
+    if (getURLParameter(window.location.href, "recursive") === "0") {
+      $("#is_recursive").prop("checked", false);
+    }
+    else if (getURLParameter(window.location.href, "recursive") === "1") {
+      $("#is_recursive").prop("checked", true);
+    }
+  }
+  if (getURLParameter(window.location.href, "exact") !== null) {
+    if (getURLParameter(window.location.href, "exact") === "0") {
+      $("#is_exact").prop("checked", false);
+    }
+    else if (getURLParameter(window.location.href, "exact") === "1") {
+      $("#is_exact").prop("checked", true);
+    }
+  }
+        </script>
+    </body>
+</html>
