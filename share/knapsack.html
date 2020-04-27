@@ -149,13 +149,13 @@ $(document).ready(function() {
       }
       vis_move -= 1;
       if (w == 0) {
-        get_td(n,w).css("background-color", "white");
+        get_td(n,w).css("background-color", "lightGray");
         set_td(n,w,0);
         unset_th(n,w);
         return 0;
       }
       if (n == 0) {
-        get_td(n,w).css("background-color", "white");
+        get_td(n,w).css("background-color", "lightGray");
         unset_th(n,w);
         if (is_exact) {
           set_td(n,w,Number.NEGATIVE_INFINITY);
@@ -167,7 +167,7 @@ $(document).ready(function() {
         }
       }
       if (dp[n][w] != 0) { // memoization
-        get_td(n,w).css("background-color", "white");
+        get_td(n,w).css("background-color", "lightGray");
         set_td(n,w,dp[n][w]);
         unset_th(n,w);
         return dp[n][w];
@@ -181,7 +181,7 @@ $(document).ready(function() {
         dp[n][w] = Math.max(await knapsack_recursive(n-1, w), // don't take (n-1)th item
                             await knapsack_recursive(n-1, w-weight[n-1]) + value[n-1]) // take (n-1)th item
       }
-      get_td(n,w).css("background-color", "white");
+      get_td(n,w).css("background-color", "lightGray");
       set_td(n,w,dp[n][w]);
       unset_th(n,w);
       return dp[n][w];
