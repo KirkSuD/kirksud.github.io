@@ -19,6 +19,10 @@ main {
 p {
   white-space: pre-wrap;
 }
+.card {
+  /*border: 2px solid rgb(223,223,223);*/
+  border-width: 2px;
+}
 .checked-todo {
   text-decoration: line-through;
 }
@@ -32,8 +36,8 @@ p {
         <div class="card">
           <div class="card-body">
             <button id="clear-todo-btn" class="close"><i class="material-icons">clear_all</i></button>
-            <button id="export-todo-btn" class="close float-left mr-1"><i class="material-icons">file_download</i></button>
-            <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3"><i class="material-icons">file_upload</i></label>
+            <button id="export-todo-btn" class="close float-left mr-1"><i class="material-icons">save</i></button>
+            <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3"><i class="material-icons">folder_open</i></label>
             <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
             <button id="export-copy-todo-btn" class="close float-left mr-1"><i class="material-icons">content_copy</i></button>
             <button id="import-paste-todo-btn" class="close float-left"><i class="material-icons">content_paste</i></button>
@@ -48,11 +52,13 @@ p {
         <div class="card">
           <div class="card-body">
             <button id="add-todo-btn" class="close"><i class="material-icons">add</i></button>
+            <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return input delete create cancel add_box add_circle -->
+            <!-- TODO: edit, time, better sortable -->
             <br><br>
             <textarea id="add-todo-txt" class="form-control" placeholder="Add a todo..."></textarea>
           </div>
         </div>
-      </div>      
+      </div>
     </div>
   </main>
 
@@ -72,7 +78,7 @@ const export_filename_prefix = "todo_export_";
 $(function() {
   //$("#todos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
   $("#todos").sortable({stop: save_to_storage});
-  //$("#todos").disableSelection(); //not sure what this does
+  //$("#todos").disableSelection(); //not sure what this does, maybe for mobile devices? tested, not working...
   $("#export-todo-btn").on("click", export_todo_btn);
   $("#import-file-selector").on("change", import_file_selected);
   $("#export-copy-todo-btn").on("click", export_copy_todo_btn);
@@ -81,31 +87,40 @@ $(function() {
   $("#import-paste-input").on("blur", done_import_paste);
   $("#clear-todo-btn").on("click", clear_todo_btn);
   $("#add-todo-btn").on("click", add_todo_btn);
-  $("#add-todo-txt").on("keydown", keydown_todo_txt);
+  $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
   load_from_storage();
 });
 
 // ui manipulation functions
-function add_todo(txt, checked=false) {
+function add_todo(txt, time_str, checked=false) {
   let new_todo_div = $(
     `<div class="col-lg-3 col-md-4 col-sm-6 col-12 p-1">
       <div class="card">
         <div class="card-body">
           <button class="close close-todo"><i class="material-icons">close</i></button>
           <button class="close check-todo float-left mr-2"><i class="material-icons">check</i></button>
+          <button class="close cancel-edit-todo float-left d-none mr-2"><i class="material-icons">undo</i></button>
+          <button class="close edit-todo float-left mr-2"><i class="material-icons">mode_edit</i></button>
           <button class="close copy-todo float-left"><i class="material-icons">content_copy</i></button>
           <br><br>
+          <small></small>
           <p class="card-text"></p>
+          <textarea class="form-control d-none"></textarea>
         </div>
       </div>
     </div>`);
+  new_todo_div.find("small").text(time_str);
   new_todo_div.find("p").text(txt);
   if (checked) {
     new_todo_div.find("p").addClass("checked-todo");
   }
   new_todo_div.find(".close-todo").on("click", close_todo);
-  new_todo_div.find(".copy-todo").on("click", copy_todo);
   new_todo_div.find(".check-todo").on("click", check_todo);
+  new_todo_div.find(".copy-todo").on("click", copy_todo);
+  new_todo_div.find(".cancel-edit-todo").on("click", toggle_edit_todo);
+  new_todo_div.find(".edit-todo").on("click", edit_todo);
+  new_todo_div.find("textarea").on("keydown", alt_enter_listener(function() {
+    new_todo_div.find(".edit-todo").click(); }));
   new_todo_div.insertAfter($("#add-todo-div"));
 }
 
@@ -119,18 +134,24 @@ function clear_todo() {
 
 // data <-> ui functions
 function ui_to_json() {
-  let todos = $("#todos").find("p").map((i, element) =>
-    [[$(element).hasClass("checked-todo"), $(element).text()]]
-  ).toArray();
-  return JSON.stringify({version: "0.1", data: todos});
+  let todos = $("#todos").find(".card-body").map((i, element) =>
+    [[$(element).find("p").hasClass("checked-todo"), $(element).find("small").text(), $(element).find("p").text()]]
+  ).toArray().slice(1);
+  return JSON.stringify({version: "0.2", time:pretty_time(), data: todos});
 }
 
 function data_to_ui(data) {
   if (typeof data.version === "undefined") { return false; }
   if (data.version === '0.1') {
+    time_str = pretty_time();
+    data.data = data.data.map(item => [item[0], time_str, item[1]]);
+    data.version = '0.2';
+    data.time = time_str;
+  }
+  if (data.version === '0.2') {
     clear_todo();
     data.data.reverse().forEach(function(element) {
-      add_todo(element[1], element[0]);
+      add_todo(element[2], element[1], element[0]);
     });
     return true;
   }
@@ -144,33 +165,35 @@ function add_todo_btn() {
   console.log("#add-todo-btn clicked");
   let todo_txt = $("#add-todo-txt").val();
   $("#add-todo-txt").val("");
-  add_todo(todo_txt);
+  add_todo(todo_txt, pretty_time());
   save_to_storage();
 }
 
-function keydown_todo_txt(evt) { // from https://stackoverflow.com/questions/30467263/handling-alt-enter-key-press-in-javascript
-  if (event.defaultPrevented) {
-    return;
-  }
-  let handled = false;
-  if (event.key !== undefined) {
-    if (event.key === 'Enter' && event.altKey) {
-      add_todo_btn();
+function alt_enter_listener(func) {
+  return function(evt) { // from https://stackoverflow.com/questions/30467263/handling-alt-enter-key-press-in-javascript
+    if (event.defaultPrevented) {
+      return;
     }
-  }
-  else if (event.keyIdentifier !== undefined) {
-    if (event.keyIdentifier === "Enter" && event.altKey) {
-      add_todo_btn();
+    let handled = false;
+    if (event.key !== undefined) {
+      if (event.key === 'Enter' && event.altKey) {
+        func();
+      }
     }
-  }
-  else if (event.keyCode !== undefined) {
-    if (event.keyCode === 13 && event.altKey) {
-      add_todo_btn();
+    else if (event.keyIdentifier !== undefined) {
+      if (event.keyIdentifier === "Enter" && event.altKey) {
+        func();
+      }
     }
+    else if (event.keyCode !== undefined) {
+      if (event.keyCode === 13 && event.altKey) {
+        func();
+      }
+    }
+    if (handled) {
+      event.preventDefault();
+    };
   }
-  if (handled) {
-    event.preventDefault();
-  };
 }
 
 function clear_todo_btn() {
@@ -189,6 +212,30 @@ function copy_todo() {
   let txt = $(this).parent().find("p").text();
   set_clip(txt);
   popcorn($(this), "top", 2000, "Copied!");
+}
+
+function edit_todo() {
+  console.log(".edit-todo clicked");
+  const parent = $(this).parent();
+  parent.find(".cancel-edit-todo").click();
+  if (parent.find("p").hasClass("d-none")) {
+    parent.find("textarea").val(parent.find("p").text());
+    parent.find("textarea").focus();
+  }
+  else {
+    parent.find("p").text(parent.find("textarea").val());
+    save_to_storage();
+  }
+}
+
+function toggle_edit_todo() {
+  console.log("toggle edit");
+  const parent = $(this).parent();
+  parent.find(".check-todo").toggleClass("d-none");
+  parent.find(".copy-todo").toggleClass("d-none");
+  parent.find(".cancel-edit-todo").toggleClass("d-none");
+  parent.find("p").toggleClass("d-none");
+  parent.find("textarea").toggleClass("d-none");
 }
 
 function check_todo() {
@@ -214,7 +261,7 @@ function import_file_selected() {
   const file = $("#import-file-selector")[0].files[0];
   const file_reader = new FileReader();
   file_reader.onload = function(evt) {
-    console.log(evt.target.result);
+    //console.log(evt.target.result);
     let data = JSON.parse(evt.target.result);
     data_to_ui(data);
     save_to_storage();
@@ -245,12 +292,12 @@ function import_pasted(evt) {
   try {
     data = JSON.parse(evt.originalEvent.clipboardData.getData('text'));
   } catch(err) {
-    console.log(err);
+    //console.log(err);
     $("#import-paste-input").blur(); //don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
     popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
     return;
   }
-  console.log(data);
+  //console.log(data);
   const success = data_to_ui(data);
   $("#import-paste-input").blur();
   if (success) {
@@ -277,9 +324,18 @@ function get_time_str() {
     pad_zero(d.getHours()) + pad_zero(d.getMinutes()) + pad_zero(d.getSeconds());
 }
 
+function pretty_time() {
+  function pad_zero(s) {
+    return ('0'+s).slice(-2);
+  }
+  const d = new Date();
+  return d.getFullYear() + '/' + pad_zero(d.getMonth()+1) + '/' + pad_zero(d.getDate()) + ' ' +
+    pad_zero(d.getHours()) + ':' + pad_zero(d.getMinutes()) + ':' + pad_zero(d.getSeconds());
+}
+
 // set clipboard
 function set_clip(txt) {
-  let tmp = $('<input>');
+  let tmp = $('<textarea>');
   $("body").append(tmp);
   tmp.val(txt).select();//.selectRange(0, txt.length);
   document.execCommand("copy");
@@ -290,16 +346,16 @@ function set_clip(txt) {
 function load_from_storage() {
   console.log("load from storage");
   let data = localStorage.getItem(localStorage_key);
-  console.log(data);
+  //console.log(data);
   if (data === null) { return false; }
   data = JSON.parse(data);
-  console.log(data);
+  //console.log(data);
   data_to_ui(data);
 }
 function save_to_storage() {
   console.log("save to storage");
   let json_data = ui_to_json();
-  console.log(json_data);
+  //console.log(json_data);
   localStorage.setItem(localStorage_key, json_data);
 }
 
