@@ -2,6 +2,7 @@
 <html>
 
 <head>
+    <meta charset="UTF-8" />
     <title>
         2048
     </title>
@@ -20,9 +21,76 @@
             position: relative;
             font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
         }
+        #game-head {
+            position: absolute;
+            left: max(0px, 30vw - 50vh);
+            width: 18vw;
+            height: 50vh;
+            margin: 0 1vw;
+            font-weight: bold;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 8fr 5fr 4fr;
+        }
+        #game-head h1 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            grid-row: 1 / span 1;
+            grid-column: 1 / span 2;
+            color: #776e65;
+            font-size: min(16vw, 10vh);
+            margin: 0;
+        }
+        #game-head div {
+            background-color: #bbada0;
+        }
+        #game-head a {
+            cursor: pointer;
+            background-color: #8f7a66;
+        }
+        #score-div, #best-div, #game-head a {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            border-radius: min(1.2vw, 1.2vh);
+            margin: 1px;
+            font-size: min(4vw, 4vh);
+        }
+        #score-div::before, #best-div::before {
+            position: absolute;
+            display: inline-block;
+            width: 100%;
+            top: 10%;
+            text-transform: uppercase;
+            font-size: min(3vw, 2vh);
+            text-align: center;
+            color: #eee4da;
+        }
+        #score-div::before {
+            content: "score";
+        }
+        #best-div::before {
+            content: "best";
+        }
+        .add-score {
+            position: absolute;
+            color: rgba(119, 110, 101, 0.9);
+            transform: translateX(-50%);
+            animation: add-score-anim 600ms ease-in;
+            animation-fill-mode: forwards;
+        }
+        @keyframes add-score-anim {
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -100%);
+            }
+        }
         #game-div {
             position: absolute;
-            left: max(0px, 50vw - 50vh);
+            left: max(20vw, 50vw - 50vh);
             top: max(0px, 50vh - 50vw);
             width: min(100vw, 100vh);
             height: min(100vw, 100vh);
@@ -215,10 +283,38 @@
             top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
             left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
         }
+        @media screen and (max-aspect-ratio:5/4) {
+            #game-head h1 {
+                grid-row: 1 / span 2;
+                grid-column: 1 / span 1;
+            }
+            #game-head {
+                left: max(0px, 50vw - 40vh);
+                width: min(100vw, 80vh);
+                height: 18vh;
+                margin: 1vh 0;
+                display: grid;
+                grid-template-columns: 5fr 2fr 2fr;
+                grid-template-rows: 5fr 4fr;
+            }
+            #game-div {
+                left: max(0px, 50vw - 40vh);
+                top: max(20vh, 50vh - 50vw);
+                height: min(100vw, 80vh);
+                width: min(100vw, 80vh);
+            }
+        }
     </style>
 </head>
 
 <body>
+    <div id="game-head">
+        <h1>2048</h1>
+        <div id="score-div"></div>
+        <div id="best-div"></div>
+        <a id="new-btn">New</a>
+        <a id="undo-btn">Undo</a>
+    </div>
     <div id="game-div">
         <div>
             <div id="grid-div">
@@ -261,6 +357,11 @@
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
     <script>
+        let autoPlay2048, autoPlay2048_2dir;
+        let autoPlayRunning=false;
+        function stopAutoPlay2048() {
+            autoPlayRunning = false;
+        };
         $(function(){
 //             console.log("position class:");
 //             for (let i=0; i<4; ++i) {
@@ -281,25 +382,27 @@
 
             let table;
             let tiles;
+            let score = 0;
+            let best = 0;
+            let tableHistory = [];
             let timeoutFunc = null;
             let timeoutId = null;
 
+            const tableHistoryLimit = Infinity;
             const localStorage_key = "kirksud_2048";
             let storageData = localStorage.getItem(localStorage_key);
             if (storageData === null) {
                 restart();
             } else {
-                table = JSON.parse(storageData);
-                tiles = [[null, null, null, null],
-                         [null, null, null, null],
-                         [null, null, null, null],
-                         [null, null, null, null]];
-                for (let i=0; i<4; ++i) {
-                    for (let j=0; j<4; ++j) {
-                        if (table[i][j] !== 0) {
-                            createTile(i, j);
-                        }
-                    }
+                storageData = JSON.parse(storageData);
+                if (typeof storageData.best !== 'undefined') {
+                    best = storageData.best;
+                }
+                if (typeof storageData.table === 'undefined' ||
+                    typeof storageData.score === 'undefined') {
+                    restart();
+                } else {
+                    setTable(storageData);
                 }
             }
 
@@ -313,6 +416,10 @@
                 doMove(dir);
             });
             $(".lose-div a").on("click", restart);
+            $("#new-btn").on("click", restart);
+            $("#undo-btn").on("click", function() {
+                undo();
+            });
 
             // touch swipe
             class Swipe { // from https://stackoverflow.com/a/39545306/, https://stackoverflow.com/questions/2264072/detect-a-finger-swipe-through-javascript-on-the-iphone-and-android/39545306#39545306
@@ -390,9 +497,154 @@
                 .onLeft(() => doMove(3))
                 .run();
 
-            function restart() {
+            autoPlay2048_2dir = function(ms=100) {
+                if (autoPlayRunning) {
+                    return;
+                }
+                autoPlayRunning = true;
+                let round = 0;
+                let undoTimes = 0;
+                setTimeout(function autoPlay2048_2dir_func() {
+                    if (!autoPlayRunning) {
+                        return;
+                    }
+                    doTimeout();
+                    let dir = round % 2 + 2;
+                    let moveCount = move(table, dir)[3];
+                    if (moveCount === 0) {
+                        dir = (round+1) % 2 + 2;
+                        moveCount = move(table, dir)[3];
+                    }
+                    let action;
+                    if (moveCount === 0) {
+                        undo();
+                        round--;
+                        undoTimes++;
+                        action="-";
+                    }
+                    else {
+                        doMove(dir);
+                        round++;
+                        action=["^",">","v","<"][dir];
+                    }
+                    console.log("Round:", round, "Undo:", undoTimes, "Action:", action);
+                    setTimeout(autoPlay2048_2dir_func, ms);
+                }, ms);
+            };
+            // https://stackoverflow.com/questions/22342854/what-is-the-optimal-algorithm-for-the-game-2048/23853848#23853848
+            // https://ronzil.github.io/2048-AI/
+            autoPlay2048 = function(turn=100) {
+                if (autoPlayRunning) {
+                    return;
+                }
+                autoPlayRunning = true;
+                let round = 0;
+                let undoTimes = 0;
+                setTimeout(function autoPlay2048_func() {
+                    if (!autoPlayRunning) {
+                        return;
+                    }
+                    doTimeout();
+                    let moveCount = 0;
+                    for (let i=0; i<4; ++i) {
+                        moveCount += move(table, i)[3];
+                    }
+                    let action;
+                    if (moveCount === 0) {
+                        undo();
+                        round--;
+                        undoTimes++;
+                        action="-";
+                    }
+                    else {
+                        let dir=decideDir(turn);
+                        doMove(dir);
+                        round++;
+                        action=["^",">","v","<"][dir];
+                    }
+                    console.log("Round:", round, "Undo:", undoTimes, "Action:", action);
+                    setTimeout(autoPlay2048_func, 300);
+                }, 300);
+                function decideDir(count) {
+                    let scoreSum = [0,0,0,0];
+                    // let count = 0;
+                    // const st = Date.now();
+                    // while (Date.now() - st < ms) {
+                    for (let i=0; i<count; ++i) {
+                        for (let j=0; j<4; ++j) {
+                            scoreSum[j] += playToEnd(j);
+                        }
+                        // count++;
+                    }
+                    let res, best=-1;
+                    for (let i=0; i<4; ++i) {
+                        scoreSum[i] /= count;
+                        scoreSum[i] += score;
+                        if (scoreSum[i] > best) {
+                            best = scoreSum[i];
+                            res = i;
+                        }
+                    }
+                    console.log("Random score:", scoreSum);
+                    return res;
+                }
+                function playToEnd(dir) {
+                    let [posMap, isMerge, tab, moveCount, addScore] = move(table, dir);
+                    let scoreSum = addScore;
+                    while (moveCount > 0) {
+                        let moveDir = [];
+                        for (let i=0; i<4; ++i) {
+                            if (move(tab, i)[3] > 0) {
+                                moveDir.push(i);
+                            }
+                        }
+                        if (moveDir.length === 0) {
+                            break;
+                        }
+                        [posMap, isMerge, tab, moveCount, addScore] = move(
+                            tab, moveDir[Math.floor(Math.random() * moveDir.length)]);
+                        scoreSum += addScore;
+                        let pos = randomSelectTile(tab);
+                        tab[pos[0]][pos[1]] = (Math.random() < 0.1) ? 4 : 2;
+                    }
+                    return scoreSum;
+                }
+            };
+
+            function doTimeout() {
+                if (timeoutFunc !== null) {
+                    clearTimeout(timeoutId);
+                    timeoutFunc();
+                }
+            }
+            function undo() {
+                doTimeout();
+                if (tableHistory.length <= 0) {
+                    return;
+                }
                 $(".lose-div").removeClass("lose-div-show");
+                setTable(JSON.parse(tableHistory.pop()));
+            }
+            function setTable(tab) {
+                table = tab.table;
+                score = tab.score;
+                tiles = [[null, null, null, null],
+                         [null, null, null, null],
+                         [null, null, null, null],
+                         [null, null, null, null]];
                 $("#tile-div").empty();
+                $("#score-div").text(score);
+                $("#best-div").text(best);
+                for (let i=0; i<4; ++i) {
+                    for (let j=0; j<4; ++j) {
+                        if (table[i][j] !== 0) {
+                            createTile(i, j);
+                        }
+                    }
+                }
+            }
+            function restart() {
+                doTimeout();
                 table = [[0,0,0,0],
                          [0,0,0,0],
                          [0,0,0,0],
@@ -401,6 +653,12 @@
                          [null, null, null, null],
                          [null, null, null, null],
                          [null, null, null, null]];
+                score = 0;
+                tableHistory = [];
+                $("#score-div").text(score);
+                $("#best-div").text(best);
+                $(".lose-div").removeClass("lose-div-show");
+                $("#tile-div").empty();
                 randomAddTile();
                 randomAddTile();
             }
@@ -409,27 +667,28 @@
                     console.log(i);
                 }
             }
-            function mappos(dir, fixed, idx) {
-                if (dir === 0) {
-                    return [idx, fixed];
-                } else if (dir === 1) {
-                    return [fixed, 3-idx];
-                } else if (dir === 2) {
-                    return [3-idx, fixed];
-                } else if (dir === 3) {
-                    return [fixed, idx];
+            function move(table, dir) {
+                // return (oldpos, newpos) array, merge table, new table,
+                //        move count, add score
+                function mappos(dir, fixed, idx) {
+                    if (dir === 0) {
+                        return [idx, fixed];
+                    } else if (dir === 1) {
+                        return [fixed, 3-idx];
+                    } else if (dir === 2) {
+                        return [3-idx, fixed];
+                    } else if (dir === 3) {
+                        return [fixed, idx];
+                    }
                 }
-            }
-            function getpos(table, dir, fixed, idx) {
-                const [a, b] = mappos(dir, fixed, idx);
-                return table[a][b];
-            }
-            function setpos(table, dir, fixed, idx, val) {
-                const [a, b] = mappos(dir, fixed, idx);
-                table[a][b] = val;
-            }
-            function move(dir) {
-                // return (oldpos, newpos) array, merge table, new table, move count
+                function getpos(table, dir, fixed, idx) {
+                    const [a, b] = mappos(dir, fixed, idx);
+                    return table[a][b];
+                }
+                function setpos(table, dir, fixed, idx, val) {
+                    const [a, b] = mappos(dir, fixed, idx);
+                    table[a][b] = val;
+                }
                 let newTable = [[0,0,0,0],
                                 [0,0,0,0],
                                 [0,0,0,0],
@@ -440,6 +699,7 @@
                                [false,false,false,false]];
                 let posMap = [];
                 let moveCount = 0;
+                let addScore = 0;
                 for (let i=0; i<4; ++i) {
                     let j=0, k=0;
                     while (k<4) {
@@ -462,21 +722,19 @@
                             continue;
                         }
                         setpos(newTable, dir, i, j, kval*2);
-                        posMap.push([mappos(dir, i, k), mappos(dir, i, j)]);
                         setpos(isMerge, dir, i, j, true);
+                        posMap.push([mappos(dir, i, k), mappos(dir, i, j)]);
                         moveCount++;
+                        addScore += kval*2;
                         j++;
                         k++;
                     }
                 }
-                return [posMap, isMerge, newTable, moveCount];
+                return [posMap, isMerge, newTable, moveCount, addScore];
             }
             function doMove(dir) {
-                if (timeoutFunc !== null) {
-                    clearTimeout(timeoutId);
-                    timeoutFunc();
-                }
-                let [posMap, isMerge, newTable, moveCount] = move(dir);
+                doTimeout();
+                let [posMap, isMerge, newTable, moveCount, addScore] = move(table, dir);
                 // console.log("dir:", dir);
                 // printAll(newTable);
                 // printAll(isMerge);
@@ -485,6 +743,11 @@
                 if (moveCount === 0) {
                     return;
                 }
+                if (tableHistory.length >= tableHistoryLimit) {
+                    tableHistory.shift();
+                }
+                tableHistory.push(JSON.stringify({ table, score }));
+
                 let toRemove = [];
                 let newTiles = [[null, null, null, null],
                                 [null, null, null, null],
@@ -501,6 +764,16 @@
                 }
                 tiles = newTiles;
                 table = newTable;
+                if (addScore > 0) {
+                    score += addScore;
+                    $("#score-div").text(score);
+                    $("#score-div").append($(`<p class="add-score">+${addScore}</p>`));
+                    if (score > best) {
+                        best = score;
+                        $("#best-div").text(best);
+                    }
+                }
+
                 timeoutFunc = function() {
                     timeoutFunc = null;
                     for (let i of toRemove) {
@@ -519,13 +792,14 @@
                     // printAll(tiles);
                     let moveCount = 0;
                     for (let i=0; i<4; ++i) {
-                        moveCount += move(i)[3];
+                        moveCount += move(table, i)[3];
                     }
                     if (moveCount === 0) {
                         $(".lose-div").addClass("lose-div-show");
-                        localStorage.removeItem(localStorage_key);
+                        // localStorage.removeItem(localStorage_key);
                     } else {
-                        localStorage.setItem(localStorage_key, JSON.stringify(table));
+                        localStorage.setItem(localStorage_key,
+                            JSON.stringify({ table, score, best }));
                     }
                 };
                 timeoutId = setTimeout(timeoutFunc, 200);
@@ -542,7 +816,7 @@
                     newTile.addClass("tile-show");
                 }
             }
-            function randomAddTile() {
+            function randomSelectTile(table) {
                 let pos = [];
                 for (let i=0; i<4; ++i) {
                     for (let j=0; j<4; ++j) {
@@ -551,12 +825,11 @@
                         }
                     }
                 }
-                pos = pos[Math.floor(Math.random() * pos.length)];
-                if (Math.random() < 0.1) {
-                    table[pos[0]][pos[1]] = 4;
-                } else {
-                    table[pos[0]][pos[1]] = 2;
-                }
+                return pos[Math.floor(Math.random() * pos.length)];
+            }
+            function randomAddTile() {
+                let pos = randomSelectTile(table);
+                table[pos[0]][pos[1]] = (Math.random() < 0.1) ? 4 : 2;
                 createTile(pos[0], pos[1]);
             }
         });
