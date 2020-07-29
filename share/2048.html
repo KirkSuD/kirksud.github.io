@@ -27,7 +27,7 @@
             width: min(100vw, 100vh);
             height: min(100vw, 100vh);
             background-color: #bbada0;
-            border-radius: min(1.5vw, 1.5vh);
+            border-radius: min(1.2vw, 1.2vh);
         }
         #game-div > div {
             width: 100%;
@@ -60,7 +60,7 @@
         .lose-div a {
             color: white;
             font-size: min(4vw, 4vh);
-            border-radius: min(0.8vw, 0.8vh);
+            border-radius: min(0.6vw, 0.6vh);
             padding: min(4vw, 4vh);
             cursor: pointer;
             background-color: #8f7a66;
@@ -68,15 +68,15 @@
         .grid {
             position: absolute;
             /* --sp: 15px; */
-            --sp: min(2.5vw, 2.5vh);
+            --sp: min(3vw, 3vh);
             width: calc(25% - var(--sp) * 5 / 4);
             height: calc(25% - var(--sp) * 5 / 4);
             background-color: rgba(238, 228, 218, 0.35);
-            border-radius: min(0.8vw, 0.8vh);
+            border-radius: min(0.6vw, 0.6vh);
         }
         .tile {
             position: absolute;
-            --sp: min(2.5vw, 2.5vh);
+            --sp: min(3vw, 3vh);
             width: calc(25% - var(--sp) * 5 / 4);
             height: calc(25% - var(--sp) * 5 / 4);
             border-radius: min(0.8vw, 0.8vh);
@@ -85,16 +85,30 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            opacity: 0;
             transform: scale(0);
-            transition: opacity 300ms ease,
-                        transform 300ms ease,
-                        left 300ms ease,
-                        top 300ms ease;
+            transition: left 200ms ease,
+                        top 200ms ease;
         }
         .tile-show {
-            opacity: 1;
-            transform: scale(1);
+            animation: tile-show-anim 200ms ease;
+            animation-fill-mode: forwards;
+        }
+        @keyframes tile-show-anim {
+            100% {
+                transform: scale(1);
+            }
+        }
+        .tile-pop {
+            animation: tile-pop-anim 200ms ease;
+            animation-fill-mode: forwards;
+        }
+        @keyframes tile-pop-anim {
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
 
         .tile-2, .tile-4 {
@@ -496,7 +510,7 @@
                     for (let i=0; i<4; ++i) {
                         for (let j=0; j<4; ++j) {
                             if (isMerge[i][j]) {
-                                createTile(i, j);
+                                createTile(i, j, true);
                             }
                         }
                     }
@@ -514,16 +528,19 @@
                         localStorage.setItem(localStorage_key, JSON.stringify(table));
                     }
                 };
-                timeoutId = setTimeout(timeoutFunc, 300);
+                timeoutId = setTimeout(timeoutFunc, 200);
             }
             function createTile(a, b, anim=false) {
                 let newTile = $(`<div class="tile tile-${table[a][b]} pos-${a}-${b}">${table[a][b]}</div>`);
                 tiles[a][b] = newTile;
                 $("#tile-div").append(newTile);
+                newTile.css("opacity"); // reflow: https://stackoverflow.com/questions/24148403/trigger-css-transition-on-appended-element
                 if (anim) {
-                    newTile.css("opacity"); // reflow: https://stackoverflow.com/questions/24148403/trigger-css-transition-on-appended-element
+                    newTile.addClass("tile-pop");
                 }
-                newTile.addClass("tile-show");
+                else {
+                    newTile.addClass("tile-show");
+                }
             }
             function randomAddTile() {
                 let pos = [];
@@ -540,7 +557,7 @@
                 } else {
                     table[pos[0]][pos[1]] = 2;
                 }
-                createTile(pos[0], pos[1], true);
+                createTile(pos[0], pos[1]);
             }
         });
         /*
