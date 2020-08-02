@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>
+        Don't touch the spikes
+    </title>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"> -->
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: hidden;
+            /* to disable chrome mobile pull-to-refresh: https://stackoverflow.com/questions/29008194/disabling-androids-chrome-pull-down-to-refresh-feature */
+            user-select: none;
+            position: relative;
+            font-weight: bold;
+            font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+        }
+        #game-div {
+            --bg-color: #808080;
+            position: absolute;
+            top: 0;
+            left: calc(50vw - 100vh * 20/29 / 2);
+            width: calc(100vh * 20/29);
+            height: 100vh;
+            background-color: var(--bg-color);
+        }
+        #game-div > div, #scene-div {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        #scene-outer-div {
+            --unit: calc(100vh * 20/29 * 9/10 * 12/100);
+            --fg-color: #ebebeb;
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 90%;
+            overflow: hidden;
+            background-color: var(--fg-color);
+        }
+        #top-div {
+            position: absolute;
+            top: calc(var(--unit) / 2);
+            width: 100%;
+            height: calc(var(--unit) * 3);
+            color: var(--bg-color);
+            text-transform: uppercase;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: min(8.5vw, 6vh);
+            text-align: center;
+        }
+        #score-div {
+            position: absolute;
+            left: calc(var(--unit) * 1.5);
+            top: calc(var(--unit) * 27 / 8);
+            width: calc(var(--unit) * 16 / 3);
+            height: calc(var(--unit) * 16 / 3);
+            border-radius: 50%;
+            color: var(--fg-color);
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: min(36vw, 25vh);
+        }
+        #hint {
+            position: absolute;
+            top: 6%;
+            /* white-space: pre-line; */
+            text-align: center;
+            text-transform: uppercase;
+            font-size: min(5vw, 3.5vh);
+            color: rgb(170, 120, 86);
+        }
+        #retry-btn {
+            position: absolute;
+            bottom: 10%;
+            width: 50%;
+            height: 15%;
+            text-align: center;
+            text-transform: uppercase;
+            font-size: min(5vw, 3.5vh);
+            border-radius: min(1.4vw, 1vh);
+            color: white;
+            background-color: rgb(170, 120, 86);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #bottom-div {
+            position: absolute;
+            bottom: calc(var(--unit) / 2);
+            width: 100%;
+            height: calc(var(--unit) * 2.5);
+            color: var(--bg-color);
+            text-transform: uppercase;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: min(5.75vw, 4vh);
+            text-align: center;
+        }
+        #pine-div, #best-div, #total-div {
+            width: 100%;
+            height: calc(var(--unit) * 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #pine-div {
+            margin-bottom: calc(var(--unit) * 0.1);
+        }
+        #pine-div::before {
+            content: "";
+            background-image: url(img/pine.png);
+            background-position: center;
+            background-size: contain;
+            width: calc(var(--unit) * 0.8);
+            height: calc(var(--unit) * 0.8);
+            margin-right: 2%;
+        }
+        #best-div::before {
+            content: "Best score: ";
+            text-transform: uppercase;
+            white-space: pre;
+        }
+        #total-div::before {
+            content: "Games played: ";
+            text-transform: uppercase;
+            white-space: pre;
+        }
+        .char {
+            position: absolute;
+            width: calc(var(--unit) * 6 / 5);
+            height: calc(var(--unit) * 6 / 5);
+            left: calc(var(--unit) * 107 / 30);
+            top: calc(var(--unit) * 653 / 120);
+            background-image: url(img/squirrel.png);
+            background-position: center;
+            background-size: contain;
+        }
+        .char-fly {
+            background-image: url(img/squirrel_fly.png);
+        }
+        .char-right {
+            transform: scaleX(-1);
+        }
+        .char-fly-anim {
+            /* animation: name duration timing-function delay iteration-count direction fill-mode; */
+            animation: char-fly-anim 1200ms linear 0s infinite;
+        }
+        @keyframes char-fly-anim {
+            0% {
+                transform: translateY(0) scaleX(-1);
+                background-image: url(img/squirrel_fly.png);
+            }
+            25% {
+                transform: translateY(-55%) scaleX(-1);
+                background-image: url(img/squirrel.png);
+            }
+            75% {
+                transform: translateY(55%) scaleX(-1);
+                background-image: url(img/squirrel_fly.png);
+            }
+            100% {
+                transform: translateY(0) scaleX(-1);
+                background-image: url(img/squirrel_fly.png);
+            }
+        }
+
+        .circle {
+            position: absolute;
+            width: var(--unit);
+            height: var(--unit);
+            background-image: url(img/circle.png);
+            background-position: center;
+            background-size: contain;
+            opacity: 0;
+            filter: invert(46%) sepia(51%) saturate(378%) hue-rotate(341deg) brightness(99%) contrast(87%);
+            /* loss 0.2? */
+            /* animation: name duration timing-function delay iteration-count direction fill-mode; */
+            animation: circle-fade 450ms linear 75ms;
+        }
+        @keyframes circle-fade {
+            0% {
+                transform: scale(0.3);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        .pine {
+            position: absolute;
+            height: calc(var(--unit) * 0.8);
+            width: calc(var(--unit) * 0.8);
+            background-image: url(img/pine.png);
+            background-position: center;
+            background-size: contain;
+            transition: transform 500ms, opacity 500ms;
+        }
+        .plus1 {
+            background-image: unset;
+            color: rgb(170, 120, 86);
+            font-size: min(5vw, 3.5vh);
+            opacity: 0;
+            transform: translateY(-80%);
+        }
+        .spike {
+            position: absolute;
+            height: var(--unit);
+            width: var(--unit);
+            filter: invert(57%) sepia(0%) saturate(0%) hue-rotate(226deg) brightness(89%) contrast(84%);
+            /* #808080 https://codepen.io/sosuke/pen/Pjoqqp loss: 0 prefect result */
+            background-image: url(img/spike.png);
+            background-position: center;
+            background-size: contain;
+        }
+        .spike-top {
+            top: calc(-1 * var(--unit) / 2);
+        }
+        .spike-bottom {
+            bottom: calc(-1 * var(--unit) / 2);
+        }
+        .spike-left {
+            left: calc(-1 * var(--unit));
+            transition: left 200ms;
+            transition-property: left;
+        }
+        .spike-left-show {
+            left: calc(-1 * var(--unit) / 2);
+        }
+        .spike-right {
+            right: calc(-1 * var(--unit));
+            transition: right 200ms;
+            transition-property: right;
+        }
+        .spike-right-show {
+            right: calc(-1 * var(--unit) / 2);
+        }
+
+        @media screen and (max-aspect-ratio:20/29) {
+            #game-div {
+                left: 0;
+                width: 100vw;
+            }
+            #scene-outer-div {
+                --unit: calc(100vw * 9/10 * 12/100);
+                height: calc(90vw * 29/20);
+                /* top: calc(50vh - 90vw * 29/20 / 2); */
+                /* disable because mobile top link bar push page down */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-div">
+        <div>
+            <div id="scene-outer-div">
+                <div id="scene-div">
+                    <div id="top-div">Don't touch<br>the spikes</div>
+                    <div id="score-div">
+                        <div id="hint">Tap<br>to jump</div>
+                    </div>
+                    <div id="bottom-div">
+                        <div id="pine-div"></div>
+                        <div id="best-div"></div>
+                        <div id="total-div"></div>
+                    </div>
+                    <div class="char char-right char-fly-anim"></div>
+
+                    <!-- <div class="spike spike-top"></div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script>
+        $(function(){
+            for (let i=0; i<8; ++i) {
+                $("#scene-div").append(
+                    $(`<div class="spike spike-top"></div>`)
+                    .css("left", `calc(var(--unit) / 6 + var(--unit) * ${i})`));
+                $("#scene-div").append(
+                    $(`<div class="spike spike-bottom"></div>`)
+                    .css("left", `calc(var(--unit) / 6 + var(--unit) * ${i})`));
+            }
+
+            let pineCount = 0, best = 0, gamesPlayed = 0;
+            const localStorage_key = "kirksud_dont_touch_the_spikes";
+            let storageData = localStorage.getItem(localStorage_key);
+            if (storageData !== null) {
+                storageData = JSON.parse(storageData);
+                if (typeof storageData.pine === 'number' &&
+                    typeof storageData.best === 'number' &&
+                    typeof storageData.total === 'number') {
+                    pineCount = storageData.pine;
+                    best = storageData.best;
+                    gamesPlayed = storageData.total;
+                }
+            }
+            $("#pine-div").text(pineCount);
+            $("#best-div").text(best);
+            $("#total-div").text(gamesPlayed);
+
+            let playing = false, flying = true;
+            let charX, charY, charDir, velocityX, velocityY;
+            let lastUpdateTime, score, flyUntil, spikeCount, speed, colorIdx, traceUntil, traceLeft;
+            let pinePos=null, pineDir=null;
+            let hasSpike = [false, false, false, false,
+                            false, false, false, false,
+                            false, false, false, false];
+            const charSize = 1.2 * 2.4;
+            // const charTopBound = 1 + charSize / 2;
+            // const charBottomBound = 28 - charSize / 2;
+            const charTopBound = 1.5;
+            const charBottomBound = 27.5;
+            const charLeftBound = charSize / 2;
+            const charRightBound = 20 - charSize / 2;
+            // const charLeftBound = charSize / 3;
+            // const charRightBound = 20 - charSize / 3;
+            const pineLeftBound = 4.8;
+            const pineRightBound = 20-4.8;
+            // const initialVelocityX = 10;    // ?/s ?=sceneX/20
+            // const flyVelocity = -16; // ?/s ?=sceneY/29
+            // const gravity = 43;
+            const initialVelocityX = 12;    // ?/s ?=sceneX/20
+            const flyVelocity = -20; // ?/s ?=sceneY/29
+            const gravity = 54;
+            const flyMs = 200;
+            const traceMs = 75;
+            const traceTimes = 6;
+            const scoreSpeedAdd = 0.008;
+            const initialSpikeCount = 3;
+            const addSpikePer = 7;
+            const changeColorPer = 4;
+            const fps = 30;
+            const bgcolor = [
+                ["#ebebeb", "#808080", "invert(57%) sepia(0%) saturate(0%) hue-rotate(226deg) brightness(89%) contrast(84%)"],
+                ["#deeaf0", "#637580", "invert(47%) sepia(21%) saturate(346%) hue-rotate(159deg) brightness(89%) contrast(86%)"],
+                ["#f4e8e1", "#806a63", "invert(44%) sepia(8%) saturate(944%) hue-rotate(328deg) brightness(95%) contrast(87%)"],
+                ["#e8f1de", "#748063", "invert(54%) sepia(16%) saturate(490%) hue-rotate(43deg) brightness(85%) contrast(87%)"],
+                ["#e6e1f4", "#6b6380", "invert(40%) sepia(17%) saturate(529%) hue-rotate(215deg) brightness(95%) contrast(92%)"],
+                ["#727272", "#ffffff", "invert(1)"],
+                ["#006a84", "#00beec", "invert(53%) sepia(62%) saturate(2123%) hue-rotate(154deg) brightness(101%) contrast(101%)"],
+                ["#288400", "#80ec00", "invert(57%) sepia(100%) saturate(489%) hue-rotate(43deg) brightness(111%) contrast(103%)"],
+                ["#002584", "#006aec", "invert(28%) sepia(92%) saturate(1688%) hue-rotate(199deg) brightness(94%) contrast(112%)"],
+                ["#84003e", "#ec0064", "invert(10%) sepia(100%) saturate(5426%) hue-rotate(327deg) brightness(104%) contrast(104%)"],
+                ["#ffab34", "#ffffff", "invert(1)"],
+                ["#00a2ff", "#ffffff", "invert(1)"],
+                ["a734ff", "ffffff", "invert(1)"],
+                ["83e015", "ffffff", "invert(1)"],
+                ["000000", "ffffff", "invert(1)"],
+                ["ea9ccc", "000000", "none"],
+                ["9cc1ea", "000000", "none"],
+                ["bbea9c", "000000", "none"],
+                ["a99cea", "000000", "none"],
+                ["9ceada", "000000", "none"],
+                ["000000", "ff0000", "invert(12%) sepia(90%) saturate(7310%) hue-rotate(3deg) brightness(104%) contrast(113%)"]];
+
+            setCharPos(10, 14.5);
+            $(document).on("keydown", function(evt) {
+                if (evt.code === "Enter" && !playing && !flying) {
+                    backToMenu();
+                    return;
+                }
+                if (evt.code !== "Space") {
+                    return;
+                }
+                press();
+            });
+            $(document).on("mousedown", press);
+
+            // scene X*Y = 20*29
+            function setCharPos(x, y) {
+                // parameter x, y = character center
+                const charSize = 1.2; // has to be same as in CSS
+                // charX = x;
+                // charY = y;
+                $(".char").css("left", `calc(var(--unit) * ${x/2.4 - charSize / 2})`)
+                          .css("top", `calc(var(--unit) * ${y/2.4 - charSize / 2})`);
+            }
+            function setCharDir(d) {
+                if (d < 0) {
+                    $(".char").removeClass("char-right");
+                }
+                else {
+                    $(".char").addClass("char-right");
+                }
+            }
+            function press() {
+                console.log("press");
+                if (!playing && !flying) {
+                    // died, back to main menu by clicking retry button
+                    return;
+                }
+                // playing or start
+                velocityY = flyVelocity;
+                flyUntil = Date.now() + flyMs;
+                $(".char").addClass("char-fly");
+                traceUntil = Date.now() + traceMs * traceTimes;
+                traceLeft = traceTimes;
+                if (playing) {
+                    return;
+                }
+                // start
+                charDir = 1;
+                playing = true;
+                flying = false;
+                lastUpdateTime = Date.now();
+                // intervalId = setInterval(updateScreen, 1000 / fps);
+                charX = 10;
+                charY = 14.5;
+                charDir = 1;
+                velocityX = initialVelocityX;
+                spikeCount = initialSpikeCount;
+                score = 0;
+                speed = 1; //0.8
+                colorIdx = 0;
+                pineDir = null;
+                $("#score-div").text("0");
+                $("#top-div").fadeOut();
+                $("#bottom-div").fadeOut();
+                $(".char").removeClass("char-fly-anim")
+                for (let i=0; i<12; ++i) {
+                    hasSpike[i] = false;
+                }
+                requestAnimationFrame(updateScreen);
+            }
+            function backToMenu() {
+                $("#top-div").html("Don't touch<br>the spikes");
+                $("#score-div").text("");
+                $(`<div id="hint"></div>`).html("Tap<br>to jump").appendTo($("#score-div"));
+                $(".pine").remove();
+                $(".spike-left").remove();
+                $(".spike-right").remove();
+                $(".char").addClass("char-fly-anim");
+                setCharPos(10, 14.5);
+                setCharDir(1);
+                setColor(0);
+                flying = true;
+            }
+            function touchedSpike() {
+                for (let i=0; i<12; ++i) {
+                    if (hasSpike[i]) {
+                        if (charY > i*2.4 + 0.1 &&
+                            charY < i*2.4 + 2.5 ) {
+                            die();
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+            function touchedPine() {
+                if ((pineDir < 0 && charX < pineLeftBound) ||
+                    (pineDir > 0 && charX > pineRightBound)) {
+                    if (charY > pinePos*2.4+0.1 &&
+                        charY < pinePos*2.4+2.5) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            function die() {
+                console.log("You touched the spike!");
+                playing = false;
+                if (score > best) {
+                    best = score;
+                }
+                gamesPlayed++;
+                localStorage.setItem(localStorage_key,
+                    JSON.stringify({ pine: pineCount, best, total: gamesPlayed }));
+                $(".pine").remove();
+                $("#top-div").html("You touched<br>the spike!").show();
+                $(`<div id="retry-btn">Retry</div>`).appendTo($("#score-div"));
+                $("#bottom-div").show();
+                $("#pine-div").text(pineCount);
+                $("#best-div").text(best);
+                $("#total-div").text(gamesPlayed);
+                $("#retry-btn").on("click", function(evt) {
+                    // died, back to main menu
+                    evt.stopPropagation();
+                    backToMenu();
+                });
+            }
+            function addSpike() {
+                const noSpike=[];
+                for (let i=0; i<12; ++i) {
+                    hasSpike[i] = false;
+                    noSpike.push(i);
+                }
+                for (let i=0; i<spikeCount; ++i) {
+                    const rand = Math.floor(Math.random() * noSpike.length);
+                    hasSpike[noSpike[rand]] = true;
+                    noSpike.splice(rand, 1);
+                }
+                const lr = (charDir<0) ? "left" : "right";
+                for (let i=0; i<12; ++i) {
+                    if (hasSpike[i]) {
+                        $("#scene-div").append(
+                            $(`<div class="spike spike-${lr}"></div>`)
+                            .css("top", `calc(var(--unit) / 12 + var(--unit) * ${i})`));
+                    }
+                }
+                // $(`.spike-${lr}`).css("transition-duration", "300ms");
+                $(`.spike-${lr}`).css("filter", bgcolor[colorIdx][2]);
+                // trigger reflow
+                $(`.spike-${lr}`).css(`${lr}`);
+                $(`.spike-${lr}`).addClass(`spike-${lr}-show`);
+            }
+            function addPine(dir) {
+                console.log("add pine", dir);
+                pineDir = dir;
+                pinePos = 1 + Math.floor(Math.random() * 10);
+                const pine = $(`<div class="pine"></div>`);
+                if (dir < 0) {
+                    pine.css("left", "calc(var(--unit) / 2)");
+                }
+                else {
+                    pine.css("right", "calc(var(--unit) / 2)");
+                }
+                pine.css("top", `calc(var(--unit) / 12 + var(--unit) * ${pinePos})`)
+                    .appendTo("#scene-div");
+            }
+            function setColor(idx) {
+                $("#scene-outer-div").css("--fg-color", bgcolor[idx][0]);
+                $("#game-div").css("--bg-color", bgcolor[idx][1]);
+                $(".spike").css("filter", bgcolor[idx][2]);
+            }
+            function updateScreen() {
+                if (!playing) {
+                    return;
+                }
+                const nowt = Date.now();
+                const dt = (nowt - lastUpdateTime) / 1000 * speed;
+                // console.log(dt);
+                lastUpdateTime = nowt;
+                charX += velocityX * dt * charDir;
+                charY += velocityY * dt + gravity * dt * dt / 2;
+                velocityY += gravity * dt;
+                setCharPos(charX, charY);
+                if (nowt > flyUntil) {
+                    $(".char").removeClass("char-fly");
+                }
+                if (charX >= charRightBound && !touchedSpike()) {
+                    const lr = (charDir<0) ? "left" : "right";
+                    $(`.spike-${lr}`).remove();
+                    charX = charRightBound*2 - charX;
+                    charDir *= -1;
+                    setCharDir(charDir);
+                    score++;
+                    $("#score-div").text(score);
+                    addSpike();
+                    if (score % addSpikePer === 0 && spikeCount < 11) {
+                        spikeCount++;
+                    }
+                    if (score % changeColorPer === 0 && colorIdx < bgcolor.length-1) {
+                        colorIdx++;
+                        setColor(colorIdx);
+                    }
+                    if (pineDir === null) {
+                        // add pine
+                        addPine(-1);
+                    }
+                    speed += scoreSpeedAdd;
+                }
+                if (charX <= charLeftBound && !touchedSpike()) {
+                    const lr = (charDir<0) ? "left" : "right";
+                    $(`.spike-${lr}`).remove();
+                    charX = charLeftBound*2 - charX;
+                    charDir *= -1;
+                    setCharDir(charDir);
+                    score++;
+                    $("#score-div").text(score);
+                    addSpike();
+                    if (score % addSpikePer === 0 && spikeCount < 11) {
+                        spikeCount++;
+                    }
+                    if (score % changeColorPer === 0 && colorIdx < bgcolor.length-1) {
+                        colorIdx++;
+                        setColor(colorIdx);
+                    }
+                    speed += scoreSpeedAdd;
+                }
+                if (touchedPine()) {
+                    pineCount++;
+                    const toRm = $(".pine").text("+1").addClass("plus1");
+                    setTimeout(() => toRm.remove(), 500);
+                    addPine(-pineDir);
+                }
+                if (traceLeft > 0 && nowt > traceUntil - traceMs * traceLeft) {
+                    // leave a trace
+                    const circle = $(`<div class="circle"></div>`)
+                        .css("left", `calc(var(--unit) * ${charX/2.4 - 1/2})`)
+                        .css("top", `calc(var(--unit) * ${charY/2.4 - 1/2})`)
+                        .appendTo($("#scene-div"));
+                    circle.css("transform");
+                    circle.addClass("circle-fade");
+                    setTimeout(()=>circle.remove(), traceMs*traceLeft);
+                    traceLeft--;
+                }
+                if (charY <= charTopBound) {
+                    die();
+                }
+                if (charY >= charBottomBound) {
+                    die();
+                }
+                requestAnimationFrame(updateScreen);
+            }
+        });
+    </script>
+</body>
+
+</html>
