@@ -58,7 +58,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 6vh;
+            font-size: min(8.5vw, 6vh);
             text-align: center;
         }
         #score-div {
@@ -73,7 +73,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 25vh;
+            font-size: min(36vw, 25vh);
         }
         #hint {
             position: absolute;
@@ -81,7 +81,7 @@
             /* white-space: pre-line; */
             text-align: center;
             text-transform: uppercase;
-            font-size: 3.5vh;
+            font-size: min(5vw, 3.5vh);
             color: rgb(170, 120, 86);
         }
         #retry-btn {
@@ -91,8 +91,8 @@
             height: 15%;
             text-align: center;
             text-transform: uppercase;
-            font-size: 3.5vh;
-            border-radius: 1vh;
+            font-size: min(5vw, 3.5vh);
+            border-radius: min(1.4vw, 1vh);
             color: white;
             background-color: rgb(170, 120, 86);
             display: flex;
@@ -110,7 +110,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 4vh;
+            font-size: min(5.75vw, 4vh);
             text-align: center;
         }
         #pine-div, #best-div, #total-div {
@@ -125,7 +125,7 @@
         }
         #pine-div::before {
             content: "";
-            background-image: url(pine.png);
+            background-image: url(img/pine.png);
             background-position: center;
             background-size: contain;
             width: calc(var(--unit) * 0.8);
@@ -148,12 +148,12 @@
             height: calc(var(--unit) * 6 / 5);
             left: calc(var(--unit) * 107 / 30);
             top: calc(var(--unit) * 653 / 120);
-            background-image: url(squirrel.png);
+            background-image: url(img/squirrel.png);
             background-position: center;
             background-size: contain;
         }
         .char-fly {
-            background-image: url(squirrel_fly.png);
+            background-image: url(img/squirrel_fly.png);
         }
         .char-right {
             transform: scaleX(-1);
@@ -165,19 +165,19 @@
         @keyframes char-fly-anim {
             0% {
                 transform: translateY(0) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
             25% {
                 transform: translateY(-55%) scaleX(-1);
-                background-image: url(squirrel.png);
+                background-image: url(img/squirrel.png);
             }
             75% {
                 transform: translateY(55%) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
             100% {
                 transform: translateY(0) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
         }
 
@@ -185,7 +185,7 @@
             position: absolute;
             width: var(--unit);
             height: var(--unit);
-            background-image: url(circle.png);
+            background-image: url(img/circle.png);
             background-position: center;
             background-size: contain;
             opacity: 0;
@@ -208,7 +208,7 @@
             position: absolute;
             height: calc(var(--unit) * 0.8);
             width: calc(var(--unit) * 0.8);
-            background-image: url(pine.png);
+            background-image: url(img/pine.png);
             background-position: center;
             background-size: contain;
             transition: transform 500ms, opacity 500ms;
@@ -216,7 +216,7 @@
         .plus1 {
             background-image: unset;
             color: rgb(170, 120, 86);
-            font-size: 3.5vh;
+            font-size: min(5vw, 3.5vh);
             opacity: 0;
             transform: translateY(-80%);
         }
@@ -226,7 +226,7 @@
             width: var(--unit);
             filter: invert(57%) sepia(0%) saturate(0%) hue-rotate(226deg) brightness(89%) contrast(84%);
             /* #808080 https://codepen.io/sosuke/pen/Pjoqqp loss: 0 prefect result */
-            background-image: url(spike.png);
+            background-image: url(img/spike.png);
             background-position: center;
             background-size: contain;
         }
@@ -263,26 +263,6 @@
                 height: calc(90vw * 29/20);
                 /* top: calc(50vh - 90vw * 29/20 / 2); */
                 /* disable because mobile top link bar push page down */
-            }
-
-            #top-div {
-                font-size: 8.5vw;
-            }
-            #score-div {
-                font-size: 36vw;
-            }
-            #hint {
-                font-size: 5vw;
-            }
-            #retry-btn {
-                font-size: 5vw;
-                border-radius: 1.4vw;
-            }
-            #bottom-div {
-                font-size: 5.75vw;
-            }
-            .plus1 {
-                font-size: 5vw;
             }
         }
     </style>
@@ -425,7 +405,7 @@
                 }
             }
             function press() {
-                // console.log("press");
+                console.log("press");
                 if (!playing && !flying) {
                     // died, back to main menu by clicking retry button
                     return;
@@ -499,7 +479,7 @@
                 return false;
             }
             function die() {
-                // console.log("You touched the spike!");
+                console.log("You touched the spike!");
                 playing = false;
                 if (score > best) {
                     best = score;
@@ -546,7 +526,7 @@
                 $(`.spike-${lr}`).addClass(`spike-${lr}-show`);
             }
             function addPine(dir) {
-                // console.log("add pine", dir);
+                console.log("add pine", dir);
                 pineDir = dir;
                 pinePos = 1 + Math.floor(Math.random() * 10);
                 const pine = $(`<div class="pine"></div>`);

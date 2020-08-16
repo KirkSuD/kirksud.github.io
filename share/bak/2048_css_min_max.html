@@ -20,12 +20,10 @@
             user-select: none;
             position: relative;
             font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
-            --mu: 1vh;
-            /* min unit: min(1vw, 1vh) */
         }
         #game-head {
             position: absolute;
-            left: calc(30vw - 50vh);
+            left: max(0px, 30vw - 50vh);
             width: 18vw;
             height: 50vh;
             margin: 0 1vw;
@@ -41,7 +39,7 @@
             grid-row: 1 / span 1;
             grid-column: 1 / span 2;
             color: #776e65;
-            font-size: 10vh;
+            font-size: min(16vw, 10vh);
             margin: 0;
         }
         #game-head div {
@@ -57,7 +55,7 @@
             justify-content: center;
             align-items: center;
             color: white;
-            border-radius: calc(1.2 * var(--mu));
+            border-radius: min(1.2vw, 1.2vh);
             margin: 1px;
             font-size: 2.8vw;
         }
@@ -67,7 +65,7 @@
             width: 100%;
             top: 10%;
             text-transform: uppercase;
-            font-size: 2vh;
+            font-size: min(3vw, 2vh);
             text-align: center;
             color: #eee4da;
         }
@@ -92,12 +90,12 @@
         }
         #game-div {
             position: absolute;
-            left: calc(50vw - 50vh);
-            top: 0;
-            width: calc(100 * var(--mu));
-            height: calc(100 * var(--mu));
+            left: max(20vw, 50vw - 50vh);
+            top: max(0px, 50vh - 50vw);
+            width: min(100vw, 100vh);
+            height: min(100vw, 100vh);
             background-color: #bbada0;
-            border-radius: calc(1.2 * var(--mu));
+            border-radius: min(1.2vw, 1.2vh);
         }
         #game-div > div {
             width: 100%;
@@ -114,7 +112,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: calc(10 * var(--mu));
+            font-size: min(10vw, 10vh);
             font-weight: bold;
             opacity: 0;
             transition: opacity 1s;
@@ -129,28 +127,28 @@
         }
         .lose-div a {
             color: white;
-            font-size: calc(4 * var(--mu));
-            border-radius: calc(0.6 * var(--mu));
-            padding: calc(4 * var(--mu));
+            font-size: min(4vw, 4vh);
+            border-radius: min(0.6vw, 0.6vh);
+            padding: min(4vw, 4vh);
             cursor: pointer;
             background-color: #8f7a66;
         }
         .grid {
             position: absolute;
             /* --sp: 15px; */
-            --sp: calc(3 * var(--mu));
+            --sp: min(3vw, 3vh);
             width: calc(25% - var(--sp) * 5 / 4);
             height: calc(25% - var(--sp) * 5 / 4);
             background-color: rgba(238, 228, 218, 0.35);
-            border-radius: calc(0.6 * var(--mu));
+            border-radius: min(0.6vw, 0.6vh);
         }
         .tile {
             position: absolute;
-            --sp: calc(3 * var(--mu));
+            --sp: min(3vw, 3vh);
             width: calc(25% - var(--sp) * 5 / 4);
             height: calc(25% - var(--sp) * 5 / 4);
-            border-radius: calc(0.8 * var(--mu));
-            font-size: calc(8 * var(--mu));
+            border-radius: min(0.8vw, 0.8vh);
+            font-size: min(8vw, 8vh);
             font-weight: bold;
             display: flex;
             justify-content: center;
@@ -190,10 +188,10 @@
             color: rgb(242, 246, 249);
         }
         .tile-1024, .tile-2048, .tile-4096, .tile-8192 {
-            font-size: calc(7 * var(--mu));
+            font-size: min(7vw, 7vh);
         }
         .tile-16384, .tile-32768, .tile-65536 {
-            font-size: calc(6 * var(--mu));
+            font-size: min(6vw, 6vh);
         }
         .tile-2 {
             background-color: rgb(238, 228, 218);
@@ -308,22 +306,14 @@
             top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
             left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
         }
-        @media screen and (max-aspect-ratio:5/3) {
-            #game-head {
-                left: 0;
-            }
-            #game-div {
-                left: 20vw;
-            }
-        }
         @media screen and (max-aspect-ratio:5/4) {
             #game-head h1 {
                 grid-row: 1 / span 2;
                 grid-column: 1 / span 1;
             }
             #game-head {
-                left: calc(50vw - 40vh);
-                width: 80vh;
+                left: max(0px, 50vw - 40vh);
+                width: min(100vw, 80vh);
                 height: 18vh;
                 margin: 1vh 0;
                 display: grid;
@@ -331,39 +321,13 @@
                 grid-template-rows: 5fr 4fr;
             }
             #game-div {
-                left: calc(50vw - 40vh);
-                top: 20vh;
-                height: 80vh;
-                width: 80vh;
+                left: max(0px, 50vw - 40vh);
+                top: max(20vh, 50vh - 50vw);
+                height: min(100vw, 80vh);
+                width: min(100vw, 80vh);
             }
             #score-div, #best-div, #game-head a {
                 font-size: 3vh;
-            }
-        }
-        @media screen and (max-aspect-ratio:1/1) { /* w < h */
-            body {
-                --mu: 1vw;
-            }
-        }
-        @media screen and (max-aspect-ratio:4/5) {
-            #game-head {
-                left: 0;
-                width: 100vw;
-            }
-            #game-div {
-                left: 0;
-                height: 100vw;
-                width: 100vw;
-            }
-        }
-        @media screen and (max-aspect-ratio:2/3) {
-            #score-div::before, #best-div::before {
-                font-size: 3vw;
-            }
-        }
-        @media screen and (max-aspect-ratio:5/8) {
-            #game-head h1 {
-                font-size: 16vw;
             }
         }
     </style>
