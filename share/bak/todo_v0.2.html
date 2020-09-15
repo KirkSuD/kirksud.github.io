@@ -18,7 +18,6 @@ main {
 }
 p {
   white-space: pre-wrap;
-  margin-bottom: 0;
 }
 .card {
   /*border: 2px solid rgb(223,223,223);*/
@@ -26,20 +25,6 @@ p {
 }
 .checked-todo {
   text-decoration: line-through;
-}
-#folder-btn::before {
-  content: "■ ";
-}
-#folder-modal-title::before {
-  content: "Folder：";
-}
-#folder-modal-div-head > div, #folder-modal-div > div {
-  padding: 5px 0;
-  border-bottom: 1px solid #dee2e6;
-  /* box-shadow: 0 2px 1px -1px black; */
-}
-#folder-modal-div > div > p {
-  cursor: pointer;
 }
   </style>
 </head>
@@ -50,8 +35,7 @@ p {
       <div class="w-100 px-1 mb-2">
         <div class="card">
           <div class="card-body">
-            <button id="folder-btn" class="close ml-3"></button>
-            <button id="clear-todo-btn" class="close"><i class="material-icons">delete_sweep</i></button>
+            <button id="clear-todo-btn" class="close"><i class="material-icons">clear_all</i></button>
             <button id="export-todo-btn" class="close float-left mr-1"><i class="material-icons">save</i></button>
             <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3"><i class="material-icons">folder_open</i></label>
             <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
@@ -76,37 +60,6 @@ p {
         </div>
       </div>
     </div>
-    <div class="modal" id="folder-modal" role="dialog" aria-label="Folder" aria-hidden="false">
-      <div id="fodler-modal-dialog" class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-
-          <div class="modal-header">
-            <h5 id="folder-modal-title" class="modal-title"></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close folder modal">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div id="folder-modal-div-head">
-              <div class="row">
-                <p class="col">Name</p>
-                <p class="col">Last used</p>
-                <p class="col">Memos</p>
-                <div class="col pr-0">
-                  <input id="add-folder-input" class="form-control" placeholder="Add"></input>
-                </div>
-                <button id="add-folder-btn" type="button" class="close pl-2 pr-2">
-                  <i class="material-icons">create_new_folder</i>
-                </button>
-              </div>
-            </div>
-            <div id="folder-modal-div"></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
   </main>
 
   <!-- Why put before end of body: https://stackoverflow.com/questions/10994335/javascript-head-body-or-jquery -->
@@ -121,12 +74,10 @@ p {
 const localStorage_key = "kirksud_todo_app_data";
 const export_filename_prefix = "todo_export_";
 
-let current_folder, current_folder_data;
-
 // run when document ready
 $(function() {
   //$("#todos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
-  $("#todos").sortable({stop: save_current_folder});
+  $("#todos").sortable({stop: save_to_storage});
   //$("#todos").disableSelection(); //not sure what this does, maybe for mobile devices? tested, not working...
   $("#export-todo-btn").on("click", export_todo_btn);
   $("#import-file-selector").on("change", import_file_selected);
@@ -135,9 +86,6 @@ $(function() {
   $("#import-paste-input").on("paste", import_pasted);
   $("#import-paste-input").on("blur", done_import_paste);
   $("#clear-todo-btn").on("click", clear_todo_btn);
-  $("#folder-btn").on("click", folder_btn);
-  $("#add-folder-btn").on("click", add_folder_btn);
-  $("#add-folder-input").on("keydown", alt_enter_listener(add_folder_btn, false));
   $("#add-todo-btn").on("click", add_todo_btn);
   $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
   load_from_storage();
@@ -185,88 +133,30 @@ function clear_todo() {
 }
 
 // data <-> ui functions
-function ui_to_data() {
+function ui_to_json() {
   let todos = $("#todos").find(".card-body").map((i, element) =>
     [[$(element).find("p").hasClass("checked-todo"), $(element).find("small").text(), $(element).find("p").text()]]
   ).toArray().slice(1);
-  current_folder_data[current_folder] = {time: pretty_time(), data: todos};
-}
-function data_to_json() {
-  return JSON.stringify({
-    version: "0.3",
-    time: pretty_time(),
-    using_folder: current_folder,
-    folders: current_folder_data});
+  return JSON.stringify({version: "0.2", time:pretty_time(), data: todos});
 }
 
-function data_to_ui(data, folder=null) {
+function data_to_ui(data) {
   if (typeof data.version === "undefined") { return false; }
-  if (data.version === '0.1') { // upgrade data from 0.1 to 0.2
-    let time_str = pretty_time();
+  if (data.version === '0.1') {
+    time_str = pretty_time();
     data.data = data.data.map(item => [item[0], time_str, item[1]]);
     data.version = '0.2';
     data.time = time_str;
   }
-  if (data.version === '0.2') { // upgrade data from 0.2 to 0.3
-    let time_str = pretty_time();
-    data = {
-      version: "0.3",
-      time: time_str,
-      using_folder: "Default",
-      folders: {
-        "Default": {
-          time: data.time,
-          data: data.data
-        }}};
-    console.log("Upgraded data from 0.2 to 0.3:", data);
-  }
-  if (data.version === '0.3') {
-    if (folder === null) {
-      folder = data.using_folder;
-      console.log("Using folder:", folder);
-    }
-    current_folder = folder;
-    current_folder_data = data.folders;
+  if (data.version === '0.2') {
     clear_todo();
-    data.folders[folder].data.reverse().forEach(function(element) {
+    data.data.reverse().forEach(function(element) {
       add_todo(element[2], element[1], element[0]);
     });
-    $("#folder-btn").text(folder);
     return true;
   }
   else {
     return false;
-  }
-}
-
-// input, textarea keydown helper
-function alt_enter_listener(func, alt_required = true) {
-  return function(evt) { // from https://stackoverflow.com/questions/30467263/handling-alt-enter-key-press-in-javascript
-    if (event.defaultPrevented) {
-      return;
-    }
-    let handled = false;
-    if (event.key !== undefined) {
-      if (event.key === 'Enter' && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
-    }
-    else if (event.keyIdentifier !== undefined) {
-      if (event.keyIdentifier === "Enter" && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
-    }
-    else if (event.keyCode !== undefined) {
-      if (event.keyCode === 13 && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
-    }
-    if (handled) {
-      event.preventDefault();
-    };
   }
 }
 
@@ -276,132 +166,45 @@ function add_todo_btn() {
   let todo_txt = $("#add-todo-txt").val();
   $("#add-todo-txt").val("");
   add_todo(todo_txt, pretty_time());
-  save_current_folder();
-}
-
-function folder_btn() {
-  $("#folder-modal-title").text(current_folder);
-  $("#add-folder-input").val("");
-  $("#folder-modal-div").empty();
-  let folders = [];
-  for (const k in current_folder_data) {
-    folders.push([k, current_folder_data[k].time, current_folder_data[k].data.length]);
-  }
-  folders.sort(function(a, b) {
-    return b[1].localeCompare(a[1]);
-  });
-  for (const folder of folders) {
-    const folder_row = $(`
-      <div class="row">
-        <p class="col"></p>
-        <p class="col"></p>
-        <p class="col"></p>
-        <div class="col pr-0">
-          <input class="form-control" placeholder="Rename">
-        </div>
-        <button type="button" class="close pl-2 pr-2">
-          <i class="material-icons">delete</i>
-        </button>
-      </div>
-    `);
-    folder_row.children("p").eq(0).text(folder[0]);
-    folder_row.children("p").eq(1).text(folder[1]);
-    folder_row.children("p").eq(2).text(folder[2]);
-    folder_row.find("input").val(folder[0]);
-    $("#folder-modal-div").append(folder_row);
-  }
-  $("#folder-modal-div > div > p").on("click", open_folder_btn);
-  $("#folder-modal-div input").on("keydown", alt_enter_listener(rename_folder_keydown, false));
-  $("#folder-modal-div button").on("click", delete_folder_btn);
-  $("#folder-modal").modal("show");
-}
-
-function add_folder_btn() {
-  const new_folder_name = $("#add-folder-input").val();
-  console.log(new_folder_name);
-  if (new_folder_name in current_folder_data) {
-    popcorn($("#add-folder-input"), "top", 2000, "Folder name exists!");
-    return;
-  }
-  if (new_folder_name.length === 0) {
-    popcorn($("#add-folder-input"), "top", 2000, "Please type folder name!");
-    return;
-  }
-  current_folder_data[new_folder_name] = {time: pretty_time(), data: []};
-  current_folder = new_folder_name; // push then set as using
   save_to_storage();
-  load_from_storage(); // save then load
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
 }
 
-function open_folder_btn() {
-  const folder_name = $(this).parent().children("p").eq(0).text();
-  load_from_storage(folder_name);
-  current_folder_data[folder_name].time = pretty_time();
-  save_to_storage();
-  $("#folder-modal").modal("hide");
-}
-
-function rename_folder_keydown(self) {
-  const new_folder_name = $(self).val();
-  if (new_folder_name in current_folder_data) {
-    popcorn($(self), "top", 2000, "Folder name exists!");
-    return;
-  }
-  if (new_folder_name.length === 0) {
-    popcorn($(self), "top", 2000, "Please type folder name!");
-    return;
-  }
-  const original_folder_name = $(self).parent().siblings("p").eq(0).text();
-  current_folder_data[new_folder_name] = current_folder_data[original_folder_name];
-  delete current_folder_data[original_folder_name];
-  if (original_folder_name === current_folder) {
-    current_folder = new_folder_name;
-  }
-  save_to_storage();
-  if (original_folder_name === current_folder) {
-    load_from_storage();
-  }
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
-}
-
-function delete_folder_btn() {
-  if (Object.keys(current_folder_data).length === 1) {
-    popcorn($(this), "right", 2000, "Can't delete only folder!");
-    return;
-  }
-  const folder_name = $(this).siblings("p").eq(0).text();
-  delete current_folder_data[folder_name];
-  if (folder_name === current_folder) { // delete using folder -> open latest folder
-    let latest_time="0000/00/00 00:00:00";
-    for (const k in current_folder_data) {
-      if (current_folder_data[k].time.localeCompare(latest_time) > 0) { // later
-        latest_time = current_folder_data[k].time;
-        current_folder = k;
+function alt_enter_listener(func) {
+  return function(evt) { // from https://stackoverflow.com/questions/30467263/handling-alt-enter-key-press-in-javascript
+    if (event.defaultPrevented) {
+      return;
+    }
+    let handled = false;
+    if (event.key !== undefined) {
+      if (event.key === 'Enter' && event.altKey) {
+        func();
       }
     }
-    console.log("Use last used folder:", current_folder);
+    else if (event.keyIdentifier !== undefined) {
+      if (event.keyIdentifier === "Enter" && event.altKey) {
+        func();
+      }
+    }
+    else if (event.keyCode !== undefined) {
+      if (event.keyCode === 13 && event.altKey) {
+        func();
+      }
+    }
+    if (handled) {
+      event.preventDefault();
+    };
   }
-  save_to_storage();
-  load_from_storage(); // save then load
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
 }
 
 function clear_todo_btn() {
-  if (!confirm("Sure to clear?")) {
-    return;
-  }
   clear_todo();
-  save_current_folder();
+  save_to_storage();
 }
 
 function close_todo() {
   console.log(".close-todo clicked");
   $(this).parentsUntil("#todos").remove();
-  save_current_folder();
+  save_to_storage();
 }
 
 function copy_todo() {
@@ -421,7 +224,7 @@ function edit_todo() {
   }
   else {
     parent.find("p").text(parent.find("textarea").val());
-    save_current_folder();
+    save_to_storage();
   }
 }
 
@@ -438,12 +241,12 @@ function toggle_edit_todo() {
 function check_todo() {
   console.log(".check-todo clicked");
   $(this).parent().find("p").toggleClass("checked-todo");
-  save_current_folder();
+  save_to_storage();
 }
 
 function export_todo_btn() {
   console.log("export");
-  let json_data = data_to_json();
+  let json_data = ui_to_json();
   let file = new Blob([json_data], {type: "application/json"});
   let tmp = $('<a>export</a>')
     .attr("href", URL.createObjectURL(file))
@@ -461,13 +264,13 @@ function import_file_selected() {
     //console.log(evt.target.result);
     let data = JSON.parse(evt.target.result);
     data_to_ui(data);
-    save_current_folder();
+    save_to_storage();
   }
   file_reader.readAsText(file);
 }
 
 function export_copy_todo_btn() {
-  set_clip(data_to_json());
+  set_clip(ui_to_json());
   popcorn($("#export-copy-todo-btn"), "bottom", 2000, "Copied!");
   //$("#export-copy-todo-btn").popover({content: "Copied!", placement: "bottom"}).popover("show");
   //setTimeout(function(){ $("#export-copy-todo-btn").popover("hide"); }, 2000);
@@ -498,7 +301,7 @@ function import_pasted(evt) {
   const success = data_to_ui(data);
   $("#import-paste-input").blur();
   if (success) {
-    save_current_folder();
+    save_to_storage();
   }
   else { // Failed? Don't worry, just have some popcorn!
     popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
@@ -508,8 +311,7 @@ function import_pasted(evt) {
 // popover
 function popcorn(jq, placement, ms, content) {
   jq.popover({content: content, placement: placement}).popover("show");
-  setTimeout(function(){ jq.popover("hide"); }, ms); // fade .15s
-  setTimeout(function(){ jq.popover("dispose"); }, ms+150);
+  setTimeout(function(){ jq.popover("hide"); }, ms);
 }
 
 // string format time
@@ -541,25 +343,20 @@ function set_clip(txt) {
 }
 
 // load, save storage functions
-function load_from_storage(folder=null) {
+function load_from_storage() {
   console.log("load from storage");
   let data = localStorage.getItem(localStorage_key);
   //console.log(data);
   if (data === null) { return false; }
   data = JSON.parse(data);
   //console.log(data);
-  data_to_ui(data, folder);
+  data_to_ui(data);
 }
 function save_to_storage() {
   console.log("save to storage");
-  let json_data = data_to_json();
+  let json_data = ui_to_json();
   //console.log(json_data);
   localStorage.setItem(localStorage_key, json_data);
-}
-function save_current_folder() {
-  console.log("save current folder");
-  ui_to_data();
-  save_to_storage();
 }
 
   </script>
