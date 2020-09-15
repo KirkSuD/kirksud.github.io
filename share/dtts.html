@@ -3,9 +3,18 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>
-        Don't touch the spikes
-    </title>
+    <title>Don't touch the spikes</title>
+    <meta name="description" content="A fun game with a squirrel & pine cone. Play on laptop & phone!" />
+
+    <meta property="og:title" content="Don't touch the spikes">
+    <meta property="og:description" content="A fun game with a squirrel & pine cone. Play on laptop & phone!">
+    <meta property="og:image" content="https://kirksud.github.io/share/img/squirrel.png">
+    <meta property="og:url" content="https://kirksud.github.io/share/dtts.html">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <meta property="og:site_name" content="kirksud.github.io">
+    <meta name="twitter:image:alt" content="Cute squirrel">
+
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"> -->
     <!-- <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"> -->
@@ -125,7 +134,7 @@
         }
         #pine-div::before {
             content: "";
-            background-image: url(pine.png);
+            background-image: url(img/pine.png);
             background-position: center;
             background-size: contain;
             width: calc(var(--unit) * 0.8);
@@ -148,12 +157,12 @@
             height: calc(var(--unit) * 6 / 5);
             left: calc(var(--unit) * 107 / 30);
             top: calc(var(--unit) * 653 / 120);
-            background-image: url(squirrel.png);
+            background-image: url(img/squirrel.png);
             background-position: center;
             background-size: contain;
         }
         .char-fly {
-            background-image: url(squirrel_fly.png);
+            background-image: url(img/squirrel_fly.png);
         }
         .char-right {
             transform: scaleX(-1);
@@ -165,19 +174,19 @@
         @keyframes char-fly-anim {
             0% {
                 transform: translateY(0) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
             25% {
                 transform: translateY(-55%) scaleX(-1);
-                background-image: url(squirrel.png);
+                background-image: url(img/squirrel.png);
             }
             75% {
                 transform: translateY(55%) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
             100% {
                 transform: translateY(0) scaleX(-1);
-                background-image: url(squirrel_fly.png);
+                background-image: url(img/squirrel_fly.png);
             }
         }
 
@@ -185,7 +194,7 @@
             position: absolute;
             width: var(--unit);
             height: var(--unit);
-            background-image: url(circle.png);
+            background-image: url(img/circle.png);
             background-position: center;
             background-size: contain;
             opacity: 0;
@@ -208,7 +217,7 @@
             position: absolute;
             height: calc(var(--unit) * 0.8);
             width: calc(var(--unit) * 0.8);
-            background-image: url(pine.png);
+            background-image: url(img/pine.png);
             background-position: center;
             background-size: contain;
             transition: transform 500ms, opacity 500ms;
@@ -226,7 +235,7 @@
             width: var(--unit);
             filter: invert(57%) sepia(0%) saturate(0%) hue-rotate(226deg) brightness(89%) contrast(84%);
             /* #808080 https://codepen.io/sosuke/pen/Pjoqqp loss: 0 prefect result */
-            background-image: url(spike.png);
+            background-image: url(img/spike.png);
             background-position: center;
             background-size: contain;
         }
