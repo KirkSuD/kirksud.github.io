@@ -84,7 +84,6 @@ p {
             <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return input delete create cancel add_box add_circle -->
             <!-- TODO: better time, sortable -->
             <br><br>
-            <label class="d-none" for="add-todo-txt">Type something here</label>
             <textarea id="add-todo-txt" class="form-control" placeholder="Type something..."></textarea>
           </div>
         </div>
@@ -412,7 +411,7 @@ function folder_btn() {
 
 function add_folder_btn() {
   const new_folder_name = $("#add-folder-input").val();
-  console.log(new_folder_name);
+  console.log("add folder btn:", new_folder_name);
   if (new_folder_name in current_folder_data) {
     popcorn($("#add-folder-input"), "top", 2000, "Folder name exists!");
     return;
@@ -452,10 +451,11 @@ function rename_folder_keydown(self) {
   delete current_folder_data[original_folder_name];
   if (original_folder_name === current_folder) {
     current_folder = new_folder_name;
-  }
-  save_to_storage();
-  if (original_folder_name === current_folder) {
+    save_to_storage();
     load_from_storage();
+  }
+  else {
+    save_to_storage();
   }
   $("#folder-modal").modal("hide");
   $("#folder-btn").click(); // reopen modal
@@ -536,7 +536,7 @@ function check_todo() {
 }
 
 function export_todo_btn() {
-  console.log("export");
+  console.log("export todo btn");
   let json_data = data_to_json();
   let file = new Blob([json_data], {type: "application/json"});
   let tmp = $('<a>export</a>')
@@ -545,7 +545,7 @@ function export_todo_btn() {
   $("body").append(tmp);
   tmp[0].click();
   tmp.remove();
-  console.log("export file");
+  console.log("exported file");
 }
 
 function import_file_selected() {
@@ -563,8 +563,6 @@ function import_file_selected() {
 function export_copy_todo_btn() {
   set_clip(data_to_json());
   popcorn($("#export-copy-todo-btn"), "bottom", 2000, "Copied!");
-  //$("#export-copy-todo-btn").popover({content: "Copied!", placement: "bottom"}).popover("show");
-  //setTimeout(function(){ $("#export-copy-todo-btn").popover("hide"); }, 2000);
 }
 
 function import_paste_todo_btn() {
@@ -588,7 +586,6 @@ function import_pasted(evt) {
     popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
     return;
   }
-  //console.log(data);
   const success = data_to_ui(data);
   $("#import-paste-input").blur();
   if (success) {
@@ -638,7 +635,6 @@ function set_clip(txt) {
 function load_from_storage(folder=null) {
   console.log("load from storage");
   let data = localStorage.getItem(localStorage_key);
-  //console.log(data);
   if (data === null) { // no data, create an empty one
     const time_str = pretty_time();
     data = {
@@ -651,13 +647,11 @@ function load_from_storage(folder=null) {
   else {
     data = JSON.parse(data);
   }
-  //console.log(data);
   data_to_ui(data, folder);
 }
 function save_to_storage() {
   console.log("save to storage");
   let json_data = data_to_json();
-  //console.log(json_data);
   localStorage.setItem(localStorage_key, json_data);
 }
 function save_current_folder() {
