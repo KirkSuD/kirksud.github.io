@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
+  <meta name="description" content="Responsive memo app with folder, backup and more features." />
   <!-- RWD & bootstrap: https://getbootstrap.com/docs/4.4/getting-started/introduction/ -->
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -10,7 +11,7 @@
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
-  <title>Todo</title>
+  <title>Memo</title>
 
   <style>
 main {
@@ -71,7 +72,6 @@ p {
               <i class="material-icons">border_all</i><p id="col-btn-text"></p>
             </button>
             <button id="clear-todo-btn" class="close"><i class="material-icons">delete_sweep</i></button>
-            <!-- <h4 class="text-center">Todo</h4> -->
           </div>
         </div>
       </div>
@@ -82,9 +82,10 @@ p {
           <div class="card-body">
             <button id="add-todo-btn" class="close"><i class="material-icons">add</i></button>
             <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return input delete create cancel add_box add_circle -->
-            <!-- TODO: edit, time, better sortable -->
+            <!-- TODO: better time, sortable -->
             <br><br>
-            <textarea id="add-todo-txt" class="form-control" placeholder="Add a todo..."></textarea>
+            <label class="d-none" for="add-todo-txt">Type something here</label>
+            <textarea id="add-todo-txt" class="form-control" placeholder="Type something..."></textarea>
           </div>
         </div>
       </div>
