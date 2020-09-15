@@ -27,8 +27,11 @@ p {
 .checked-todo {
   text-decoration: line-through;
 }
-#folder-btn::before {
-  content: "■ ";
+#zoom-btn::after {
+  content: "%";
+}
+#folder-btn-text, #col-btn-text {
+  display: inline-block;
 }
 #folder-modal-title::before {
   content: "Folder：";
@@ -50,21 +53,31 @@ p {
       <div class="w-100 px-1 mb-2">
         <div class="card">
           <div class="card-body">
-            <button id="folder-btn" class="close ml-3"></button>
-            <button id="clear-todo-btn" class="close"><i class="material-icons">delete_sweep</i></button>
             <button id="export-todo-btn" class="close float-left mr-1"><i class="material-icons">save</i></button>
             <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3"><i class="material-icons">folder_open</i></label>
             <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
             <button id="export-copy-todo-btn" class="close float-left mr-1"><i class="material-icons">content_copy</i></button>
             <button id="import-paste-todo-btn" class="close float-left"><i class="material-icons">content_paste</i></button>
             <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
+            
+            <br class="d-sm-none">
+            <br class="d-sm-none">
+
+            <button id="folder-btn" class="close ml-3">
+              <i class="material-icons">folder_open</i><p id="folder-btn-text"></p>
+            </button>
+            <button id="zoom-btn" class="close ml-3">100</button>
+            <button id="col-btn" class="close ml-3">
+              <i class="material-icons">border_all</i><p id="col-btn-text"></p>
+            </button>
+            <button id="clear-todo-btn" class="close"><i class="material-icons">delete_sweep</i></button>
             <!-- <h4 class="text-center">Todo</h4> -->
           </div>
         </div>
       </div>
     </div>
     <div id="todos" class="row">
-      <div id="add-todo-div" class="col-lg-3 col-md-4 col-sm-6 col-12 p-1">
+      <div id="add-todo-div" class="memo p-1">
         <div class="card">
           <div class="card-body">
             <button id="add-todo-btn" class="close"><i class="material-icons">add</i></button>
@@ -93,6 +106,9 @@ p {
                 <p class="col">Name</p>
                 <p class="col">Last used</p>
                 <p class="col">Memos</p>
+
+                <div class="col-12 d-sm-none"></div>
+
                 <div class="col pr-0">
                   <input id="add-folder-input" class="form-control" placeholder="Add"></input>
                 </div>
@@ -121,7 +137,16 @@ p {
 const localStorage_key = "kirksud_todo_app_data";
 const export_filename_prefix = "todo_export_";
 
-let current_folder, current_folder_data;
+const max_col = { // col-lg-3 col-md-4 col-sm-6 col-12
+  "lg": 4,
+  "md": 3,
+  "sm": 2,
+  "xs": 1
+};
+const min_zoom_percentage=50, max_zoom_percentage=300;
+const text_rem=1.2, small_rem=0.96;
+// Firefox: p=1rem, small~0.8rem
+let current_folder, current_folder_data, zoom_percentage=100;
 
 // run when document ready
 $(function() {
@@ -135,18 +160,23 @@ $(function() {
   $("#import-paste-input").on("paste", import_pasted);
   $("#import-paste-input").on("blur", done_import_paste);
   $("#clear-todo-btn").on("click", clear_todo_btn);
+  $("#zoom-btn").on("click", zoom_btn);
+  $("#col-btn").on("click", col_btn);
   $("#folder-btn").on("click", folder_btn);
   $("#add-folder-btn").on("click", add_folder_btn);
   $("#add-folder-input").on("keydown", alt_enter_listener(add_folder_btn, false));
   $("#add-todo-btn").on("click", add_todo_btn);
   $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
+  $(window).resize(resize_col);
+  $(window).on("wheel", wheel_zoom);
+  resize_col();
   load_from_storage();
 });
 
 // ui manipulation functions
 function add_todo(txt, time_str, checked=false) {
   let new_todo_div = $(
-    `<div class="col-lg-3 col-md-4 col-sm-6 col-12 p-1">
+    `<div class="memo p-1">
       <div class="card">
         <div class="card-body">
           <button class="close close-todo"><i class="material-icons">close</i></button>
@@ -190,6 +220,8 @@ function ui_to_data() {
     [[$(element).find("p").hasClass("checked-todo"), $(element).find("small").text(), $(element).find("p").text()]]
   ).toArray().slice(1);
   current_folder_data[current_folder] = {time: pretty_time(), data: todos};
+  resize_col(null, -1);
+  wheel_zoom();
 }
 function data_to_json() {
   return JSON.stringify({
@@ -231,7 +263,9 @@ function data_to_ui(data, folder=null) {
     data.folders[folder].data.reverse().forEach(function(element) {
       add_todo(element[2], element[1], element[0]);
     });
-    $("#folder-btn").text(folder);
+    resize_col(null, -1);
+    wheel_zoom();
+    $("#folder-btn-text").text(folder);
     return true;
   }
   else {
@@ -270,7 +304,63 @@ function alt_enter_listener(func, alt_required = true) {
   }
 }
 
+// bootstrap media query size name
+function media_size() {
+  if (window.matchMedia('(min-width: 992px)').matches) {
+    return "lg";
+  }
+  else if (window.matchMedia('(min-width: 768px)').matches) {
+    return "md";
+  }
+  else if (window.matchMedia('(min-width: 576px)').matches) {
+    return "sm";
+  }
+  else {
+    return "xs";
+  }
+}
+
+// window resize col
+function resize_col(evt, cur_col=0) { // col-lg-3 col-md-4 col-sm-6 col-12
+  for (let i=1; i<=4; i++) {
+    $(".memo").removeClass("col-"+(12/i));
+  }
+  if (cur_col === 0) {
+    cur_col = max_col[media_size()];
+  }
+  else if (cur_col === -1) {
+    cur_col = parseInt($("#col-btn-text").text());
+  }
+  $(".memo").addClass("col-"+(12/cur_col));
+  $("#col-btn-text").text(cur_col);
+}
+
+// ctrl + mouse wheel zoom
+function wheel_zoom(evt=null) {
+  if (evt !== null) {
+    if (!evt.ctrlKey) {
+      return;
+    }
+    evt.preventDefault();
+    zoom_percentage -= evt.originalEvent.deltaY * 10 / 3;
+    zoom_percentage = Math.max(zoom_percentage, min_zoom_percentage);
+    zoom_percentage = Math.min(zoom_percentage, max_zoom_percentage);
+    zoom_percentage = Math.round(zoom_percentage);
+  }
+  $(".card-text").css("font-size", text_rem*zoom_percentage/100 + "rem");
+  $("small").css("font-size", small_rem*zoom_percentage/100 + "rem");
+  $("#zoom-btn").text(zoom_percentage);
+}
+
 // onclick functions
+function zoom_btn() {
+  zoom_percentage = 100;
+  wheel_zoom();
+}
+function col_btn() {
+  resize_col(null, parseInt($("#col-btn-text").text()) - 1);
+}
+
 function add_todo_btn() {
   console.log("#add-todo-btn clicked");
   let todo_txt = $("#add-todo-txt").val();
@@ -296,10 +386,13 @@ function folder_btn() {
         <p class="col"></p>
         <p class="col"></p>
         <p class="col"></p>
+
+        <div class="col-12 d-sm-none"></div>
+
         <div class="col pr-0">
           <input class="form-control" placeholder="Rename">
         </div>
-        <button type="button" class="close pl-2 pr-2">
+        <button type="button" class="close px-2">
           <i class="material-icons">delete</i>
         </button>
       </div>
@@ -545,8 +638,18 @@ function load_from_storage(folder=null) {
   console.log("load from storage");
   let data = localStorage.getItem(localStorage_key);
   //console.log(data);
-  if (data === null) { return false; }
-  data = JSON.parse(data);
+  if (data === null) { // no data, create an empty one
+    const time_str = pretty_time();
+    data = {
+      version: "0.3",
+      time: time_str,
+      using_folder: "Default",
+      folders: { "Default": { time: time_str, data: [] } }
+    }
+  }
+  else {
+    data = JSON.parse(data);
+  }
   //console.log(data);
   data_to_ui(data, folder);
 }
