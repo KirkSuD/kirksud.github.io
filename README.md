@@ -1,16 +1,15 @@
-# KirkSuD GitHub Pages
+## KirkSuD GitHub Pages
 
 I'm KirkSuD, a CS student who is still learning lots of things.
 
-Currently, this site only shares some HTML pages which worths trying.
+Currently, this site only shares some HTML pages which worth trying.
 
 ## Shared HTMLs
 
 Links to useful / fun html page:
 
-* [[App] memo](https://kirksud.github.io/share/memo.html) / [[App] todo](https://kirksud.github.io/share/todo.html)
+* [[App] memo](https://kirksud.github.io/share/memo.html)
 
-These two are the same.
 A responsive memo web app that saves memos in local storage
 with backup & restore functionality
 which uses bootstrap, jquery, jquery-ui, material icons.
@@ -41,6 +40,4 @@ You can toggle recursive & exact, 4 versions in total!
 
 * [termux_api](https://github.com/KirkSuD/termux_api): A simple Python module to call [termux-api](https://wiki.termux.com/wiki/Termux:API) using [subprocess.run()](https://docs.python.org/3.7/library/subprocess.html#subprocess.run).
 
-* [OsuMusicPlayer](https://github.com/KirkSuD/OsuMusicPlayer): A music player for osu!, the rhythm game.
-
-* [osudb](https://github.com/KirkSuD/osudb): A simple Python module to parse databases of osu!, the rhythm game.
+* [osu_db_kaitai_struct](https://github.com/KirkSuD/osu_db_kaitai_struct): A simple osu! DB parser written in Kaitai Struct, including an html music player and a collection to playlist converter.

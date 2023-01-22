@@ -33,9 +33,9 @@ p {
 .checked-todo {
   text-decoration: line-through;
 }
-#zoom-btn::after {
+/* #zoom-btn::after {
   content: "%";
-}
+}  // wheel_zoom not working */
 #folder-btn-text, #col-btn-text {
   display: inline-block;
 }
@@ -72,7 +72,7 @@ p {
             <button id="folder-btn" class="close ml-3">
               <i class="material-icons">folder_open</i><p id="folder-btn-text"></p>
             </button>
-            <button id="zoom-btn" class="close ml-3">100</button>
+            <!-- <button id="zoom-btn" class="close ml-3">100</button>  // wheel_zoom not working -->
             <button id="col-btn" class="close ml-3">
               <i class="material-icons">border_all</i><p id="col-btn-text"></p>
             </button>
@@ -165,7 +165,7 @@ $(function() {
   $("#import-paste-input").on("paste", import_pasted);
   $("#import-paste-input").on("blur", done_import_paste);
   $("#clear-todo-btn").on("click", clear_todo_btn);
-  $("#zoom-btn").on("click", zoom_btn);
+  // $("#zoom-btn").on("click", zoom_btn);  // wheel_zoom not working
   $("#col-btn").on("click", col_btn);
   $("#folder-btn").on("click", folder_btn);
   $("#add-folder-btn").on("click", add_folder_btn);
@@ -173,7 +173,7 @@ $(function() {
   $("#add-todo-btn").on("click", add_todo_btn);
   $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
   $(window).resize(resize_col);
-  $(window).on("wheel", wheel_zoom);
+  // $(window).on("wheel", wheel_zoom);  // wheel_zoom not working
   resize_col();
   load_from_storage();
 });
@@ -354,7 +354,7 @@ function wheel_zoom(evt=null) {
   }
   $(".card-text").css("font-size", text_rem*zoom_percentage/100 + "rem");
   $("small").css("font-size", small_rem*zoom_percentage/100 + "rem");
-  $("#zoom-btn").text(zoom_percentage);
+  // $("#zoom-btn").text(zoom_percentage);  // wheel_zoom not working
 }
 
 // onclick functions
