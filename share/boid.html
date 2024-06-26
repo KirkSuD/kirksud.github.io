@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8" />
+    <title>Boids Flocking Simulation</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Boids flocking simulation. Interactive and colorful!" />
+    <meta property="og:title" content="Boids Flocking Simulation">
+    <meta property="og:description" content="Boids flocking simulation. Interactive and colorful!">
+    <meta property="og:url" content="https://kirksud.github.io/share/boid.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <style>
+
+body {
+    display: flex;
+    flex-direction: row;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: hidden; /* to disable chrome mobile pull-to-refresh */
+}
+#toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 30px;
+}
+#canvas {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    touch-action: none;  /* so the browser won't eat pointermove event */
+}
+#config {
+    width: 150px;
+    padding: 8px;
+    border-left: 1px solid;
+    overflow-y: auto;
+}
+#config > * {
+    display: block;
+    margin: 8px 0;
+    font-family: sans-serif;
+}
+#config > * > * {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    body {
+        flex-direction: column-reverse;
+    }
+    #config {
+        width: unset;
+        border-left: unset;
+        border-bottom: 1px solid;
+        display: flex;
+        flex-wrap: wrap;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: rgba(1, 1, 1, 0.1);
+        backdrop-filter: blur(4px);
+    }
+    #config > * {
+        margin: 3px;
+    }
+    #config > * > * {
+        width: 150px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    #canvas {
+        background-color: black;
+    }
+    #config {
+        background-color: black;
+        color: whitesmoke;
+    }
+}
+@media (max-width: 768px) and (prefers-color-scheme: dark) {
+    #config {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+}
+
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas">
+        This page needs a browser supporting canvas.
+    </canvas>
+
+    <div id="config">
+        <!-- <label>
+            test<br>
+            <input id="test" type="number" value="123"><br>
+        </label> -->
+    </div>
+
+    <input id="toggle" type="button" value="X">
+
+    <script>
+
+/**
+ * 
+Boids flocking simulation
+
+About Boids:
+https://en.wikipedia.org/wiki/Boids
+https://en.wikipedia.org/wiki/Flocking
+https://en.wikipedia.org/wiki/Artificial_life
+https://www.red3d.com/cwr/boids/
+https://www.red3d.com/cwr/papers/2000/pip.pdf
+https://vergenet.net/~conrad/boids/pseudocode.html
+
+Python Pygame:
+https://github.com/meznak/boids_py
+https://github.com/Josephbakulikira/simple-Flocking-simulation-python-pygame
+JavaScript Phaser:
+https://github.com/lufemas/boid-ai-implementation
+
+*/
+
+function distance(a, b) {
+    return Math.hypot(a[0] - b[0], a[1] - b[1])
+}
+
+class SpatialDiv {
+    constructor(bound, n_bin=10) {
+        this.bound = bound
+        this.n_bin = n_bin
+        this.clear()
+    }
+    clear() {
+        this.bins = new Array(this.n_bin).fill(0).map(
+            () => new Array(this.n_bin).fill(0).map(
+            () => new Array())) // shape (n, n, 0)
+        return this
+    }
+    which(x, y) {
+        return [
+            ((Math.floor(x / this.bound[0] * this.n_bin)
+                % this.n_bin) + this.n_bin) % this.n_bin,
+            ((Math.floor(y / this.bound[1] * this.n_bin)
+                % this.n_bin) + this.n_bin) % this.n_bin]
+    }
+    add(pos, obj) {
+        const [x, y] = this.which(pos[0], pos[1])
+        this.bins[x][y].push([pos, obj])
+        return this
+    }
+    query(pos, radius) {
+        let [x0, y0] = this.which(pos[0] - radius, pos[1] - radius)
+        let [x1, y1] = this.which(pos[0] + radius, pos[1] + radius)
+        const neighbors = []
+        x1 = (x1 + 1) % this.n_bin
+        y1 = (y1 + 1) % this.n_bin
+        for (let x = x0; x != x1; x = (x + 1) % this.n_bin)
+            for (let y = y0; y != y1; y = (y + 1) % this.n_bin)
+                for (const [obj_pos, obj] of this.bins[x][y])
+                    if (distance(obj_pos, pos) < radius)
+                        neighbors.push(obj)
+        return neighbors
+    }
+}
+
+class Boid {
+    constructor(position, velocity, spatial_div, bound) {
+        this.position = position
+        this.velocity = velocity
+        this.spatial_div = spatial_div.add(position, this)
+        this.bound = bound
+        this.steering = [0, 0]
+    }
+    shortest(a, b) {
+        let x = a[0] - b[0]
+        let y = a[1] - b[1]
+        if (x < -this.bound[0] / 2)
+            x += this.bound[0]
+        else if (x > this.bound[0] / 2)
+            x -= this.bound[0]
+        if (y < -this.bound[1] / 2)
+            y += this.bound[1]
+        else if (y > this.bound[1] / 2)
+            y -= this.bound[1]
+        return [x, y]
+    }
+    separation(boids) {
+        if (!boids.length)
+            return [0, 0]
+        let x = 0
+        let y = 0
+        for (const boid of boids) {
+            const tmp = this.shortest(boid.position, this.position)
+            x -= tmp[0]
+            y -= tmp[1]
+        }
+        return [x, y]
+    }
+    alignment(boids) {
+        if (!boids.length)
+            return [0, 0]
+        let x = 0
+        let y = 0
+        for (const boid of boids) {
+            x += boid.velocity[0]
+            y += boid.velocity[1]
+        }
+        x = x / boids.length - this.velocity[0]
+        y = y / boids.length - this.velocity[1]
+        return [x, y]
+    }
+    cohesion(boids) {
+        if (!boids.length)
+            return [0, 0]
+        let x = 0
+        let y = 0
+        for (const boid of boids) {
+            x += boid.position[0]
+            y += boid.position[1]
+        }
+        x = x / boids.length
+        y = y / boids.length
+        return this.shortest([x, y], this.position)
+    }
+    away(point) {
+        return this.shortest(this.position, point)
+    }
+    neighbors(radius) {
+        return this.spatial_div.query(this.position, radius)
+    }
+    calculate(radius=null, weight=null, away=[], force=[0, 0]) {
+        radius = radius ?? [0.02, 0.08, 0.04, 0.24]
+        weight = weight ?? [800, 100, 1, 800]
+        const [separation_r, alignment_r, cohesion_r, away_r] = radius
+        const [separation_w, alignment_w, cohesion_w, away_w] = weight
+
+        let x = 0, y = 0
+        let tmp
+        tmp = this.separation(this.neighbors(separation_r))
+        x += tmp[0] * separation_w
+        y += tmp[1] * separation_w
+        tmp = this.alignment(this.neighbors(alignment_r))
+        x += tmp[0] * alignment_w
+        y += tmp[1] * alignment_w
+        tmp = this.cohesion(this.neighbors(cohesion_r))
+        x += tmp[0] * cohesion_w
+        y += tmp[1] * cohesion_w
+
+        for (const point of away)
+            if (distance(this.position, point) < away_r) {
+                tmp = this.away(point)
+                x += tmp[0] * away_w
+                y += tmp[1] * away_w
+            }
+        x += force[0]
+        y += force[1]
+        // console.log("calc", [x, y])
+        return [x, y]
+    }
+    move(speed, dt) {
+        this.velocity[0] += this.steering[0] * dt * dt
+        this.velocity[1] += this.steering[1] * dt * dt
+        if (this.velocity[0] || this.velocity[1]) {
+            const length = Math.hypot(this.velocity[0], this.velocity[1])
+            this.velocity[0] /= length
+            this.velocity[1] /= length
+        }
+        this.position[0] += this.velocity[0] * speed * dt
+        this.position[1] += this.velocity[1] * speed * dt
+        return this.position
+    }
+    wrap_position() {
+        this.position[0] = (
+            (this.position[0] % this.bound[0]) + this.bound[0]) % this.bound[0]
+        this.position[1] = (
+            (this.position[1] % this.bound[1]) + this.bound[1]) % this.bound[1]
+        return this.position
+    }
+    static think(boids, radius=null, weight=null, away=[], force=[0, 0]) {
+        for (const boid of boids)
+            boid.steering = boid.calculate(radius, weight, away, force)
+    }
+    static update(boids, speed, dt) {
+        for (const boid of boids) {
+            boid.move(speed, dt)
+            boid.wrap_position()
+        }
+        boids[0].spatial_div.clear()
+        for (const boid of boids)
+            boid.spatial_div.add(boid.position, boid)
+    }
+    static test(n_boid=250, duration=10_000) {
+        const spatial_div = new SpatialDiv([1, 1])
+        const boids = new Array(n_boid).fill(0).map(() => new Boid(
+            [Math.random(), Math.random()],
+            [Math.random()*2-1, Math.random()*2-1],
+            spatial_div, [1, 1]
+        ))
+        let frame_count = 0
+        let start = Date.now()
+        let t = start
+        while (t - start < duration) {
+            const new_t = Date.now()
+            const dt = new_t - t
+            t = new_t
+            frame_count += 1
+            Boid.think(boids)
+            Boid.update(boids, 1, dt)
+        }
+        const fps = frame_count * 1000 / duration
+        return fps
+        // test result:
+        // firefox 40 FPS (not meaningful)
+        // chrome/edge 2600 FPS
+    }
+}
+
+function FPS(recent_sec=1) {
+    const recent = [Date.now() / 1000]
+    return () => {
+        const t = Date.now() / 1000
+        const dt = t - recent[recent.length-1]
+        while (recent.length && t - recent[0] > recent_sec)
+            recent.shift()
+        recent.push(t)
+        const recent_fps = Math.round(recent.length / recent_sec)
+        return [dt, recent_fps]
+    }
+}
+
+class BoidApp {
+    constructor(
+        start_boid=800,
+        boid_radius_rel=0.0075, // r, relative to sqrt(window area)
+        speed_rel=5, // relative to boid_radius(r)
+        radius_rel=[2, 8, 4, 24], // relative to boid_radius(r)
+        weight=[800, 100, 1, 800], // (separation, alignment, cohesion, away)
+        think_fps=60,
+    ) {
+        this.canvas = document.getElementById("canvas")
+        if (!this.canvas.getContext) {
+            console.log("This browser doesn't support canvas.")
+            return
+        }
+
+        this.ctx = this.canvas.getContext("2d")
+        this.boid_radius_rel = boid_radius_rel
+        this.speed_rel = speed_rel
+        this.radius_rel = radius_rel
+        this.weight = weight
+        this.csize = [null, null]
+        this.resize()
+        window.onresize = this.resize.bind(this)
+
+        this.spatial_div = new SpatialDiv(this.csize)
+        this.boids = []
+        while (start_boid--)
+            this.add()
+        this.config()
+
+        this.pointer_points = {}
+        this.canvas.onpointerdown = evt => this.pointer_down(evt)
+        this.canvas.onpointermove = evt => this.pointer_move(evt)
+        this.canvas.onpointerup = evt => this.pointer_up(evt)
+        this.canvas.onpointercancel = evt => this.pointer_up(evt)
+        this.canvas.onpointerout = evt => this.pointer_up(evt)
+        this.canvas.onpointerleave = evt => this.pointer_up(evt)
+
+        this.think_fps_monitor = FPS()
+        this.update_fps_monitor = FPS()
+        this.last_fps = [null, null]
+        setInterval(this.think.bind(this), 1000/think_fps)
+        requestAnimationFrame(this.update.bind(this))
+    }
+    add() {
+        this.boids.push(new Boid(
+            [
+                this.r + (this.csize[0] - 2 * this.r) * Math.random(),
+                this.r + (this.csize[1] - 2 * this.r) * Math.random()],
+            [Math.random() * 2 - 1, Math.random() * 2 - 1],
+            this.spatial_div,
+            this.csize))
+    }
+    remove() {
+        this.boids.shift()
+    }
+    config() {
+        document.getElementById("toggle").onclick = () => {
+            const config = document.getElementById("config")
+            if (config.style.display === "none") {
+                config.style.removeProperty("display")
+            }
+            else {
+                config.style.display = "none"
+            }
+            this.resize()
+        }
+
+        const configs = [
+            ["boids", ()=>this.boids.length, v=>{
+                while (this.boids.length < v)
+                    this.add()
+                while (this.boids.length > v)
+                    this.remove()
+            }],
+            ["boid radius%", ()=>this.boid_radius_rel*100, v=>this.boid_radius_rel=v/100],
+            ["speed", ()=>this.speed_rel, v=>this.speed_rel=v],
+            ["fullscreen", ()=>(document.fullscreenElement===null)?0:1, v=>{
+                if(v)
+                    document.documentElement.requestFullscreen()
+                else
+                    document.exitFullscreen()
+            }],
+            ["radius: separation", ()=>this.radius_rel[0], v=>this.radius_rel[0]=v],
+            ["radius: alignment", ()=>this.radius_rel[1], v=>this.radius_rel[1]=v],
+            ["radius: cohesion", ()=>this.radius_rel[2], v=>this.radius_rel[2]=v],
+            ["radius: away", ()=>this.radius_rel[3], v=>this.radius_rel[3]=v],
+            ["weight: separation", ()=>this.weight[0], v=>this.weight[0]=v],
+            ["weight: alignment", ()=>this.weight[1], v=>this.weight[1]=v],
+            ["weight: cohesion", ()=>this.weight[2], v=>this.weight[2]=v],
+            ["weight: away", ()=>this.weight[3], v=>this.weight[3]=v],
+            ["show config", ()=>1, v=>{
+                if(!v) {
+                    document.getElementById("config").style.display = "none";
+                    document.getElementById("toggle").style.display = "none";
+                }
+            }]
+        ]
+        let idx = 0
+        for (const [label_text, value_getter, value_setter] of configs) {
+            document.getElementById("config").insertAdjacentHTML(
+                "beforeend", `
+                <label>
+                    ${label_text}<br>
+                    <input id="app_config_${idx}" type="number"
+                        value="${value_getter()}"><br>
+                </label>`)
+            const this_input = document.getElementById(`app_config_${idx}`)
+            this_input.onchange = () => {
+                value_setter(Number(this_input.value))
+                this.resize()
+            }
+            idx++
+        }
+    }
+    resize() {
+        if (this.canvas.clientWidth <= 0 || this.canvas.clientHeight <= 0) {
+            return
+        }
+        this.csize[0] = this.canvas.width = this.canvas.clientWidth
+        this.csize[1] = this.canvas.height = this.canvas.clientHeight
+        this.r = this.boid_radius_rel * Math.sqrt(this.csize[0] * this.csize[1])
+        this.speed = this.speed_rel * this.r
+        this.radius = this.radius_rel.map(i => i * this.r)
+    }
+    think() {
+        const [dt, fps] = this.think_fps_monitor()
+        this.last_fps[0] = fps
+        // console.log("think FPS:", fps)
+        document.getElementById("toggle").value = this.last_fps
+        Boid.think(this.boids, this.radius, this.weight, Object.values(this.pointer_points))
+    }
+    update() {
+        const [dt, fps] = this.update_fps_monitor()
+        this.last_fps[1] = fps
+        // console.log("update FPS:", fps)
+        document.getElementById("toggle").value = this.last_fps
+        Boid.update(this.boids, this.speed, dt)
+
+        this.ctx.clearRect(0, 0, this.csize[0], this.csize[1])
+        for (const boid of this.boids) {
+            const phi = Math.atan2(boid.velocity[1], boid.velocity[0])
+            this.ctx.fillStyle = `hsl(${phi / Math.PI * 180} 100% 50%)`
+            this.ctx.beginPath()
+            this.ctx.ellipse(
+                boid.position[0], boid.position[1], this.r, this.r, 0, 0, 2*Math.PI)
+            this.ctx.fill()
+        }
+        requestAnimationFrame(this.update.bind(this))
+    }
+    pointer_down(evt) {
+        this.pointer_points[evt.pointerId] = [evt.clientX, evt.clientY]
+        // console.log("pointer down", this.pointer_points)
+    }
+    pointer_move(evt) {
+        if (evt.pointerId in this.pointer_points)
+            this.pointer_points[evt.pointerId] = [evt.clientX, evt.clientY]
+        // console.log("pointer move", this.pointer_points)
+    }
+    pointer_up(evt) {
+        delete this.pointer_points[evt.pointerId]
+        // console.log("pointer up", this.pointer_points)
+    }
+}
+
+const boid_app = new BoidApp()
+
+    </script>
+</body>
+</html>

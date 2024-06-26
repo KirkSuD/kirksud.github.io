@@ -34,6 +34,17 @@ But it's still really fun! I promise.
 A visualization of knapsack 0-1 algorithm.  
 You can toggle recursive & exact, 4 versions in total!
 
+* [[Visualization] Boids Flocking Simulation](https://kirksud.github.io/share/boid.html)
+
+[Boids](https://en.wikipedia.org/wiki/Boids) [Flocking](https://en.wikipedia.org/wiki/Flocking) simulation.  
+Efficient O(n) implementation with spatial division data structure optimization.  
+It's interactive, colorful, and beautiful. Try it!  
+
+Learn more about Boids:  
+[Craig Reynolds' Boids page](https://www.red3d.com/cwr/boids/)  
+[O(n) optimization](https://www.red3d.com/cwr/papers/2000/pip.pdf)  
+[pseudo code](https://vergenet.net/~conrad/boids/pseudocode.html)
+
 ## Projects on Github
 
 * [ChromecastLocalPlayer](https://github.com/KirkSuD/ChromecastLocalPlayer): A simple Python server with web UI to control Chromecast, play local media files via Chromecast.
