@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="utf-8" />
+    <title>PPG (photoplethysmogram)</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="PPG (photoplethysmogram) using camera." />
+    <meta property="og:title" content="PPG (photoplethysmogram)">
+    <meta property="og:description" content="PPG (photoplethysmogram) using camera.">
+    <meta property="og:url" content="https://kirksud.github.io/share/ppg.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <style>
+
+#input, #button {
+    box-sizing: border-box;
+    height: 50px;
+}
+#capture {
+    display: none;
+}
+
+    </style>
+</head>
+
+<body>
+    <video id="video">Video stream not available.</video>
+    <br>
+    <input id="checkbox" type="checkbox" checked>
+    <input id="input" type="number" value="20">
+    <button id="button">Start PPG</button>
+    <br>
+    <canvas id="canvas"></canvas>
+    <canvas id="capture"></canvas>
+
+    <script>
+
+(function() {
+
+const fps = 60
+const width = 320
+const waitSec = 2.5
+
+const video = document.getElementById("video")
+const checkbox = document.getElementById("checkbox")
+const input = document.getElementById("input")
+const button = document.getElementById("button")
+const canvas = document.getElementById("canvas")
+const capture = document.getElementById("capture")
+
+let videoStarted = false
+let state = "before"
+let signal = []
+let runSec
+let waitUntil
+let runUntil
+let intervalId
+
+video.setAttribute("width", width)
+input.style.width = `${width/2 - 11}px`
+button.style.width = `${width/2 - 11}px`
+canvas.setAttribute("width", width)
+capture.setAttribute("width", width)
+
+document.getElementById("button").addEventListener("click", () => {
+    if (state === "running")
+        return
+    if (state === "after") {
+        const text = signal.map(v => v.toFixed(6)).join("\n") + "\n"
+        const file = new Blob([text], {type: "text/plain"})
+        const fileUrl = URL.createObjectURL(file)
+        const hz = (signal.length / runSec).toFixed(2)
+        const fileName = currentTimestamp() + `_${hz}hz.txt`
+        document.body.insertAdjacentHTML("beforeend", `
+            <a id="export" href=${fileUrl} download=${fileName}>export</a>`)
+        const exportLink = document.getElementById("export")
+        exportLink.click()
+        exportLink.remove()
+
+        button.innerText = "Start PPG"
+        state = "before"
+        return
+    }
+
+    button.innerText = "Running PPG..."
+    button.disabled = true
+    state = "running"
+    videoStarted = false
+    signal = []
+
+    navigator.mediaDevices.getUserMedia({video: {facingMode: "environment"}, audio: false})
+    .then(stream => {
+        video.srcObject = stream
+        video.play()
+        if (checkbox.checked) {
+            const track = stream.getVideoTracks()[0]
+            track.applyConstraints({advanced: [{torch: true}]})
+        }
+    })
+    .catch(err => {
+        console.error(`getUserMedia error: ${err}`)
+    })
+})
+
+video.addEventListener("canplay", () => {
+    if (videoStarted)
+        return
+    videoStarted = true
+    console.log(`video size: ${video.videoWidth} x ${video.videoHeight}`)
+    const height = video.videoHeight / video.videoWidth * width
+    video.setAttribute("height", height)
+    canvas.setAttribute("height", height)
+    capture.setAttribute("height", height)
+    startRunning()
+})
+
+function currentTimestamp() {
+    const now = new Date()
+    const [m, d, H, M, S] = [
+        now.getMonth() + 1,
+        now.getDay(),
+        now.getHours(),
+        now.getMinutes(),
+        now.getSeconds()
+    ].map(v => String(v).padStart(2, "0"))
+    return `${now.getFullYear()}${m}${d}_${H}${M}${S}`
+}
+
+function startRunning() {
+    runSec = Number(input.value)
+    waitUntil = Date.now() + waitSec * 1000
+    runUntil = waitUntil + runSec * 1000
+    intervalId = setInterval(readFrame, 1000/fps)
+    requestAnimationFrame(displaySignal)
+}
+
+function readFrame() {
+    if (Date.now() > runUntil) {
+        clearInterval(intervalId)
+        video.srcObject = null
+        button.innerText = "Download signal"
+        button.disabled = false
+        state = "after"
+        console.log("signal:", signal)
+        return
+    }
+
+    const ctx = capture.getContext("2d")
+    ctx.drawImage(video, 0, 0, capture.width, capture.height)
+    const imageData = ctx.getImageData(0, 0, capture.width, capture.height).data
+    let imageSum = 0
+    for (let i=0; i<imageData.length; i++)
+        imageSum += imageData[i]
+    const frameMean = imageSum / imageData.length
+    if (Date.now() > waitUntil)
+        signal.push(frameMean)
+}
+
+function displaySignal() {
+    if (Date.now() > runUntil)
+        return
+    if (signal.length === 0) {
+        requestAnimationFrame(displaySignal)
+        return
+    }
+
+    let signalDisplay = signal.slice(-canvas.width)
+    const signalMin = Math.min(...signalDisplay)
+    const signalMax = Math.max(...signalDisplay)
+    signalDisplay = signalDisplay.map(
+        v => (signalMax - v) / (signalMax - signalMin) * canvas.height)
+
+    const ctx = canvas.getContext("2d")
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.beginPath()
+    ctx.moveTo(0, signalDisplay[0])
+    for (let i=1; i<signalDisplay.length; i++)
+        ctx.lineTo(i, signalDisplay[i])
+    ctx.stroke()
+    requestAnimationFrame(displaySignal)
+}
+
+})()
+
+    </script>
+</body>
+</html>
