@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Day Timer</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Day Timer times what you do in a day.">
+    <meta property="og:title" content="Day Timer">
+    <meta property="og:description" content="Day Timer times what you do in a day.">
+    <meta property="og:url" content="https://kirksud.github.io/share/day_timer.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <style>
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    overflow-y: hidden; /* to disable chrome mobile pull-to-refresh */
+
+    display: flex;
+    flex-direction: column;
+}
+#root {
+    /* width: 100%;
+    max-height: 100%; */
+    padding: 20px;
+    overflow-y: auto;
+    user-select: none;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+#root > div {
+    border: 1px solid black;
+    border-radius: 15px;
+    padding: 10px;
+    margin: 5px;
+
+    display: flex;
+    align-items: center;
+}
+#root > div > * {
+    margin: 3px;
+    padding: 3px;
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
+}
+#root > div > button {
+    padding: 3px 10px;
+}
+
+#date > pre {
+    text-align: center;
+}
+#add > label {
+    padding: 0;
+    margin: 0;
+}
+#add > label > button {
+    padding: 3px 10px;
+    pointer-events: none;
+}
+
+.flex-1 {
+    flex: 1;
+}
+.d-none {
+    display: none;
+}
+
+@media (max-width: 1200px) {
+    #root {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    #root {
+        grid-template-columns: repeat(1, 1fr);
+        padding: 0;
+    }
+}
+
+    </style>
+</head>
+
+<body>
+    <div id="root">
+        <div id="date">
+            <input type="date" required>
+            <pre class="flex-1"></pre>
+            <input type="date">
+        </div>
+        <div id="transfer">
+            <select></select> > <select></select>
+            <pre><select></select>:<select></select>:<select></select></pre>
+            <div class="flex-1"></div>
+            <button>></button>
+        </div>
+        <div id="add">
+            <button>v</button>
+            <label for="fileInput">
+                <button>^</button>
+                <input id="fileInput" type="file" accept=".json,.txt" class="d-none">
+            </label>
+            <button>x</button>
+            <input type="text" class="flex-1">
+            <button>+</button>
+        </div>
+    </div>
+
+    <script>
+function $(selectors) {
+    return document.querySelector(selectors)
+}
+function $$(selectors) {
+    return document.querySelectorAll(selectors)
+}
+function $$$(element, selectors) {
+    return element.querySelectorAll(selectors)
+}
+class DateUtil {
+    static pad2(n) {
+        if (n < 10)
+            return `0${n}`
+        return `${n}`
+    }
+    static padSpace(s, n) {
+        while (s.length < n)
+            s = " " + s
+        return s
+    }
+    static splitDuration(sec) {
+        return [
+            Math.floor(sec / 3600),
+            Math.floor(sec / 60) % 60,
+            sec % 60
+        ]
+    }
+    static joinDuration(h, m, s) {
+        return h * 3600 + m * 60 + s
+    }
+    static formatDuration(sec, prefix="", full=false) {
+        const pad2 = DateUtil.pad2
+        const padSpace = DateUtil.padSpace
+        const [h, m, s] = DateUtil.splitDuration(sec)
+        if (full)
+            return `${prefix}${pad2(h)}:${pad2(m)}:${pad2(s)}`
+        const n = prefix.length + 8
+        if (h == 0 && m == 0 && s == 0)
+            return padSpace("", n)
+        if (h == 0 && m == 0)
+            return padSpace(`${prefix}${s}`, n)
+        if (h == 0)
+            return padSpace(`${prefix}${m}:${pad2(s)}`, n)
+        return padSpace(`${prefix}${h}:${pad2(m)}:${pad2(s)}`, n)
+    }
+    static formatDate(t=null) {
+        const pad2 = DateUtil.pad2
+        if (typeof t === "number")
+            t = new Date(t * 1000)
+        t = t ?? new Date()
+        return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`
+    }
+    static now() {
+        return Math.floor(Date.now() / 1000)
+    }
+    static day(t=null) {
+        t = t ?? (Date.now() / 1000)
+        return t - (t % 86400)
+    }
+}
+class Timer {
+    constructor(name, lastTotal=0, lastCurrent=0, start=null) {
+        this.name = name
+        this.lastTotal = lastTotal
+        this.lastCurrent = lastCurrent
+        this.start = start
+    }
+    load(data) {
+        this.name = data.name
+        this.lastTotal = data.total
+        this.lastCurrent = data.current
+        this.start = data.start
+        return this
+    }
+    dump() {
+        return {
+            name: this.name,
+            total: this.lastTotal,
+            current: this.lastCurrent,
+            start: this.start,
+        }
+    }
+    total(t=null) {
+        if (this.start === null)
+            return this.lastTotal
+        t = t ?? DateUtil.now()
+        return this.lastTotal + t - this.start
+    }
+    current(t=null) {
+        if (this.start === null)
+            return this.lastCurrent
+        t = t ?? DateUtil.now()
+        return this.lastCurrent + t - this.start
+    }
+    run(t=null) {
+        this.start = t ?? DateUtil.now()
+    }
+    pause(t=null) {
+        t = t ?? DateUtil.now()
+        this.lastTotal = this.total(t)
+        this.lastCurrent = this.current(t)
+        this.start = null
+    }
+    stop(t=null) {
+        this.pause()
+        this.lastCurrent = 0
+    }
+    reset(t=null) {
+        this.lastTotal = 0
+    }
+}
+class DayTimer {
+    constructor(timers={}, timing=null) {
+        this.timers = timers
+        this.timing = timing
+    }
+    run(name, pause=false) {
+        if (!(name in this.timers))
+            return false
+        if (this.timing) {
+            if (pause)
+                this.timers[this.timing].pause()
+            else
+                this.timers[this.timing].stop()
+        }
+        this.timing = name
+        this.timers[this.timing].run()
+        return true
+    }
+    rename(oldName, newName) {
+        if (!(oldName in this.timers) || (newName in this.timers))
+            return false
+        if (this.timing === oldName)
+            this.timing = newName
+        this.timers[newName] = this.timers[oldName]
+        delete this.timers[oldName]
+        this.timers[newName].name = newName
+        return true
+    }
+    remove(name) {
+        if (this.timing === name || this.timers[name].total() !== 0)
+            return false
+        delete this.timers[name]
+        return true
+    }
+    transfer(from, to, t) {
+        if (!(from in this.timers && to in this.timers && this.timers[from].total() >= t))
+            return false
+        this.timers[from].lastTotal -= t
+        this.timers[to].lastTotal += t
+        this.timers[from].lastCurrent = Math.min(
+            this.timers[from].lastCurrent, this.timers[from].lastTotal)
+        return true
+    }
+    newDay(t=null) {
+        if (!this.timing)
+            return [false, null]
+        const today = DateUtil.day(t)
+        const days = (today - DateUtil.day(this.timers[this.timing].start)) / 86400
+        if (days == 0)
+            return [false, null]
+        if (days != 1) {
+            for (const name in this.timers) {
+                this.timers[name].stop()
+                this.timers[name].reset()
+            }
+            this.timing = null
+            return [true, null]
+        }
+        this.timer[this.timing].pause(today)
+        const res = {}
+        for (const name in this.timers) {
+            res[name] = this.timers[name].lastTotal
+            this.timers[name].reset()
+        }
+        this.timers[this.timing].run(today)
+        return [true, res]
+    }
+}
+class TimerWidget {
+    constructor(element, timer, dayTimerApp) {
+        if (typeof element === "string")
+            element = $(element)
+        this.element = element
+        this.elements = {
+            current: $$$(element, "pre")[0],
+            total: $$$(element, "pre")[1],
+            name: $$$(element, "pre")[2],
+            rename: $$$(element, "button")[0],
+            remove: $$$(element, "button")[1],
+        }
+        this.timer = timer
+        this.dayTimerApp = dayTimerApp
+        this.currentLocked = false
+        this.element.onclick = evt => this.onRun(evt)
+        this.elements.current.onclick = evt => this.onCurrent(evt)
+        this.elements.rename.onclick = evt => this.onRename(evt)
+        this.elements.remove.onclick = evt => this.onRemove(evt)
+    }
+    update() {
+        this.elements.name.innerText = this.timer.name
+        this.elements.total.innerText = DateUtil.formatDuration(this.timer.total())
+        this.elements.current.innerText = DateUtil.formatDuration(this.timer.current(), "+")
+    }
+    onRun(evt) {
+        const app = this.dayTimerApp
+        const dayTimer = app.dayTimer
+        const timerWidgets = app.timerWidgets
+
+        let pause = false
+        if (dayTimer.timing !== null)
+            pause = timerWidgets[dayTimer.timing].currentLocked
+        dayTimer.run(this.timer.name, pause)
+
+        app.update()
+        app.save()
+    }
+    onCurrent(evt) {
+        if (this.currentLocked) {
+            evt.stopPropagation()
+            this.currentLocked = false
+            this.elements.current.style.removeProperty("border")
+        }
+        else if (this.timer.current() !== 0) {
+            evt.stopPropagation()
+            this.currentLocked = true
+            this.elements.current.style.border = "1px solid black"
+        }
+    }
+    onRename(evt) {
+        evt.stopPropagation()
+        const app = this.dayTimerApp
+        const dayTimer = app.dayTimer
+        const timerWidgets = app.timerWidgets
+
+        const oldName = this.timer.name
+        const newName = prompt("Rename:", oldName)
+        if (newName === null || !dayTimer.rename(oldName, newName))
+            return
+        timerWidgets[newName] = this
+        delete timerWidgets[oldName]
+
+        app.sortTimers()
+        app.updateOptions()
+        app.update()
+        app.save()
+    }
+    onRemove(evt) {
+        evt.stopPropagation()
+        const app = this.dayTimerApp
+        const dayTimer = app.dayTimer
+        const timerWidgets = app.timerWidgets
+
+        if (!dayTimer.remove(this.timer.name))
+            return
+        this.element.remove()
+        delete timerWidgets[this.timer.name]
+
+        app.updateOptions()
+        app.save()
+    }
+    static newElement() {
+        const template = document.createElement("template")
+        template.innerHTML = `
+            <div class="timer">
+                <pre></pre>
+                <pre></pre>
+                <pre class="flex-1"></pre>
+                <button>=</button>
+                <button>x</button>
+            </div>`
+        return template.content.children[0]
+    }
+}
+class DayTimerApp {
+    constructor() {
+        this.localStorageKey = "kirksud_day_timer"
+        this.elements = {
+            root: $("#root"),
+
+            day: $$("#date > input")[0],
+            dday: $("#date > pre"),
+            ddayInput: $$("#date > input")[1],
+
+            transferFrom: $$("#transfer > select")[0],
+            transferTo: $$("#transfer > select")[1],
+            transferH: $$("#transfer > pre > select")[0],
+            transferM: $$("#transfer > pre > select")[1],
+            transferS: $$("#transfer > pre > select")[2],
+            transfer: $("#transfer > button"),
+
+            export: $$("#add > button")[0],
+            import: $("#fileInput"),
+            clear: $$("#add > button")[1],
+            addInput: $("#add > input"),
+            add: $$("#add > button")[2],
+        }
+        this.elements.day.onchange = evt => this.onDay()
+        this.elements.ddayInput.onchange = evt => this.onDday()
+        this.elements.transferFrom.onchange = evt => this.onTransferFrom()
+        this.elements.transfer.onclick = evt => this.onTransfer()
+        this.elements.export.onclick = evt => this.onExport()
+        this.elements.import.onchange = evt => this.onImport()
+        this.elements.clear.onclick = evt => this.onClear()
+        this.elements.add.onclick = evt => this.onAdd()
+        this.elements.addInput.onkeydown = evt => {
+            if (evt.key === "Enter")
+                this.onAdd()
+        }
+        this.updateIntervalId = null
+        this.load()
+    }
+    load(data=null) {
+        if (data === null) {
+            data = localStorage.getItem(this.localStorageKey)
+            if (data === null)
+                data = {
+                    dday: "",
+                    timers: {},
+                    timing: null,
+                    history: {},
+                }
+            else
+                data = JSON.parse(data)
+        }
+
+        this.timerWidgets = {}
+        this.dayTimer = new DayTimer({}, data.timing)
+        this.history = data.history
+        this.elements.ddayInput.value = data.dday
+
+        const timerElements = $$("#root > div.timer")
+        for (let i=0; i<timerElements.length; i++)
+            timerElements[i].remove()
+
+        const names = Object.keys(data.timers).sort()
+        for (const name of names) {
+            const element = TimerWidget.newElement()
+            const timer = new Timer().load(data.timers[name])
+            this.elements.root.insertAdjacentElement("beforeend", element)
+            this.timerWidgets[name] = new TimerWidget(element, timer, this)
+            this.dayTimer.timers[name] = timer
+        }
+
+        this.updateOptions()
+        this.elements.transferH.innerHTML = ""
+        this.elements.transferM.innerHTML = ""
+        this.elements.transferS.innerHTML = ""
+        for (let i=0; i<24; i++)
+            this.elements.transferH.insertAdjacentHTML(
+                "beforeend", `<option value="${i}">${i}</option>`)
+        for (let i=0; i<60; i++)
+            this.elements.transferM.insertAdjacentHTML(
+                "beforeend", `<option value="${i}">${i}</option>`)
+        for (let i=0; i<60; i++)
+            this.elements.transferS.insertAdjacentHTML(
+                "beforeend", `<option value="${i}">${i}</option>`)
+
+        if (this.updateIntervalId === null)
+            this.updateIntervalId = setInterval(() => this.update(), 100)
+    }
+    save() {
+        localStorage.setItem(this.localStorageKey, JSON.stringify({
+            dday: this.elements.ddayInput.value,
+            timers: Object.fromEntries(
+                Object.entries(this.dayTimer.timers).map(
+                    ([name, timer]) => [name, timer.dump()])),
+            timing: this.dayTimer.timing,
+            history: this.history,
+        }))
+    }
+    update() {
+        this.elements.day.value = DateUtil.formatDate()
+        this.updateDday()
+
+        const [isNewDay, yesterdayResult] = this.dayTimer.newDay()
+        if (isNewDay) {
+            if (yesterdayResult !== null) {
+                const yesterday = DateUtil.formatDate(DateUtil.day() - 86400)
+                this.history[yesterday] = yesterdayResult
+            }
+            this.save()
+        }
+
+        for (const name in this.timerWidgets)
+            this.timerWidgets[name].update()
+    }
+    updateOptions() {
+        const from = this.elements.transferFrom.value
+        const to = this.elements.transferTo.value
+        this.elements.transferFrom.innerHTML = `<option value="" disabled></option>`
+        this.elements.transferTo.innerHTML = `<option value="" disabled></option>`
+        for (const name of Object.keys(this.dayTimer.timers).sort())
+            this.elements.transferFrom.insertAdjacentHTML(
+                "beforeend", `<option value="${name}">${name}</option>`)
+        for (const name of Object.keys(this.dayTimer.timers).sort())
+            this.elements.transferTo.insertAdjacentHTML(
+                "beforeend", `<option value="${name}">${name}</option>`)
+        if (from in this.dayTimer.timers)
+            this.elements.transferFrom.value = from
+        else
+            this.elements.transferFrom.value = ""
+        if (to in this.dayTimer.timers)
+            this.elements.transferTo.value = to
+        else
+            this.elements.transferTo.value = ""
+    }
+    updateDday() {
+        let dayDiff = null
+        if (this.elements.ddayInput.value.length) {
+            const day = Date.parse(this.elements.day.value) / 1000
+            const dday = Date.parse(this.elements.ddayInput.value) / 1000
+            dayDiff = (day - dday) / 86400
+        }
+        if (dayDiff === null)
+            this.elements.dday.innerText = ""
+        else if (dayDiff < 0)
+            this.elements.dday.innerText = `D${dayDiff}`
+        else if (dayDiff === 0)
+            this.elements.dday.innerText = "D-Day"
+        else
+            this.elements.dday.innerText = `D+${dayDiff}`
+    }
+    sortTimers() {
+        for (const name of Object.keys(this.timerWidgets).sort())
+            this.elements.root.insertAdjacentElement(
+                "beforeend", this.timerWidgets[name].element)
+    }
+
+    onDay() {
+        const day = this.elements.day.value
+        if (day.length === 0 || Date.parse(day) / 1000 >= DateUtil.day()) {
+            $("#transfer").style.display = ""
+            $("#add").style.display = ""
+            this.load()
+            return
+        }
+
+        this.updateDday()
+        if (this.updateIntervalId !== null)
+            clearInterval(this.updateIntervalId)
+        this.updateIntervalId = null
+        $("#transfer").style.display = "none"
+        $("#add").style.display = "none"
+
+        const timerElements = $$("#root > div.timer")
+        for (let i=0; i<timerElements.length; i++)
+            timerElements[i].remove()
+
+        if (!(day in this.history)) {
+            this.elements.root.insertAdjacentHTML("beforeend", `
+                <div class="timer">
+                    <pre class="flex-1">No data on this day</pre>
+                </div>`)
+            return
+        }
+
+        const names = Object.keys(this.history[day]).sort()
+        for (const name of names)
+            this.elements.root.insertAdjacentHTML("beforeend", `
+                <div class="timer">
+                    <pre>${DateUtil.formatDuration(this.history[day][name])}</pre>
+                    <pre class="flex-1">${name}</pre>
+                </div>`)
+    }
+    onDday() {
+        this.updateDday()
+        this.save()
+    }
+    onTransferFrom() {
+        if (!(this.elements.transferFrom.value in this.dayTimer.timers))
+            return
+        const timer = this.dayTimer.timers[this.elements.transferFrom.value]
+        const t = (timer.current() > 0) ? timer.current() : timer.total()
+        const [h, m, s] = DateUtil.splitDuration(t)
+        this.elements.transferH.value = h
+        this.elements.transferM.value = m
+        this.elements.transferS.value = s
+    }
+    onTransfer() {
+        const from = this.elements.transferFrom.value
+        const to = this.elements.transferTo.value
+        const h = Number(this.elements.transferH.value)
+        const m = Number(this.elements.transferM.value)
+        const s = Number(this.elements.transferS.value)
+        if (this.dayTimer.transfer(from, to, DateUtil.joinDuration(h, m, s))) {
+            this.update()
+            this.save()
+        }
+    }
+    onExport() {
+        const text = localStorage.getItem(this.localStorageKey)
+        const file = new Blob([text], {type: "application/json"})
+        const fileUrl = URL.createObjectURL(file)
+        const timestamp = DateUtil.formatDate().replaceAll("-", "")
+        const fileName = `day_timer_${timestamp}.json`
+
+        const template = document.createElement("template")
+        template.innerHTML = `
+            <a id="export" href=${fileUrl} download=${fileName}>export</a>`
+        const exportLink = template.content.children[0]
+
+        document.body.insertAdjacentElement("beforeend", exportLink)
+        exportLink.click()
+        exportLink.remove()
+    }
+    onImport() {
+        const file = this.elements.import.files[0]
+        const file_reader = new FileReader()
+        file_reader.onload = evt => {
+            this.load(JSON.parse(evt.target.result))
+        }
+        file_reader.readAsText(file)
+    }
+    onClear() {
+        if (confirm("Confirm to CLEAR ALL DATA?") &&
+            confirm("Confirm again to CLEAR ALL DATA!")) {
+            localStorage.removeItem(this.localStorageKey)
+            this.load()
+        }
+    }
+    onAdd() {
+        const name = this.elements.addInput.value
+        if (name in this.dayTimer.timers)
+            return
+
+        const element = TimerWidget.newElement()
+        const timer = new Timer(name)
+        this.elements.root.insertAdjacentElement("beforeend", element)
+        this.timerWidgets[name] = new TimerWidget(element, timer, this)
+        this.dayTimer.timers[name] = timer
+
+        this.sortTimers()
+        this.updateOptions()
+        this.update()
+        this.save()
+    }
+}
+const dayTimerApp = new DayTimerApp()
+
+    </script>
+</body>
+</html>
