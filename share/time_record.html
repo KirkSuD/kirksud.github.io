@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <title>紀錄時間</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="一個記錄時間的小網頁">
+    <meta property="og:title" content="記錄時間">
+    <meta property="og:description" content="一個記錄時間的小網頁">
+    <meta property="og:url" content="https://kirksud.github.io/share/time_record.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <style>
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+p {
+    text-align: center;
+    margin: 0 16px;
+    padding: 16px 0;
+}
+.record {
+    border-bottom: 1px solid black;
+}
+#undo {
+    margin: 16px;
+    height: 50px;
+}
+#do {
+    margin: 16px;
+    flex: 1;
+}
+    </style>
+</head>
+<body>
+    <p id="diff"></p>
+    <button id="undo">移除上次紀錄</button>
+    <button id="do">紀錄</button>
+
+    <script>
+function $(selectors, element=document) {
+    return element.querySelector(selectors)
+}
+function $$(selectors, element=document) {
+    return element.querySelectorAll(selectors)
+}
+class DateUtil {
+    static day(d=null) {
+        d = d ?? new Date()
+        d = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+        return d.getTime()
+    }
+    static formatTime(t) {
+        function pad2(n) {
+            return (n < 10) ? `0${n}` : `${n}`
+        }
+        const d = new Date(t)
+        const dayDiff = (DateUtil.day() - DateUtil.day(d)) / 86400_000
+        const dayName = "日一二三四五六"
+        let date = `${d.getMonth()+1}/${d.getDate()} (${dayName[d.getDay()]})`
+        if (dayDiff >= 0 && dayDiff <= 2)
+            date = ["今天", "昨天", "前天"][dayDiff]
+
+        let h = d.getHours()
+        const m = d.getMonth()
+        let dayNight = (h < 12) ? "上午" : "下午"
+        if (h === 0)
+            dayNight = "半夜"
+        else if (h === 12)
+            dayNight = "中午"
+        h = h % 12
+        if (h === 0)
+            h = 12
+        return `${date} ${dayNight} ${pad2(h)} : ${pad2(m)}`
+    }
+    static formatDiff(t) {
+        t = t / 1000
+        const d = Math.floor(t / 86400)
+        const h = Math.floor(t % 86400 / 3600)
+        const m = Math.floor(t % 3600 / 60)
+        const s = Math.floor(t % 60)
+        if (d > 0)
+            return `${d} 天 ${h} 小時`
+        if (h > 0)
+            return `${h} 小時 ${m} 分鐘`
+        if (m > 0)
+            return `${m} 分 ${s} 秒`
+        return `${s} 秒`
+    }
+}
+class TimeRecordApp {
+    constructor() {
+        this.localStorageKey = "kirksud_time_record"
+        this.maxRecords = 5
+        this.records = []
+
+        this.load()
+        $("#undo").onclick = evt => this.undo()
+        $("#do").onclick = evt => this.do()
+        setInterval(() => this.update(), 100)
+    }
+    load() {
+        const data = localStorage.getItem(this.localStorageKey)
+        if (data === null)
+            this.records = []
+        else
+            this.records = JSON.parse(data)
+        return this.records
+    }
+    save() {
+        localStorage.setItem(this.localStorageKey, JSON.stringify(this.records))
+    }
+    undo(quiet=false) {
+        if (this.records.length === 0)
+            return false
+        if (!quiet && !confirm("確定移除上次紀錄？"))
+            return false
+
+        this.records.pop()
+        this.update()
+        this.save()
+        return true
+    }
+    do(t=null) {
+        if (this.records.length === this.maxRecords)
+            this.records.shift()
+        this.records.push(t ?? Date.now())
+        this.update()
+        this.save()
+        return true
+    }
+    update() {
+        while ($$(".record").length !== this.records.length) {
+            const records = $$(".record")
+            if (records.length < this.records.length)
+                $("#diff").insertAdjacentHTML("beforebegin", `<p class="record"></p>`)
+            else
+                records[records.length-1].remove()
+        }
+        for (let i=0; i<this.records.length; i++)
+            $$(".record")[i].innerText = DateUtil.formatTime(this.records[i])
+        if (this.records.length === 0)
+            $("#diff").innerText = "無紀錄"
+        else {
+            const diff = Date.now() - this.records[this.records.length-1]
+            $("#diff").innerText = `上次紀錄：${DateUtil.formatDiff(diff)} 前`
+        }
+    }
+}
+const timeRecordApp = new TimeRecordApp()
+
+    </script>
+</body>
+</html>
