@@ -18,14 +18,11 @@ body {
     width: 100vw;
     height: 100vh;
     margin: 0;
-    overflow-y: hidden; /* to disable chrome mobile pull-to-refresh */
 
     display: flex;
     flex-direction: column;
 }
 #root {
-    /* width: 100%;
-    max-height: 100%; */
     padding: 20px;
     overflow-y: auto;
     user-select: none;
@@ -34,21 +31,29 @@ body {
     grid-template-columns: repeat(3, 1fr);
 }
 #root > div {
-    border: 1px solid black;
-    border-radius: 15px;
+    min-width: 0;
     padding: 10px;
     margin: 5px;
+    border: 1px solid black;
+    border-radius: 15px;
 
     display: flex;
     align-items: center;
 }
 #root > div > * {
     margin: 3px;
-    padding: 3px;
-    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 }
-#root > div > button {
-    padding: 3px 10px;
+#root input, #root select {
+    padding: 10px 0;
+}
+#root pre {
+    padding: 10px 3px;
+}
+#root button {
+    padding: 10px 10px;
+}
+#root * {
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 }
 
 #date > pre {
@@ -59,15 +64,17 @@ body {
     margin: 0;
 }
 #add > label > button {
-    padding: 3px 10px;
     pointer-events: none;
 }
-
-.flex-1 {
-    flex: 1;
-}
-.d-none {
+#fileInput {
     display: none;
+}
+
+.grow {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 @media (max-width: 1200px) {
@@ -88,36 +95,31 @@ body {
 <body>
     <div id="root">
         <div id="date">
-            <input type="date" required>
-            <pre class="flex-1"></pre>
+            <input type="date">
+            <pre class="grow"></pre>
             <input type="date">
         </div>
         <div id="transfer">
-            <select></select> > <select></select>
-            <pre><select></select>:<select></select>:<select></select></pre>
-            <div class="flex-1"></div>
-            <button>></button>
+            <select class="grow"></select>
+            <select></select>:<select></select>:<select></select>
+            <select class="grow" disabled></select>
         </div>
         <div id="add">
             <button>v</button>
             <label for="fileInput">
                 <button>^</button>
-                <input id="fileInput" type="file" accept=".json,.txt" class="d-none">
+                <input id="fileInput" type="file" accept=".json,.txt">
             </label>
             <button>x</button>
-            <input type="text" class="flex-1">
-            <button>+</button>
+            <input type="text" class="grow", placeholder="new timer">
         </div>
     </div>
 
     <script>
-function $(selectors) {
-    return document.querySelector(selectors)
+function $(selectors, element=document) {
+    return element.querySelector(selectors)
 }
-function $$(selectors) {
-    return document.querySelectorAll(selectors)
-}
-function $$$(element, selectors) {
+function $$(selectors, element=document) {
     return element.querySelectorAll(selectors)
 }
 class DateUtil {
@@ -147,14 +149,14 @@ class DateUtil {
         const [h, m, s] = DateUtil.splitDuration(sec)
         if (full)
             return `${prefix}${pad2(h)}:${pad2(m)}:${pad2(s)}`
-        const n = prefix.length + 8
-        if (h == 0 && m == 0 && s == 0)
+        const n = prefix.length + 6
+        if (h === 0 && m === 0 && s === 0)
             return padSpace("", n)
-        if (h == 0 && m == 0)
-            return padSpace(`${prefix}${s}`, n)
-        if (h == 0)
-            return padSpace(`${prefix}${m}:${pad2(s)}`, n)
-        return padSpace(`${prefix}${h}:${pad2(m)}:${pad2(s)}`, n)
+        if (h === 0 && m === 0)
+            return padSpace(`${prefix}${s}s`, n)
+        if (h === 0)
+            return padSpace(`${prefix}${m}m${pad2(s)}s`, n)
+        return padSpace(`${prefix}${h}h${pad2(m)}m`, n)
     }
     static formatDate(t=null) {
         const pad2 = DateUtil.pad2
@@ -167,8 +169,11 @@ class DateUtil {
         return Math.floor(Date.now() / 1000)
     }
     static day(t=null) {
-        t = t ?? (Date.now() / 1000)
-        return t - (t % 86400)
+        if (typeof t === "number")
+            t = new Date(t * 1000)
+        t = t ?? new Date()
+        t = new Date(t.getFullYear(), t.getMonth(), t.getDate())
+        return t.getTime() / 1000
     }
 }
 class Timer {
@@ -220,6 +225,7 @@ class Timer {
     }
     reset(t=null) {
         this.lastTotal = 0
+        this.lastCurrent = 0
     }
 }
 class DayTimer {
@@ -265,14 +271,14 @@ class DayTimer {
             this.timers[from].lastCurrent, this.timers[from].lastTotal)
         return true
     }
-    newDay(t=null) {
+    newDay() {
         if (!this.timing)
             return [false, null]
-        const today = DateUtil.day(t)
+        const today = DateUtil.day()
         const days = (today - DateUtil.day(this.timers[this.timing].start)) / 86400
-        if (days == 0)
+        if (days === 0)
             return [false, null]
-        if (days != 1) {
+        if (days !== 1) {
             for (const name in this.timers) {
                 this.timers[name].stop()
                 this.timers[name].reset()
@@ -280,7 +286,7 @@ class DayTimer {
             this.timing = null
             return [true, null]
         }
-        this.timer[this.timing].pause(today)
+        this.timers[this.timing].pause(today)
         const res = {}
         for (const name in this.timers) {
             res[name] = this.timers[name].lastTotal
@@ -296,11 +302,11 @@ class TimerWidget {
             element = $(element)
         this.element = element
         this.elements = {
-            current: $$$(element, "pre")[0],
-            total: $$$(element, "pre")[1],
-            name: $$$(element, "pre")[2],
-            rename: $$$(element, "button")[0],
-            remove: $$$(element, "button")[1],
+            current: $$("pre", element)[0],
+            total: $$("pre", element)[1],
+            name: $$("pre", element)[2],
+            rename: $$("button", element)[0],
+            remove: $$("button", element)[1],
         }
         this.timer = timer
         this.dayTimerApp = dayTimerApp
@@ -323,7 +329,11 @@ class TimerWidget {
         let pause = false
         if (dayTimer.timing !== null)
             pause = timerWidgets[dayTimer.timing].currentLocked
+        timerWidgets[dayTimer.timing]
+            .elements.name.style.removeProperty("text-decoration")
         dayTimer.run(this.timer.name, pause)
+        timerWidgets[dayTimer.timing]
+            .elements.name.style["text-decoration"] = "underline"
 
         app.update()
         app.save()
@@ -332,12 +342,12 @@ class TimerWidget {
         if (this.currentLocked) {
             evt.stopPropagation()
             this.currentLocked = false
-            this.elements.current.style.removeProperty("border")
+            this.elements.current.style.removeProperty("text-decoration")
         }
         else if (this.timer.current() !== 0) {
             evt.stopPropagation()
             this.currentLocked = true
-            this.elements.current.style.border = "1px solid black"
+            this.elements.current.style["text-decoration"] = "underline"
         }
     }
     onRename(evt) {
@@ -364,10 +374,11 @@ class TimerWidget {
         const dayTimer = app.dayTimer
         const timerWidgets = app.timerWidgets
 
-        if (!dayTimer.remove(this.timer.name))
+        const name = this.timer.name
+        if (!(confirm(`Delete ${name}?`) && dayTimer.remove(name)))
             return
         this.element.remove()
-        delete timerWidgets[this.timer.name]
+        delete timerWidgets[name]
 
         app.updateOptions()
         app.save()
@@ -378,7 +389,7 @@ class TimerWidget {
             <div class="timer">
                 <pre></pre>
                 <pre></pre>
-                <pre class="flex-1"></pre>
+                <pre class="grow"></pre>
                 <button>=</button>
                 <button>x</button>
             </div>`
@@ -396,27 +407,24 @@ class DayTimerApp {
             ddayInput: $$("#date > input")[1],
 
             transferFrom: $$("#transfer > select")[0],
-            transferTo: $$("#transfer > select")[1],
-            transferH: $$("#transfer > pre > select")[0],
-            transferM: $$("#transfer > pre > select")[1],
-            transferS: $$("#transfer > pre > select")[2],
-            transfer: $("#transfer > button"),
+            transferH: $$("#transfer > select")[1],
+            transferM: $$("#transfer > select")[2],
+            transferS: $$("#transfer > select")[3],
+            transferTo: $$("#transfer > select")[4],
 
             export: $$("#add > button")[0],
             import: $("#fileInput"),
             clear: $$("#add > button")[1],
-            addInput: $("#add > input"),
-            add: $$("#add > button")[2],
+            add: $("#add > input"),
         }
         this.elements.day.onchange = evt => this.onDay()
         this.elements.ddayInput.onchange = evt => this.onDday()
         this.elements.transferFrom.onchange = evt => this.onTransferFrom()
-        this.elements.transfer.onclick = evt => this.onTransfer()
+        this.elements.transferTo.onchange = evt => this.onTransfer()
         this.elements.export.onclick = evt => this.onExport()
         this.elements.import.onchange = evt => this.onImport()
         this.elements.clear.onclick = evt => this.onClear()
-        this.elements.add.onclick = evt => this.onAdd()
-        this.elements.addInput.onkeydown = evt => {
+        this.elements.add.onkeydown = evt => {
             if (evt.key === "Enter")
                 this.onAdd()
         }
@@ -454,6 +462,8 @@ class DayTimerApp {
             this.timerWidgets[name] = new TimerWidget(element, timer, this)
             this.dayTimer.timers[name] = timer
         }
+        this.timerWidgets[this.dayTimer.timing]
+            .elements.name.style["text-decoration"] = "underline"
 
         this.updateOptions()
         this.elements.transferH.innerHTML = ""
@@ -563,7 +573,7 @@ class DayTimerApp {
         if (!(day in this.history)) {
             this.elements.root.insertAdjacentHTML("beforeend", `
                 <div class="timer">
-                    <pre class="flex-1">No data on this day</pre>
+                    <pre class="grow">No data on this day</pre>
                 </div>`)
             return
         }
@@ -573,7 +583,7 @@ class DayTimerApp {
             this.elements.root.insertAdjacentHTML("beforeend", `
                 <div class="timer">
                     <pre>${DateUtil.formatDuration(this.history[day][name])}</pre>
-                    <pre class="flex-1">${name}</pre>
+                    <pre class="grow">${name}</pre>
                 </div>`)
     }
     onDday() {
@@ -589,6 +599,7 @@ class DayTimerApp {
         this.elements.transferH.value = h
         this.elements.transferM.value = m
         this.elements.transferS.value = s
+        this.elements.transferTo.disabled = false
     }
     onTransfer() {
         const from = this.elements.transferFrom.value
@@ -596,10 +607,18 @@ class DayTimerApp {
         const h = Number(this.elements.transferH.value)
         const m = Number(this.elements.transferM.value)
         const s = Number(this.elements.transferS.value)
-        if (this.dayTimer.transfer(from, to, DateUtil.joinDuration(h, m, s))) {
-            this.update()
-            this.save()
-        }
+        if (!confirm(`Transfer ${from} -> ${to} ${h}:${m}:${s}?`))
+            return
+        this.elements.transferTo.value = ""
+        if (!this.dayTimer.transfer(from, to, DateUtil.joinDuration(h, m, s)))
+            return
+        this.elements.transferFrom.value = ""
+        this.elements.transferH.value = 0
+        this.elements.transferM.value = 0
+        this.elements.transferS.value = 0
+        this.elements.transferTo.disabled = true
+        this.update()
+        this.save()
     }
     onExport() {
         const text = localStorage.getItem(this.localStorageKey)
@@ -633,7 +652,7 @@ class DayTimerApp {
         }
     }
     onAdd() {
-        const name = this.elements.addInput.value
+        const name = this.elements.add.value
         if (name in this.dayTimer.timers)
             return
 
@@ -642,6 +661,7 @@ class DayTimerApp {
         this.elements.root.insertAdjacentElement("beforeend", element)
         this.timerWidgets[name] = new TimerWidget(element, timer, this)
         this.dayTimer.timers[name] = timer
+        this.elements.add.value = ""
 
         this.sortTimers()
         this.updateOptions()
