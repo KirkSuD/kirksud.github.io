@@ -14,10 +14,12 @@
     <meta property="og:site_name" content="kirksud.github.io">
 
     <style>
+html {
+    height: 100%;
+}
 body {
-    width: 100vw;
-    height: 100vh;
     margin: 0;
+    height: 100%;
 
     display: flex;
     flex-direction: column;
@@ -236,7 +238,7 @@ class DayTimer {
     run(name, pause=false) {
         if (!(name in this.timers))
             return false
-        if (this.timing) {
+        if (this.timing !== null) {
             if (pause)
                 this.timers[this.timing].pause()
             else
@@ -272,7 +274,7 @@ class DayTimer {
         return true
     }
     newDay() {
-        if (!this.timing)
+        if (this.timing === null)
             return [false, null]
         const today = DateUtil.day()
         const days = (today - DateUtil.day(this.timers[this.timing].start)) / 86400
@@ -327,10 +329,11 @@ class TimerWidget {
         const timerWidgets = app.timerWidgets
 
         let pause = false
-        if (dayTimer.timing !== null)
+        if (dayTimer.timing !== null) {
             pause = timerWidgets[dayTimer.timing].currentLocked
-        timerWidgets[dayTimer.timing]
-            .elements.name.style.removeProperty("text-decoration")
+            timerWidgets[dayTimer.timing]
+                .elements.name.style.removeProperty("text-decoration")
+        }
         dayTimer.run(this.timer.name, pause)
         timerWidgets[dayTimer.timing]
             .elements.name.style["text-decoration"] = "underline"
@@ -462,8 +465,9 @@ class DayTimerApp {
             this.timerWidgets[name] = new TimerWidget(element, timer, this)
             this.dayTimer.timers[name] = timer
         }
-        this.timerWidgets[this.dayTimer.timing]
-            .elements.name.style["text-decoration"] = "underline"
+        if (this.dayTimer.timing !== null)
+            this.timerWidgets[this.dayTimer.timing]
+                .elements.name.style["text-decoration"] = "underline"
 
         this.updateOptions()
         this.elements.transferH.innerHTML = ""

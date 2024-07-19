@@ -14,10 +14,12 @@
     <meta property="og:site_name" content="kirksud.github.io">
 
     <style>
+html {
+    height: 100%;
+}
 body {
-    width: 100vw;
-    height: 100vh;
     margin: 0;
+    height: 100%;
 
     display: flex;
     flex-direction: column;
@@ -37,6 +39,7 @@ p {
 #do {
     margin: 16px;
     flex: 1;
+    font-size: large;
 }
     </style>
 </head>
@@ -70,7 +73,7 @@ class DateUtil {
             date = ["今天", "昨天", "前天"][dayDiff]
 
         let h = d.getHours()
-        const m = d.getMonth()
+        const m = d.getMinutes()
         let dayNight = (h < 12) ? "上午" : "下午"
         if (h === 0)
             dayNight = "半夜"
