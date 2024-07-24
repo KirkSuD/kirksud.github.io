@@ -51,6 +51,9 @@ p {
   cursor: pointer;
 }
   </style>
+
+  <script src="synk.js"></script>
+
 </head>
 
 <body>
@@ -152,6 +155,7 @@ const min_zoom_percentage=50, max_zoom_percentage=300;
 const text_rem=1.2, small_rem=0.96;
 // Firefox: p=1rem, small~0.8rem
 let current_folder, current_folder_data, zoom_percentage=100;
+let synk;
 
 // run when document ready
 $(function() {
@@ -176,6 +180,18 @@ $(function() {
   // $(window).on("wheel", wheel_zoom);  // wheel_zoom not working
   resize_col();
   load_from_storage();
+
+  const synkServer = "https://kirk.alwaysdata.net"
+  // const synkServer = "https://kirksud.pythonanywhere.com"
+  synk = new Synk(synkServer, "1MB", localStorage_key + "_synk");
+  const localData = localStorage.getItem(localStorage_key) ?? "null"
+  synk.run(localData, data => {
+    if (data !== null && data !== localData) {
+      localStorage.setItem(localStorage_key, data);
+      load_from_storage();
+    }
+  })
+
 });
 
 // ui manipulation functions
@@ -656,8 +672,16 @@ function load_from_storage(folder=null) {
 }
 function save_to_storage() {
   console.log("save to storage");
-  let json_data = data_to_json();
+  const json_data = data_to_json();
   localStorage.setItem(localStorage_key, json_data);
+
+  const localData = json_data;
+  synk.run(localData, data => {
+    if (data !== null && data !== localData) {
+      localStorage.setItem(localStorage_key, data);
+      load_from_storage();
+    }
+  })
 }
 function save_current_folder() {
   console.log("save current folder");

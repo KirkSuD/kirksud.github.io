@@ -92,6 +92,9 @@ body {
 }
 
     </style>
+
+    <script src="synk.js"></script>
+
 </head>
 
 <body>
@@ -433,6 +436,17 @@ class DayTimerApp {
         }
         this.updateIntervalId = null
         this.load()
+
+        const synkServer = "https://kirk.alwaysdata.net"
+        // const synkServer = "https://kirksud.pythonanywhere.com"
+        this.synk = new Synk(synkServer, "64KB", this.localStorageKey + "_synk")
+        const localData = localStorage.getItem(this.localStorageKey) ?? "null"
+        this.synk.run(localData, data => {
+            if (data === null || data === localData)
+                return
+            localStorage.setItem(this.localStorageKey, data)
+            this.load(JSON.parse(data))
+        })
     }
     load(data=null) {
         if (data === null) {
@@ -495,6 +509,14 @@ class DayTimerApp {
             timing: this.dayTimer.timing,
             history: this.history,
         }))
+
+        const localData = localStorage.getItem(this.localStorageKey) ?? "null"
+        this.synk.run(localData, data => {
+            if (data === null || data === localData)
+                return
+            localStorage.setItem(this.localStorageKey, data)
+            this.load(JSON.parse(data))
+        })
     }
     update() {
         this.elements.day.value = DateUtil.formatDate()
