@@ -121,12 +121,11 @@ class TimeRecordApp {
             if (data === null || data === localData)
                 return
             localStorage.setItem(this.localStorageKey, data)
-            this.load(data)
+            this.load()
         })
     }
-    load(data=null) {
-        data = data ?? localStorage.getItem(this.localStorageKey)
-        data = data ?? "[]"
+    load() {
+        const data = localStorage.getItem(this.localStorageKey) ?? "[]"
         this.records = JSON.parse(data)
         return this.records
     }
@@ -138,7 +137,7 @@ class TimeRecordApp {
             if (data === null || data === localData)
                 return
             localStorage.setItem(this.localStorageKey, data)
-            this.load(data)
+            this.load()
         })
     }
     undo(quiet=false) {

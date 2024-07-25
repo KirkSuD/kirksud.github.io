@@ -445,7 +445,7 @@ class DayTimerApp {
             if (data === null || data === localData)
                 return
             localStorage.setItem(this.localStorageKey, data)
-            this.load(JSON.parse(data))
+            this.load()
         })
     }
     load(data=null) {
@@ -515,7 +515,7 @@ class DayTimerApp {
             if (data === null || data === localData)
                 return
             localStorage.setItem(this.localStorageKey, data)
-            this.load(JSON.parse(data))
+            this.load()
         })
     }
     update() {
@@ -633,9 +633,9 @@ class DayTimerApp {
         const h = Number(this.elements.transferH.value)
         const m = Number(this.elements.transferM.value)
         const s = Number(this.elements.transferS.value)
+        this.elements.transferTo.value = ""
         if (!confirm(`Transfer ${from} -> ${to} ${h}:${m}:${s}?`))
             return
-        this.elements.transferTo.value = ""
         if (!this.dayTimer.transfer(from, to, DateUtil.joinDuration(h, m, s)))
             return
         this.elements.transferFrom.value = ""

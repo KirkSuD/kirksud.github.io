@@ -16,13 +16,16 @@
 
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+    crossorigin="anonymous">
 
   <style>
 main {
   margin: 3% 8%;
 }
-p {
+main p {
   white-space: pre-wrap;
   margin-bottom: 0;
 }
@@ -30,17 +33,37 @@ p {
   /*border: 2px solid rgb(223,223,223);*/
   border-width: 2px;
 }
+.card-text {
+  font-size: 1.2rem;  /* firefox: p=1rem */
+}
+.card-body > small {
+  font-size: 0.96rem;  /* firefox: small~0.8rem */
+  display: block;
+  margin-bottom: 5px;
+}
 .checked-todo {
   text-decoration: line-through;
+  text-decoration-thickness: 0.08em;
 }
-/* #zoom-btn::after {
-  content: "%";
-}  // wheel_zoom not working */
+#import-todo-btn {
+  cursor: pointer;
+}
+
+#todos .card-body button, #todos .card-body br {
+  display: none;
+}
+#todos #add-todo-div button, #todos #add-todo-div br {
+  display: revert;
+}
+#todos .card-body:hover button, #todos .card-body:hover br {
+  display: revert;
+}
+
 #folder-btn-text, #col-btn-text {
   display: inline-block;
 }
 #folder-modal-title::before {
-  content: "Folder：";
+  content: "Folder: ";
 }
 #folder-modal-div-head > div, #folder-modal-div > div {
   padding: 5px 0;
@@ -58,38 +81,51 @@ p {
 
 <body>
   <main>
+
     <div class="row">
       <div class="w-100 px-1 mb-2">
         <div class="card">
           <div class="card-body">
-            <button id="export-todo-btn" class="close float-left mr-1"><i class="material-icons">save</i></button>
-            <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3"><i class="material-icons">folder_open</i></label>
+            <button id="export-todo-btn" class="close float-left mr-1">
+              <i class="material-icons">save</i>
+            </button>
+            <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
+              <i class="material-icons">folder_open</i>
+            </label>
             <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
-            <button id="export-copy-todo-btn" class="close float-left mr-1"><i class="material-icons">content_copy</i></button>
-            <button id="import-paste-todo-btn" class="close float-left"><i class="material-icons">content_paste</i></button>
+
+            <button id="export-copy-todo-btn" class="close float-left mr-1">
+              <i class="material-icons">content_copy</i>
+            </button>
+            <button id="import-paste-todo-btn" class="close float-left">
+              <i class="material-icons">content_paste</i>
+            </button>
             <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
             
             <br class="d-sm-none">
             <br class="d-sm-none">
 
             <button id="folder-btn" class="close ml-3">
-              <i class="material-icons">folder_open</i><p id="folder-btn-text"></p>
+              <i class="material-icons">folder_open</i> <p id="folder-btn-text"></p>
             </button>
-            <!-- <button id="zoom-btn" class="close ml-3">100</button>  // wheel_zoom not working -->
             <button id="col-btn" class="close ml-3">
-              <i class="material-icons">border_all</i><p id="col-btn-text"></p>
+              <i class="material-icons">border_all</i> <p id="col-btn-text"></p>
             </button>
-            <button id="clear-todo-btn" class="close"><i class="material-icons">delete_sweep</i></button>
+            <button id="clear-todo-btn" class="close">
+              <i class="material-icons">delete_sweep</i>
+            </button>
           </div>
         </div>
       </div>
     </div>
+
     <div id="todos" class="row">
       <div id="add-todo-div" class="memo p-1">
         <div class="card">
           <div class="card-body">
             <button id="add-todo-btn" class="close"><i class="material-icons">add</i></button>
-            <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return input delete create cancel add_box add_circle -->
+            <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return
+              input delete create cancel add_box add_circle -->
             <!-- TODO: better time, sortable -->
             <br><br>
             <textarea id="add-todo-txt" class="form-control" placeholder="Type something..."></textarea>
@@ -97,6 +133,7 @@ p {
         </div>
       </div>
     </div>
+
     <div class="modal" id="folder-modal" role="dialog" aria-label="Folder" aria-hidden="false">
       <div id="fodler-modal-dialog" class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -131,37 +168,41 @@ p {
         </div>
       </div>
     </div>
+
   </main>
 
-  <!-- Why put before end of body: https://stackoverflow.com/questions/10994335/javascript-head-body-or-jquery -->
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-  <!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script> -->
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
+  <!-- Why put before end of body: https://stackoverflow.com/questions/10994335 -->
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+    crossorigin="anonymous"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+    crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+    integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU=" crossorigin="anonymous"></script>
 
   <script>
 
 const localStorage_key = "kirksud_todo_app_data";
 const export_filename_prefix = "todo_export_";
 
-const max_col = { // col-lg-3 col-md-4 col-sm-6 col-12
-  "lg": 4,
-  "md": 3,
-  "sm": 2,
-  "xs": 1
-};
-const min_zoom_percentage=50, max_zoom_percentage=300;
-const text_rem=1.2, small_rem=0.96;
-// Firefox: p=1rem, small~0.8rem
-let current_folder, current_folder_data, zoom_percentage=100;
-let synk;
+const synkServer = "https://kirk.alwaysdata.net";
+// const synkServer = "https://kirksud.pythonanywhere.com";
+const synk = new Synk(synkServer, "1MB", localStorage_key + "_synk");
+
+let current_folder, current_folder_data;
 
 // run when document ready
 $(function() {
-  //$("#todos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
+  // $("#todos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
   $("#todos").sortable({stop: save_current_folder});
-  //$("#todos").disableSelection(); //not sure what this does, maybe for mobile devices? tested, not working...
+  // $("#todos").disableSelection();
+  // ^ not sure what this does, maybe for mobile devices? tested, not working...
   $("#export-todo-btn").on("click", export_todo_btn);
   $("#import-file-selector").on("change", import_file_selected);
   $("#export-copy-todo-btn").on("click", export_copy_todo_btn);
@@ -169,7 +210,6 @@ $(function() {
   $("#import-paste-input").on("paste", import_pasted);
   $("#import-paste-input").on("blur", done_import_paste);
   $("#clear-todo-btn").on("click", clear_todo_btn);
-  // $("#zoom-btn").on("click", zoom_btn);  // wheel_zoom not working
   $("#col-btn").on("click", col_btn);
   $("#folder-btn").on("click", folder_btn);
   $("#add-folder-btn").on("click", add_folder_btn);
@@ -177,32 +217,29 @@ $(function() {
   $("#add-todo-btn").on("click", add_todo_btn);
   $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
   $(window).resize(resize_col);
-  // $(window).on("wheel", wheel_zoom);  // wheel_zoom not working
   resize_col();
   load_from_storage();
 
-  const synkServer = "https://kirk.alwaysdata.net"
-  // const synkServer = "https://kirksud.pythonanywhere.com"
-  synk = new Synk(synkServer, "1MB", localStorage_key + "_synk");
-  const localData = localStorage.getItem(localStorage_key) ?? "null"
+  const localData = localStorage.getItem(localStorage_key) ?? "null";
   synk.run(localData, data => {
     if (data !== null && data !== localData) {
       localStorage.setItem(localStorage_key, data);
       load_from_storage();
     }
-  })
+  });
 
 });
 
 // ui manipulation functions
 function add_todo(txt, time_str, checked=false) {
-  let new_todo_div = $(
+  const new_todo_div = $(
     `<div class="memo p-1">
       <div class="card">
         <div class="card-body">
           <button class="close close-todo"><i class="material-icons">close</i></button>
           <button class="close check-todo float-left mr-2"><i class="material-icons">check</i></button>
-          <button class="close cancel-edit-todo float-left d-none mr-2"><i class="material-icons">undo</i></button>
+          <button class="close cancel-edit-todo float-left d-none mr-2">
+            <i class="material-icons">undo</i> </button>
           <button class="close edit-todo float-left mr-2"><i class="material-icons">mode_edit</i></button>
           <button class="close copy-todo float-left"><i class="material-icons">content_copy</i></button>
           <br><br>
@@ -237,12 +274,16 @@ function clear_todo() {
 
 // data <-> ui functions
 function ui_to_data() {
-  let todos = $("#todos").find(".card-body").map((i, element) =>
-    [[$(element).find("p").hasClass("checked-todo"), $(element).find("small").text(), $(element).find("p").text()]]
+  $("#add-todo-div").prependTo("#todos"); // keep it always first
+  const todos = $("#todos").find(".card-body").map((i, element) =>
+    [[
+      $(element).find("p").hasClass("checked-todo"),
+      $(element).find("small").text(),
+      $(element).find("p").text()
+    ]]
   ).toArray().slice(1);
   current_folder_data[current_folder] = {time: pretty_time(), data: todos};
   resize_col(null, -1);
-  wheel_zoom();
 }
 function data_to_json() {
   return JSON.stringify({
@@ -285,7 +326,6 @@ function data_to_ui(data, folder=null) {
       add_todo(element[2], element[1], element[0]); // .slice() for copy, not reverse in-place
     });
     resize_col(null, -1);
-    wheel_zoom();
     $("#folder-btn-text").text(folder);
     return true;
   }
@@ -295,29 +335,16 @@ function data_to_ui(data, folder=null) {
 }
 
 // input, textarea keydown helper
-function alt_enter_listener(func, alt_required = true) {
-  return function(evt) { // from https://stackoverflow.com/questions/30467263/handling-alt-enter-key-press-in-javascript
+function alt_enter_listener(func, alt_required=true) {
+  return function(event) {
+    // https://stackoverflow.com/questions/30467263
     if (event.defaultPrevented) {
       return;
     }
     let handled = false;
-    if (event.key !== undefined) {
-      if (event.key === 'Enter' && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
-    }
-    else if (event.keyIdentifier !== undefined) {
-      if (event.keyIdentifier === "Enter" && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
-    }
-    else if (event.keyCode !== undefined) {
-      if (event.keyCode === 13 && (!alt_required || event.altKey)) {
-        func(this);
-        handled = true;
-      }
+    if (event.key === 'Enter' && (!alt_required || event.altKey)) {
+      func(this);
+      handled = true;
     }
     if (handled) {
       event.preventDefault();
@@ -343,6 +370,12 @@ function media_size() {
 
 // window resize col
 function resize_col(evt, cur_col=0) { // col-lg-3 col-md-4 col-sm-6 col-12
+  const max_col = { // col-lg-3 col-md-4 col-sm-6 col-12
+    lg: 4,
+    md: 3,
+    sm: 2,
+    xs: 1
+  };
   for (let i=1; i<=4; i++) {
     $(".memo").removeClass("col-"+(12/i));
   }
@@ -356,35 +389,15 @@ function resize_col(evt, cur_col=0) { // col-lg-3 col-md-4 col-sm-6 col-12
   $("#col-btn-text").text(cur_col);
 }
 
-// ctrl + mouse wheel zoom
-function wheel_zoom(evt=null) {
-  if (evt !== null) {
-    if (!evt.ctrlKey) {
-      return;
-    }
-    evt.preventDefault();
-    zoom_percentage -= evt.originalEvent.deltaY * 10 / 3;
-    zoom_percentage = Math.max(zoom_percentage, min_zoom_percentage);
-    zoom_percentage = Math.min(zoom_percentage, max_zoom_percentage);
-    zoom_percentage = Math.round(zoom_percentage);
-  }
-  $(".card-text").css("font-size", text_rem*zoom_percentage/100 + "rem");
-  $("small").css("font-size", small_rem*zoom_percentage/100 + "rem");
-  // $("#zoom-btn").text(zoom_percentage);  // wheel_zoom not working
-}
 
 // onclick functions
-function zoom_btn() {
-  zoom_percentage = 100;
-  wheel_zoom();
-}
 function col_btn() {
   resize_col(null, parseInt($("#col-btn-text").text()) - 1);
 }
 
 function add_todo_btn() {
   console.log("#add-todo-btn clicked");
-  let todo_txt = $("#add-todo-txt").val();
+  const todo_txt = $("#add-todo-txt").val();
   $("#add-todo-txt").val("");
   add_todo(todo_txt, pretty_time());
   save_current_folder();
@@ -394,7 +407,7 @@ function folder_btn() {
   $("#folder-modal-title").text(current_folder);
   $("#add-folder-input").val("");
   $("#folder-modal-div").empty();
-  let folders = [];
+  const folders = [];
   for (const k in current_folder_data) {
     folders.push([k, current_folder_data[k].time, current_folder_data[k].data.length]);
   }
@@ -490,7 +503,7 @@ function delete_folder_btn() {
   const folder_name = $(this).siblings("p").eq(0).text();
   delete current_folder_data[folder_name];
   if (folder_name === current_folder) { // delete using folder -> open latest folder
-    let latest_time="0000/00/00 00:00:00";
+    let latest_time="1970/01/01 00:00:00";
     for (const k in current_folder_data) {
       if (current_folder_data[k].time.localeCompare(latest_time) > 0) { // later
         latest_time = current_folder_data[k].time;
@@ -521,7 +534,7 @@ function close_todo() {
 
 function copy_todo() {
   console.log(".copy-todo clicked");
-  let txt = $(this).parent().find("p").text();
+  const txt = $(this).parent().find("p").text();
   set_clip(txt);
   popcorn($(this), "top", 2000, "Copied!");
 }
@@ -558,9 +571,9 @@ function check_todo() {
 
 function export_todo_btn() {
   console.log("export todo btn");
-  let json_data = data_to_json();
-  let file = new Blob([json_data], {type: "application/json"});
-  let tmp = $('<a>export</a>')
+  const json_data = data_to_json();
+  const file = new Blob([json_data], {type: "application/json"});
+  const tmp = $('<a>export</a>')
     .attr("href", URL.createObjectURL(file))
     .attr("download", export_filename_prefix + get_time_str() + ".json");
   $("body").append(tmp);
@@ -574,7 +587,7 @@ function import_file_selected() {
   const file_reader = new FileReader();
   file_reader.onload = function(evt) {
     //console.log(evt.target.result);
-    let data = JSON.parse(evt.target.result);
+    const data = JSON.parse(evt.target.result);
     data_to_ui(data);
     save_current_folder();
   }
@@ -603,7 +616,8 @@ function import_pasted(evt) {
     data = JSON.parse(evt.originalEvent.clipboardData.getData('text'));
   } catch(err) {
     //console.log(err);
-    $("#import-paste-input").blur(); //don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
+    $("#import-paste-input").blur();
+    // ^ don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
     popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
     return;
   }
@@ -645,7 +659,7 @@ function pretty_time() {
 
 // set clipboard
 function set_clip(txt) {
-  let tmp = $('<textarea>');
+  const tmp = $('<textarea>');
   $("body").append(tmp);
   tmp.val(txt).select();//.selectRange(0, txt.length);
   document.execCommand("copy");
@@ -681,7 +695,7 @@ function save_to_storage() {
       localStorage.setItem(localStorage_key, data);
       load_from_storage();
     }
-  })
+  });
 }
 function save_current_folder() {
   console.log("save current folder");

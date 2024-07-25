@@ -159,10 +159,12 @@ class SynkClient {
             id: this.id, token: this.token,
             hash, data: encrypted, device: this.device, force
         })
-        if (err === null && res.result !== "conflict") {
+        if (err === null) {
             res.time *= 1000
-            this.time = res.time
             res.data = await this.decrypt(res.data)
+        }
+        if (err === null && res.result !== "conflict") {
+            this.time = res.time
             this.save()
         }
         return [res, err]
