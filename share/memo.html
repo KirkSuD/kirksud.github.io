@@ -41,21 +41,21 @@ main p {
   display: block;
   margin-bottom: 5px;
 }
-.checked-todo {
+.checked-memo {
   text-decoration: line-through;
   text-decoration-thickness: 0.08em;
 }
-#import-todo-btn {
+#import-memo-btn {
   cursor: pointer;
 }
 
-#todos .card-body button, #todos .card-body br {
+#memos .card-body button, #memos .card-body br {
   display: none;
 }
-#todos #add-todo-div button, #todos #add-todo-div br {
+#memos #add-memo-div button, #memos #add-memo-div br {
   display: revert;
 }
-#todos .card-body:hover button, #todos .card-body:hover br {
+#memos .card-body:hover button, #memos .card-body:hover br {
   display: revert;
 }
 
@@ -86,18 +86,18 @@ main p {
       <div class="w-100 px-1 mb-2">
         <div class="card">
           <div class="card-body">
-            <button id="export-todo-btn" class="close float-left mr-1">
+            <button id="export-memo-btn" class="close float-left mr-1">
               <i class="material-icons">save</i>
             </button>
-            <label id="import-todo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
+            <label id="import-memo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
               <i class="material-icons">folder_open</i>
             </label>
             <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
 
-            <button id="export-copy-todo-btn" class="close float-left mr-1">
+            <button id="export-copy-memo-btn" class="close float-left mr-1">
               <i class="material-icons">content_copy</i>
             </button>
-            <button id="import-paste-todo-btn" class="close float-left">
+            <button id="import-paste-memo-btn" class="close float-left">
               <i class="material-icons">content_paste</i>
             </button>
             <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
@@ -111,7 +111,7 @@ main p {
             <button id="col-btn" class="close ml-3">
               <i class="material-icons">border_all</i> <p id="col-btn-text"></p>
             </button>
-            <button id="clear-todo-btn" class="close">
+            <button id="clear-memo-btn" class="close">
               <i class="material-icons">delete_sweep</i>
             </button>
           </div>
@@ -119,16 +119,15 @@ main p {
       </div>
     </div>
 
-    <div id="todos" class="row">
-      <div id="add-todo-div" class="memo p-1">
+    <div id="memos" class="row">
+      <div id="add-memo-div" class="memo p-1">
         <div class="card">
           <div class="card-body">
-            <button id="add-todo-btn" class="close"><i class="material-icons">add</i></button>
+            <button id="add-memo-btn" class="close"><i class="material-icons">add</i></button>
             <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return
               input delete create cancel add_box add_circle -->
-            <!-- TODO: better time, sortable -->
             <br><br>
-            <textarea id="add-todo-txt" class="form-control" placeholder="Type something..."></textarea>
+            <textarea id="add-memo-txt" class="form-control" placeholder="Type something..."></textarea>
           </div>
         </div>
       </div>
@@ -188,8 +187,8 @@ main p {
 
   <script>
 
-const localStorage_key = "kirksud_todo_app_data";
-const export_filename_prefix = "todo_export_";
+const localStorage_key = "kirksud_memo_app_data";
+const export_filename_prefix = "memo_export_";
 
 const synkServer = "https://kirk.alwaysdata.net";
 // const synkServer = "https://kirksud.pythonanywhere.com";
@@ -199,23 +198,23 @@ let current_folder, current_folder_data;
 
 // run when document ready
 $(function() {
-  // $("#todos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
-  $("#todos").sortable({stop: save_current_folder});
-  // $("#todos").disableSelection();
+  // $("#memos").sortable({placeholder: "ui-state-highlight",helper:'clone'});
+  $("#memos").sortable({stop: save_current_folder});
+  // $("#memos").disableSelection();
   // ^ not sure what this does, maybe for mobile devices? tested, not working...
-  $("#export-todo-btn").on("click", export_todo_btn);
+  $("#export-memo-btn").on("click", export_memo_btn);
   $("#import-file-selector").on("change", import_file_selected);
-  $("#export-copy-todo-btn").on("click", export_copy_todo_btn);
-  $("#import-paste-todo-btn").on("click", import_paste_todo_btn);
+  $("#export-copy-memo-btn").on("click", export_copy_memo_btn);
+  $("#import-paste-memo-btn").on("click", import_paste_memo_btn);
   $("#import-paste-input").on("paste", import_pasted);
   $("#import-paste-input").on("blur", done_import_paste);
-  $("#clear-todo-btn").on("click", clear_todo_btn);
+  $("#clear-memo-btn").on("click", clear_memo_btn);
   $("#col-btn").on("click", col_btn);
   $("#folder-btn").on("click", folder_btn);
   $("#add-folder-btn").on("click", add_folder_btn);
   $("#add-folder-input").on("keydown", alt_enter_listener(add_folder_btn, false));
-  $("#add-todo-btn").on("click", add_todo_btn);
-  $("#add-todo-txt").on("keydown", alt_enter_listener(add_todo_btn));
+  $("#add-memo-btn").on("click", add_memo_btn);
+  $("#add-memo-txt").on("keydown", alt_enter_listener(add_memo_btn));
   $(window).resize(resize_col);
   resize_col();
   load_from_storage();
@@ -231,17 +230,17 @@ $(function() {
 });
 
 // ui manipulation functions
-function add_todo(txt, time_str, checked=false) {
-  const new_todo_div = $(
+function add_memo(txt, time_str, checked=false) {
+  const new_memo_div = $(
     `<div class="memo p-1">
       <div class="card">
         <div class="card-body">
-          <button class="close close-todo"><i class="material-icons">close</i></button>
-          <button class="close check-todo float-left mr-2"><i class="material-icons">check</i></button>
-          <button class="close cancel-edit-todo float-left d-none mr-2">
+          <button class="close close-memo"><i class="material-icons">close</i></button>
+          <button class="close check-memo float-left mr-2"><i class="material-icons">check</i></button>
+          <button class="close cancel-edit-memo float-left d-none mr-2">
             <i class="material-icons">undo</i> </button>
-          <button class="close edit-todo float-left mr-2"><i class="material-icons">mode_edit</i></button>
-          <button class="close copy-todo float-left"><i class="material-icons">content_copy</i></button>
+          <button class="close edit-memo float-left mr-2"><i class="material-icons">mode_edit</i></button>
+          <button class="close copy-memo float-left"><i class="material-icons">content_copy</i></button>
           <br><br>
           <small></small>
           <p class="card-text"></p>
@@ -249,23 +248,23 @@ function add_todo(txt, time_str, checked=false) {
         </div>
       </div>
     </div>`);
-  new_todo_div.find("small").text(time_str);
-  new_todo_div.find("p").text(txt);
+  new_memo_div.find("small").text(time_str);
+  new_memo_div.find("p").text(txt);
   if (checked) {
-    new_todo_div.find("p").addClass("checked-todo");
+    new_memo_div.find("p").addClass("checked-memo");
   }
-  new_todo_div.find(".close-todo").on("click", close_todo);
-  new_todo_div.find(".check-todo").on("click", check_todo);
-  new_todo_div.find(".copy-todo").on("click", copy_todo);
-  new_todo_div.find(".cancel-edit-todo").on("click", toggle_edit_todo);
-  new_todo_div.find(".edit-todo").on("click", edit_todo);
-  new_todo_div.find("textarea").on("keydown", alt_enter_listener(function() {
-    new_todo_div.find(".edit-todo").click(); }));
-  new_todo_div.insertAfter($("#add-todo-div"));
+  new_memo_div.find(".close-memo").on("click", close_memo);
+  new_memo_div.find(".check-memo").on("click", check_memo);
+  new_memo_div.find(".copy-memo").on("click", copy_memo);
+  new_memo_div.find(".cancel-edit-memo").on("click", toggle_edit_memo);
+  new_memo_div.find(".edit-memo").on("click", edit_memo);
+  new_memo_div.find("textarea").on("keydown", alt_enter_listener(function() {
+    new_memo_div.find(".edit-memo").click(); }));
+  new_memo_div.insertAfter($("#add-memo-div"));
 }
 
-function clear_todo() {
-  $("#todos").children().each(function(i, element) {
+function clear_memo() {
+  $("#memos").children().each(function(i, element) {
     if(i!=0) {
       $(element).remove();
     }
@@ -274,15 +273,15 @@ function clear_todo() {
 
 // data <-> ui functions
 function ui_to_data() {
-  $("#add-todo-div").prependTo("#todos"); // keep it always first
-  const todos = $("#todos").find(".card-body").map((i, element) =>
+  $("#add-memo-div").prependTo("#memos"); // keep it always first
+  const memos = $("#memos").find(".card-body").map((i, element) =>
     [[
-      $(element).find("p").hasClass("checked-todo"),
+      $(element).find("p").hasClass("checked-memo"),
       $(element).find("small").text(),
       $(element).find("p").text()
     ]]
   ).toArray().slice(1);
-  current_folder_data[current_folder] = {time: pretty_time(), data: todos};
+  current_folder_data[current_folder] = {time: pretty_time(), data: memos};
   resize_col(null, -1);
 }
 function data_to_json() {
@@ -321,9 +320,9 @@ function data_to_ui(data, folder=null) {
     }
     current_folder = folder;
     current_folder_data = data.folders;
-    clear_todo();
+    clear_memo();
     data.folders[folder].data.slice().reverse().forEach(function(element) {
-      add_todo(element[2], element[1], element[0]); // .slice() for copy, not reverse in-place
+      add_memo(element[2], element[1], element[0]); // .slice() for copy, not reverse in-place
     });
     resize_col(null, -1);
     $("#folder-btn-text").text(folder);
@@ -395,11 +394,11 @@ function col_btn() {
   resize_col(null, parseInt($("#col-btn-text").text()) - 1);
 }
 
-function add_todo_btn() {
-  console.log("#add-todo-btn clicked");
-  const todo_txt = $("#add-todo-txt").val();
-  $("#add-todo-txt").val("");
-  add_todo(todo_txt, pretty_time());
+function add_memo_btn() {
+  console.log("#add-memo-btn clicked");
+  const memo_txt = $("#add-memo-txt").val();
+  $("#add-memo-txt").val("");
+  add_memo(memo_txt, pretty_time());
   save_current_folder();
 }
 
@@ -518,31 +517,31 @@ function delete_folder_btn() {
   $("#folder-btn").click(); // reopen modal
 }
 
-function clear_todo_btn() {
+function clear_memo_btn() {
   if (!confirm("Sure to clear?")) {
     return;
   }
-  clear_todo();
+  clear_memo();
   save_current_folder();
 }
 
-function close_todo() {
-  console.log(".close-todo clicked");
-  $(this).parentsUntil("#todos").remove();
+function close_memo() {
+  console.log(".close-memo clicked");
+  $(this).parentsUntil("#memos").remove();
   save_current_folder();
 }
 
-function copy_todo() {
-  console.log(".copy-todo clicked");
+function copy_memo() {
+  console.log(".copy-memo clicked");
   const txt = $(this).parent().find("p").text();
   set_clip(txt);
   popcorn($(this), "top", 2000, "Copied!");
 }
 
-function edit_todo() {
-  console.log(".edit-todo clicked");
+function edit_memo() {
+  console.log(".edit-memo clicked");
   const parent = $(this).parent();
-  parent.find(".cancel-edit-todo").click();
+  parent.find(".cancel-edit-memo").click();
   if (parent.find("p").hasClass("d-none")) {
     parent.find("textarea").val(parent.find("p").text());
     parent.find("textarea").focus();
@@ -553,24 +552,24 @@ function edit_todo() {
   }
 }
 
-function toggle_edit_todo() {
+function toggle_edit_memo() {
   console.log("toggle edit");
   const parent = $(this).parent();
-  parent.find(".check-todo").toggleClass("d-none");
-  parent.find(".copy-todo").toggleClass("d-none");
-  parent.find(".cancel-edit-todo").toggleClass("d-none");
+  parent.find(".check-memo").toggleClass("d-none");
+  parent.find(".copy-memo").toggleClass("d-none");
+  parent.find(".cancel-edit-memo").toggleClass("d-none");
   parent.find("p").toggleClass("d-none");
   parent.find("textarea").toggleClass("d-none");
 }
 
-function check_todo() {
-  console.log(".check-todo clicked");
-  $(this).parent().find("p").toggleClass("checked-todo");
+function check_memo() {
+  console.log(".check-memo clicked");
+  $(this).parent().find("p").toggleClass("checked-memo");
   save_current_folder();
 }
 
-function export_todo_btn() {
-  console.log("export todo btn");
+function export_memo_btn() {
+  console.log("export memo btn");
   const json_data = data_to_json();
   const file = new Blob([json_data], {type: "application/json"});
   const tmp = $('<a>export</a>')
@@ -594,19 +593,19 @@ function import_file_selected() {
   file_reader.readAsText(file);
 }
 
-function export_copy_todo_btn() {
+function export_copy_memo_btn() {
   set_clip(data_to_json());
-  popcorn($("#export-copy-todo-btn"), "bottom", 2000, "Copied!");
+  popcorn($("#export-copy-memo-btn"), "bottom", 2000, "Copied!");
 }
 
-function import_paste_todo_btn() {
+function import_paste_memo_btn() {
   console.log("open input");
-  $("#import-paste-todo-btn").toggleClass("d-none");
+  $("#import-paste-memo-btn").toggleClass("d-none");
   $("#import-paste-input").toggleClass("d-none").val("").focus();
 }
 function done_import_paste() {
   console.log("close input");
-  $("#import-paste-todo-btn").toggleClass("d-none");
+  $("#import-paste-memo-btn").toggleClass("d-none");
   $("#import-paste-input").val("").toggleClass("d-none");
 }
 function import_pasted(evt) {
@@ -618,7 +617,7 @@ function import_pasted(evt) {
     //console.log(err);
     $("#import-paste-input").blur();
     // ^ don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
-    popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
+    popcorn($("#import-paste-memo-btn"), "bottom", 2000, "Import failed!");
     return;
   }
   const success = data_to_ui(data);
@@ -627,7 +626,7 @@ function import_pasted(evt) {
     save_current_folder();
   }
   else { // Failed? Don't worry, just have some popcorn!
-    popcorn($("#import-paste-todo-btn"), "bottom", 2000, "Import failed!");
+    popcorn($("#import-paste-memo-btn"), "bottom", 2000, "Import failed!");
   }
 }
 
