@@ -250,7 +250,7 @@ class Synk {
     font-size: x-large;
 }
 #synk_modal > input, #synk_modal > button {
-    padding: 10px 0;
+    padding: 10px;
 }
 </style>
         `
@@ -317,16 +317,21 @@ class Synk {
                 <p>${text}</p>
             </div>
         `)
-        if (input)
-            modal.insertAdjacentHTML(
-                "beforeend", `<input id="synk_input" type="text">`)
+        if (input) {
+            const input = this.newElement(`<input id="synk_input" type="text">`)
+            if (buttons.length)
+                input.onkeydown = evt => {
+                    if (evt.key === "Enter")
+                        buttons[0][1]()
+                }
+            modal.insertAdjacentElement("beforeend", input)
+        }
         for (const [text, click] of buttons) {
             const button = this.newElement(`<button>${text}</button>`)
             button.onclick = click
             modal.insertAdjacentElement("beforeend", button)
         }
         document.body.insertAdjacentElement("beforeend", modal)
-
     }
 
     sleep(ms) {
@@ -353,7 +358,7 @@ class Synk {
     async sync(data, force, callback) {
         this.showDialog("Synk", "Syncing...", () => {})
         const [res, err] = await this.client.sync(data, force)
-        if (res.result === "conflict")
+        if (err === null && res.result === "conflict")
             return this.modalConflict(data, res, callback)
         if (err === "InvalidCredentials") {
             this.client.clear()
@@ -392,7 +397,7 @@ class Synk {
             Server last sync: ${new Date(res.time).toLocaleString()}
             Now: ${new Date().toLocaleString()}
 
-            Which one do you prefer?`,
+            Which one to keep?`,
             false, [
             ["Local", () => this.sync(data, "client", callback)],
             ["Server", () => this.sync(data, "server", callback)],
@@ -407,7 +412,7 @@ class Synk {
             Data is encrypted before transmission.
             Server: ${this.client.server}`,
             false, [
-            ["New device", async () => {
+            ["Sign up", async () => {
                 const [success, err] = await this.client.signup(data)
                 if (err)
                     this.modalError(err, callback)
@@ -416,19 +421,19 @@ class Synk {
                     callback(null)
                 }
             }],
-            ["Sync with old", async () => this.modalLoginCode(data, callback)],
+            ["Log in", async () => this.modalLoginCode(data, callback)],
             ["No / Later", () => this.removeDialogModal(callback)],
         ])
     }
     modalLoginCode(data, callback) {
         this.showModal(
-            "Sync with old device",
+            "Log in",
             "Enter sync code:",
             true, [
             ["Continue", async () => {
                 const code = this.$("#synk_input").value
                 const [verify, err] = await this.client.loginCode(code)
-                if (err === "InvalidCredentials")
+                if (err === "InvalidCode")
                     this.modalError(err, null, () => this.modalLoginCode(data, callback))
                 else if (err)
                     this.modalError(err, callback)
@@ -440,7 +445,7 @@ class Synk {
     }
     modalLoginEnd(data, code, verify, callback) {
         this.showModal(
-            "Sync with old device",
+            "Log in",
             `Verify code:
             <strong>${verify}</strong>`,
             false, [
@@ -462,11 +467,12 @@ class Synk {
         const callback = () => this.running++
         this.showModal(
             "Manage Synk",
-            `ID: ${this.client.id}
+            `Server: ${this.client.server}
+            ID: ${this.client.id}
             Device: ${this.client.device}
             Last sync: ${new Date(this.client.time).toLocaleString()}`,
             false, [
-            ["Sync with new", async () => {
+            ["Get sync code", async () => {
                 const [code, err] = await this.client.loginBegin()
                 if (err)
                     this.modalError(err, callback)
@@ -501,7 +507,7 @@ class Synk {
     }
     modalLoginBegin(code, callback) {
         this.showModal(
-            "Sync with new device",
+            "Log in on new device",
             `Sync code:
             <strong>${code}</strong>`,
             false, [
@@ -511,13 +517,13 @@ class Synk {
     }
     modalLoginVerify(code, callback) {
         this.showModal(
-            "Sync with new device",
+            "Log in on new device",
             "Enter verify code:",
             true, [
             ["Continue", async () => {
                 const verify = this.$("#synk_input").value
                 const [success, err] = await this.client.loginVerify(code, verify)
-                if (err === "InvalidCredentials")
+                if (err === "InvalidCode")
                     this.modalError(err, null, () => this.modalLoginVerify(code, callback))
                 else if (err)
                     this.modalError(err, callback)
