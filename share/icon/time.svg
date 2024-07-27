@@ -8,10 +8,10 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)"
-   sodipodi:docname="icon.svg"
-   inkscape:export-filename="icon.png"
-   inkscape:export-xdpi="12.7"
-   inkscape:export-ydpi="12.7"
+   sodipodi:docname="time.svg"
+   inkscape:export-filename="time.png"
+   inkscape:export-xdpi="4.7624998"
+   inkscape:export-ydpi="4.7624998"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -26,7 +26,9 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.11313708"
+     inkscape:zoom="0.1681485"
+     inkscape:cx="1204.2926"
+     inkscape:cy="2667.2852"
      inkscape:window-width="1920"
      inkscape:window-height="986"
      inkscape:window-x="-11"
@@ -40,8 +42,13 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       id="path1"
+       d="M 512,80 A 432,432 0 0 0 80,512 432,432 0 0 0 512,944 432,432 0 0 0 944,512 432,432 0 0 0 512,80 Z m 0,88 A 344,344 0 0 1 856,512 344,344 0 0 1 512,856 344,344 0 0 1 168,512 344,344 0 0 1 512,168 Z"
        style="fill:#ffffff;stroke:#000000;stroke-width:10"
-       d="M 192 128 L 192 448 L 192 576 L 192 896 L 336 896 L 336 592 L 640 896 L 832 896 L 448 512 L 832 128 L 640 128 L 336 432 L 336 128 L 192 128 z" />
+       id="path1" />
+    <path
+       id="path2"
+       style="fill:#ffffff;stroke:#000000;stroke-width:10"
+       d="M 360 322.15 L 480 530 L 718 530 L 720 466 L 516.95 466 L 415.43 290.15 L 360 322.15 z"
+       transform="rotate(30, 480, 530)" />
   </g>
 </svg>

@@ -67,5 +67,5 @@ Learn more about Boids:
 
 * `share/dtts_static/(pine|squirrel|squirrel_fly).png`: copyright belongs to original painter
 * `share/icon/squirrel_*.png`: copyright belongs to original painter
-* `share/icon/(edit|time)_*.png`: screenshot from material icon, copyright belongs to them
+* `share/icon/(edit|time)_*.png`: Inkscape recreate of material icon ModeEdit & AccessTime
 * other images: I made them using Inkscape, or screenshot from html web page

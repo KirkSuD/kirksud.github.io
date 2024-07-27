@@ -8,9 +8,9 @@
     "categories": ["health", "medical", "productivity"],
     "icons": [
         {
-            "src": "../icon/time_350.png",
-            "sizes": "350x350",
-            "type": "image/png"
+            "src": "../icon/time.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
         },
         {
             "src": "../icon/time_512.png",

@@ -8,9 +8,9 @@
     "categories": ["productivity"],
     "icons": [
         {
-            "src": "../icon/edit_350.png",
-            "sizes": "350x350",
-            "type": "image/png"
+            "src": "../icon/edit.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
         },
         {
             "src": "../icon/edit_512.png",
