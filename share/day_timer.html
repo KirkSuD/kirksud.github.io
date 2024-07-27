@@ -127,12 +127,17 @@ body {
     </div>
 
     <script>
+
+navigator.serviceWorker.register("service_worker.js")
+
 function $(selectors, element=document) {
     return element.querySelector(selectors)
 }
+
 function $$(selectors, element=document) {
     return element.querySelectorAll(selectors)
 }
+
 class DateUtil {
     static pad2(n) {
         if (n < 10)
@@ -187,6 +192,7 @@ class DateUtil {
         return t.getTime() / 1000
     }
 }
+
 class Timer {
     constructor(name, lastTotal=0, lastCurrent=0, start=null) {
         this.name = name
@@ -239,6 +245,7 @@ class Timer {
         this.lastCurrent = 0
     }
 }
+
 class DayTimer {
     constructor(timers={}, timing=null) {
         this.timers = timers
@@ -307,6 +314,7 @@ class DayTimer {
         return [true, res]
     }
 }
+
 class TimerWidget {
     constructor(element, timer, dayTimerApp) {
         if (typeof element === "string")
@@ -408,6 +416,7 @@ class TimerWidget {
         return template.content.children[0]
     }
 }
+
 class DayTimerApp {
     constructor() {
         this.localStorageKey = "kirksud_day_timer"
@@ -701,6 +710,7 @@ class DayTimerApp {
         this.save()
     }
 }
+
 const dayTimerApp = new DayTimerApp()
 
     </script>

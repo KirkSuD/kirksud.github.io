@@ -58,12 +58,17 @@ body {
     <button id="do">紀錄</button>
 
     <script>
+
+navigator.serviceWorker.register("service_worker.js")
+
 function $(selectors, element=document) {
     return element.querySelector(selectors)
 }
+
 function $$(selectors, element=document) {
     return element.querySelectorAll(selectors)
 }
+
 class DateUtil {
     static day(d=null) {
         d = d ?? new Date()
@@ -108,6 +113,7 @@ class DateUtil {
         return `${s} 秒`
     }
 }
+
 class TimeRecordApp {
     constructor() {
         this.localStorageKey = "kirksud_time_record"
@@ -183,6 +189,7 @@ class TimeRecordApp {
         }
     }
 }
+
 const timeRecordApp = new TimeRecordApp()
 
     </script>
