@@ -36,7 +36,8 @@ Play it on your laptop and mobile phones!
 * [[Game] Don't touch the spikes!](https://kirksud.github.io/share/dtts.html) (PWA)
 
 Inspired by [mobile game - Don't Touch The Spikes](https://play.google.com/store/apps/details?id=com.ketchapp.donttouchthespikes&hl=zh_TW),  
-but with different skin - a cute squirrel & pine cone.
+but with different skin - a cute squirrel & pine cone.  
+You can pay 10 pine cones to make an RL trained neural net to play 1 game for you.
 
 * [[Visualization] The knapsack 0-1 algorithm](https://kirksud.github.io/share/knapsack.html)
 
@@ -61,3 +62,10 @@ Learn more about Boids:
 * [termux_api](https://github.com/KirkSuD/termux_api): A simple Python module to call [termux-api](https://wiki.termux.com/wiki/Termux:API) using [subprocess.run()](https://docs.python.org/3.7/library/subprocess.html#subprocess.run).
 
 * [osu_db_kaitai_struct](https://github.com/KirkSuD/osu_db_kaitai_struct): A simple osu! DB parser written in Kaitai Struct, including an html music player and a collection to playlist converter.
+
+## Image copyright
+
+* `share/dtts_static/(pine|squirrel|squirrel_fly).png`: copyright belongs to original painter
+* `share/icon/squirrel_*.png`: copyright belongs to original painter
+* `share/icon/(edit|time)_*.png`: screenshot from material icon, copyright belongs to them
+* other images: I made them using Inkscape, or screenshot from html web page
