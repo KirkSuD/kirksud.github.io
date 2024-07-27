@@ -1,0 +1,26 @@
+{
+    "name": "2048",
+    "short_name": "2048",
+    "start_url": "../2048.html",
+    "scope": "../2048.html",
+    "display": "standalone",
+    "description": "The classic 2048. Play on laptop & phone!",
+    "categories": ["entertainment", "games"],
+    "icons": [
+        {
+            "src": "../icon/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "../icon/icon_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/icon_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

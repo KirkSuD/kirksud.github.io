@@ -1,49 +1,58 @@
 ## KirkSuD GitHub Pages
 
-I'm KirkSuD, a CS student who is still learning lots of things.
-
-Currently, this site only shares some HTML pages which worth trying.
+Currently, this site only shares some single page HTML little app.
 
 ## Shared HTMLs
 
 Links to useful / fun html page:
 
-* [[App] memo](https://kirksud.github.io/share/memo.html)
+* [[App] Memo](https://kirksud.github.io/share/memo.html) (PWA, Sync)
 
 A responsive memo web app that saves memos in local storage
-with backup & restore functionality  
+with backup & restore features  
 using bootstrap, jquery, jquery-ui, material icons.  
 You can organize your thoughts, plan your todos using the folder functionality.
-Just try it!
 
-* [[Game] 2048](https://kirksud.github.io/share/2048.html)
+* [[App] Day timer](https://kirksud.github.io/share/day_timer.html) (PWA, Sync)
 
-No need to explain! The classic 2048 game. It's responsive, of course.  
+A productivity app similar to chess clock to track what you do every day.
+
+* [[App] Time record](https://kirksud.github.io/share/time_record.html) (PWA, Sync)
+
+A very simple little app to record time,  
+ideal for saving when you take meds the last time.
+
+* [[App] PPG (photoplethysmogram)](https://kirksud.github.io/share/ppg.html) (PWA)
+
+Do [photoplethysmogram](https://en.wikipedia.org/wiki/Photoplethysmogram) using camera,
+then save the result text file.  
+Can be used to calculate heart BPM, and do [HRV](https://en.wikipedia.org/wiki/Heart_rate_variability) analysis.
+
+* [[Game] 2048](https://kirksud.github.io/share/2048.html) (PWA)
+
+Responsive classic 2048 game.  
 Play it on your laptop and mobile phones!
 
-* [[Game] Don't touch the spikes!](https://kirksud.github.io/share/dtts.html)
+* [[Game] Don't touch the spikes!](https://kirksud.github.io/share/dtts.html) (PWA)
 
-Inspired by [mobile game - Don't Touch The Spikes](https://play.google.com/store/apps/details?id=com.ketchapp.donttouchthespikes&hl=zh_TW).  
-Almost the same as the original game, but different skin - a cute squirrel & pine cone!  
-Well... I'm lazy to implement a real collision algo.  
-So, you know... You'll see something strange occasionally.  
-But it's still really fun! I promise.
+Inspired by [mobile game - Don't Touch The Spikes](https://play.google.com/store/apps/details?id=com.ketchapp.donttouchthespikes&hl=zh_TW),  
+but with different skin - a cute squirrel & pine cone.
 
 * [[Visualization] The knapsack 0-1 algorithm](https://kirksud.github.io/share/knapsack.html)
 
 A visualization of knapsack 0-1 algorithm.  
-You can toggle recursive & exact, 4 versions in total!
+You can toggle recursive & exact, 4 versions in total.
 
-* [[Visualization] Boids Flocking Simulation](https://kirksud.github.io/share/boid.html)
+* [[Visualization] Boids flocking simulation](https://kirksud.github.io/share/boid.html) (PWA)
 
-[Boids](https://en.wikipedia.org/wiki/Boids) [Flocking](https://en.wikipedia.org/wiki/Flocking) simulation.  
+[Boids](https://en.wikipedia.org/wiki/Boids) [flocking](https://en.wikipedia.org/wiki/Flocking) simulation.  
 Efficient O(n) implementation with spatial division data structure optimization.  
-It's interactive, colorful, and beautiful. Try it!  
+It's interactive, colorful, and beautiful.  
 
 Learn more about Boids:  
 [Craig Reynolds' Boids page](https://www.red3d.com/cwr/boids/)  
 [O(n) optimization](https://www.red3d.com/cwr/papers/2000/pip.pdf)  
-[pseudo code](https://vergenet.net/~conrad/boids/pseudocode.html)
+[Pseudo code](https://vergenet.net/~conrad/boids/pseudocode.html)
 
 ## Projects on Github
 

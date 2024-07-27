@@ -1,0 +1,26 @@
+{
+    "name": "Day Timer",
+    "short_name": "DayTimer",
+    "start_url": "../day_timer.html",
+    "scope": "../day_timer.html",
+    "display": "standalone",
+    "description": "Day Timer times what you do in a day.",
+    "categories": ["productivity"],
+    "icons": [
+        {
+            "src": "../icon/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "../icon/icon_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/icon_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

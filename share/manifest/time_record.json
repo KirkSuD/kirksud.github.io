@@ -1,0 +1,26 @@
+{
+    "name": "紀錄時間",
+    "short_name": "紀錄時間",
+    "start_url": "../time_record.html",
+    "scope": "../time_record.html",
+    "display": "standalone",
+    "description": "一個記錄時間的小網頁",
+    "categories": ["health", "medical", "productivity"],
+    "icons": [
+        {
+            "src": "../icon/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "../icon/icon_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/icon_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

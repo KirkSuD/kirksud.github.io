@@ -1,0 +1,26 @@
+{
+    "name": "PPG (photoplethysmogram)",
+    "short_name": "PPG",
+    "start_url": "../ppg.html",
+    "scope": "../ppg.html",
+    "display": "standalone",
+    "description": "PPG (photoplethysmogram) using camera.",
+    "categories": ["health", "medical"],
+    "icons": [
+        {
+            "src": "../icon/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "../icon/icon_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/icon_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}
