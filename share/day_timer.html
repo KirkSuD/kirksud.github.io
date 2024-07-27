@@ -445,7 +445,7 @@ class DayTimerApp {
 
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
-        this.synk = new Synk(synkServer, "64KB", this.localStorageKey + "_synk")
+        this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
         this.synk.run(localData, data => {
             if (data === null || data === localData)

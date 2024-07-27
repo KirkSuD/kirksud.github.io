@@ -16,6 +16,8 @@ class SynkClient {
                 },
                 body: JSON.stringify(data)
             })
+            if (!resp.ok)
+                throw new Error(`Response not ok: ${resp.status} ${resp.statusText}`)
             const res = await resp.json()
             return [res, res.error ?? null]
         } catch (e) {
@@ -188,12 +190,13 @@ class SynkClient {
 class Synk {
     constructor(
         server, quota, localStorageKey, expire=300_000,
-        style=null, dialogTimeout=5_000,
+        dialogTimeout=5_000, style=null, i18n=null,
     ) {
         this.client = new SynkClient(server, quota, localStorageKey, expire)
         this.dialogTimeout = dialogTimeout
         this.nextRun = 0
         this.running = 0
+        this.shownSignupDialog = false
 
         style = style ?? `
 <style>
@@ -255,6 +258,147 @@ class Synk {
 </style>
         `
         document.head.insertAdjacentHTML("beforeend", style)
+
+        i18n = i18n ?? {
+            "en-US": {
+                synk: "Synk",
+                clickToSync: "Click to sync",
+                syncing: "Syncing...",
+                networkServerErrorShort: "Network/Server Error!",
+                synced: "Synced",
+                errorIs: "Error:",
+                ok: "OK",
+
+                NetworkServerError: "Network or server error. Try again later.",
+                InvalidArgs: "This client sends some invalid data to server.",
+                InvalidCredentials: "You're logged out. Please re-login.",
+                InvalidCode: "Invalid or expired code.",
+                OutOfQuota: "Quota exceeded. Remove some data & try again.",
+                OutOfStorage: "Sorry. Server is full.",
+                TooManyDevices: "You've synced too many devices.",
+                ServerLocked: "Server is locked. Ask server admin to unlock.",
+                UnexpectedError: "Unexpected error occurred.",
+
+                dataConflict: "Data conflict",
+                bothLocalServerDataChanged: "Both local & server data have changed since last sync.",
+                localLastSync: "Local last sync:",
+                serverLastSync: "Server last sync:",
+                nowTime: "Now:",
+                whichOneToKeep: "Which one to keep?",
+
+                local: "Local",
+                server: "Server",
+                doNothing: "Do nothing",
+
+                syncDataUsingSynk: "Sync data using Synk",
+                noAccountIsRequired: "No account is required.",
+                dataIsEncrypted: "Data is encrypted before transmission.",
+                serverIs: "Server:",
+
+                signup: "Sign up",
+                login: "Log in",
+                noLater: "No / Later",
+
+                enterSyncCode: "Enter sync code:",
+                continue: "Continue",
+                cancel: "Cancel",
+
+                verifyCode: "Verify code:",
+                manageSynk: "Manage Synk",
+                idIs: "ID:",
+                deviceIs: "Device:",
+                lastSync: "Last sync:",
+
+                getSyncCode: "Get sync code",
+                logout: "Log out",
+                loggedOut: "Logged out",
+                logoutLocally: "Log out locally",
+                loggedOutLocally: "Logged out locally",
+                deleteAccount: "Delete account",
+                deletedAccount: "Deleted account",
+
+                loginOnAnotherDevice: "Log in on another device",
+                syncCode: "Sync code:",
+                enterVerifyCode: "Enter verify code:",
+                newDeviceReady: "New device ready",
+            },
+
+            "zh-TW": {
+                synk: "Synk 同步",
+                clickToSync: "點此開始同步",
+                syncing: "同步中…",
+                networkServerErrorShort: "網路/伺服器 錯誤！",
+                synced: "同步成功",
+                errorIs: "錯誤：",
+                ok: "OK",
+
+                NetworkServerError: "網路或伺服器錯誤。 請稍後重試。",
+                InvalidArgs: "此用戶端不知為何發送了伺服器不接受的資料。",
+                InvalidCredentials: "您已被登出。 請重新登入。",
+                InvalidCode: "錯誤或已過期的驗證碼。",
+                OutOfQuota: "儲存空間配額已用完。 請刪除一些資料再重試。",
+                OutOfStorage: "抱歉。 伺服器已滿。",
+                TooManyDevices: "你同步了過多的裝置。",
+                ServerLocked: "伺服器已鎖定。 請向管理員要求解鎖。",
+                UnexpectedError: "發生了未知的錯誤。",
+
+                dataConflict: "同步資料衝突",
+                bothLocalServerDataChanged: "本地和伺服器的資料在上次同步後都有變更。",
+                localLastSync: "本地資料上次同步：",
+                serverLastSync: "伺服器資料上次同步：",
+                nowTime: "現在時間：",
+                whichOneToKeep: "保留哪一份資料？",
+
+                local: "本地",
+                server: "伺服器",
+                doNothing: "不做任何事",
+
+                syncDataUsingSynk: "使用 Synk 同步資料",
+                noAccountIsRequired: "不需要帳號。",
+                dataIsEncrypted: "資料在傳輸前經過加密。",
+                serverIs: "伺服器：",
+
+                signup: "註冊",
+                login: "登入",
+                noLater: "不要 / 稍後",
+
+                enterSyncCode: "輸入同步碼：",
+                continue: "繼續",
+                cancel: "取消",
+
+                verifyCode: "驗證碼：",
+                manageSynk: "管理 Synk",
+                idIs: "編號：",
+                deviceIs: "裝置：",
+                lastSync: "上次同步：",
+
+                getSyncCode: "取得同步碼",
+                logout: "登出",
+                loggedOut: "已登出",
+                logoutLocally: "刪除本地帳號資料",
+                loggedOutLocally: "已刪除本地帳號資料",
+                deleteAccount: "刪除帳號",
+                deletedAccount: "已刪除帳號",
+
+                loginOnAnotherDevice: "在另一個裝置登入",
+                syncCode: "同步碼：",
+                enterVerifyCode: "輸入驗證碼：",
+                newDeviceReady: "新裝置已準備好同步",
+            },
+
+            "en": "en-US",
+            "zh": "zh-TW",
+        }
+        for (const lang in i18n)
+            if (typeof i18n[lang] === "string" && i18n[lang] in i18n)
+                i18n[lang] = i18n[i18n[lang]]
+
+        this.i18n = i18n["en"]
+        for (const lang of navigator.languages)
+            if (lang in i18n) {
+                this.i18n = i18n[lang]
+                break
+            }
     }
 
     $(selectors, element=document) {
@@ -349,14 +493,20 @@ class Synk {
             self.running++
             callback(...args)
         })(this, callback)
-        if (this.client.id === null)
-            this.showDialog(
-                "Synk", "Click to sync", () => this.modalSignup(data, cb), cb)
+        if (this.client.id === null) {
+            if (this.shownSignupDialog)
+                cb(null)
+            else {
+                this.shownSignupDialog = true
+                this.showDialog(
+                    this.i18n.synk, this.i18n.clickToSync, () => this.modalSignup(data, cb), cb)
+            }
+        }
         else
             await this.sync(data, "", cb)
     }
     async sync(data, force, callback) {
-        this.showDialog("Synk", "Syncing...", () => {})
+        this.showDialog(this.i18n.synk, this.i18n.syncing, () => {})
         const [res, err] = await this.client.sync(data, force)
         if (err === null && res.result === "conflict")
             return this.modalConflict(data, res, callback)
@@ -364,73 +514,69 @@ class Synk {
             this.client.clear()
             return this.modalError(err, null, () => this.modalSignup(data, callback))
         }
+        if (err === "NetworkServerError") {
+            this.showDialog(this.i18n.synk, this.i18n.networkServerErrorShort)
+            callback(null)
+            return
+        }
         if (err)
             return this.modalError(err, callback)
-        this.showDialog("Synk", "Synced", () => this.modalManage())
+        this.showDialog(this.i18n.synk, this.i18n.synced, () => this.modalManage())
         callback(res.data ?? data)
     }
     modalError(err, callback=null, click=null) {
         this.showModal(
-            `Error: ${err}`,
-            {
-                NetworkServerError: "Network or server error. Try again later.",
-                InvalidArgs: "This client sends some invalid data to server.",
-                InvalidCredentials: "You're logged out. Please re-login.",
-                InvalidCode: "Invalid or expired code.",
-                OutOfQuota: "Quota exceeded. Remove some data & try again.",
-                OutOfStorage: "Sorry. Server is full.",
-                TooManyDevices: "You've synced too many devices.",
-                ServerLocked: "Server is locked. Ask server admin to unlock.",
-            }[err] ?? "Unexpected error occurred.",
+            `${this.i18n.errorIs} ${err}`,
+            this.i18n[err] ?? this.i18n.UnexpectedError,
             false, [
-            ["OK", () => this.removeDialogModal(click)]
+            [this.i18n.ok, () => this.removeDialogModal(click)]
         ])
         if (callback !== null)
             callback(null)
     }
     modalConflict(data, res, callback) {
         this.showModal(
-            "Data conflict",
-            `Both local & server data have changed since last sync.
+            this.i18n.dataConflict,
+            `${this.i18n.bothLocalServerDataChanged}
 
-            Local last sync: ${new Date(this.client.time).toLocaleString()}
-            Server last sync: ${new Date(res.time).toLocaleString()}
-            Now: ${new Date().toLocaleString()}
+            ${this.i18n.localLastSync} ${new Date(this.client.time).toLocaleString()}
+            ${this.i18n.serverLastSync} ${new Date(res.time).toLocaleString()}
+            ${this.i18n.nowTime} ${new Date().toLocaleString()}
 
-            Which one to keep?`,
+            ${this.i18n.whichOneToKeep}`,
             false, [
-            ["Local", () => this.sync(data, "client", callback)],
-            ["Server", () => this.sync(data, "server", callback)],
-            ["Do nothing", () => this.removeDialogModal(callback)],
+            [this.i18n.local, () => this.sync(data, "client", callback)],
+            [this.i18n.server, () => this.sync(data, "server", callback)],
+            [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
 
     modalSignup(data, callback) {
         this.showModal(
-            "Sync data using Synk",
-            `No account is required.
-            Data is encrypted before transmission.
-            Server: ${this.client.server}`,
+            this.i18n.syncDataUsingSynk,
+            `${this.i18n.noAccountIsRequired}
+            ${this.i18n.dataIsEncrypted}
+            ${this.i18n.serverIs} ${this.client.server}`,
             false, [
-            ["Sign up", async () => {
+            [this.i18n.signup, async () => {
                 const [success, err] = await this.client.signup(data)
                 if (err)
                     this.modalError(err, callback)
                 else {
-                    this.showDialog("Synk", "Synced", () => this.modalManage())
+                    this.showDialog(this.i18n.synk, this.i18n.synced, () => this.modalManage())
                     callback(null)
                 }
             }],
-            ["Log in", async () => this.modalLoginCode(data, callback)],
-            ["No / Later", () => this.removeDialogModal(callback)],
+            [this.i18n.login, async () => this.modalLoginCode(data, callback)],
+            [this.i18n.noLater, () => this.removeDialogModal(callback)],
         ])
     }
     modalLoginCode(data, callback) {
         this.showModal(
-            "Log in",
-            "Enter sync code:",
+            this.i18n.login,
+            this.i18n.enterSyncCode,
             true, [
-            ["Continue", async () => {
+            [this.i18n.continue, async () => {
                 const code = this.$("#synk_input").value
                 const [verify, err] = await this.client.loginCode(code)
                 if (err === "InvalidCode")
@@ -440,16 +586,16 @@ class Synk {
                 else
                     this.modalLoginEnd(data, code, verify, callback)
             }],
-            ["Cancel", () => this.removeDialogModal(callback)]
+            [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
     modalLoginEnd(data, code, verify, callback) {
         this.showModal(
-            "Log in",
-            `Verify code:
+            this.i18n.login,
+            `${this.i18n.verifyCode}
             <strong>${verify}</strong>`,
             false, [
-            ["Continue", async () => {
+            [this.i18n.continue, async () => {
                 const [success, err] = await this.client.loginEnd(code, verify)
                 if (err)
                     this.modalError(err, callback)
@@ -458,7 +604,7 @@ class Synk {
                     this.sync(data, "", callback)
                 }
             }],
-            ["Cancel", () => this.removeDialogModal(callback)]
+            [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
 
@@ -466,61 +612,61 @@ class Synk {
         await this.waitRun()
         const callback = () => this.running++
         this.showModal(
-            "Manage Synk",
-            `Server: ${this.client.server}
-            ID: ${this.client.id}
-            Device: ${this.client.device}
-            Last sync: ${new Date(this.client.time).toLocaleString()}`,
+            this.i18n.manageSynk,
+            `${this.i18n.serverIs} ${this.client.server}
+            ${this.i18n.idIs} ${this.client.id}
+            ${this.i18n.deviceIs} ${this.client.device}
+            ${this.i18n.lastSync} ${new Date(this.client.time).toLocaleString()}`,
             false, [
-            ["Get sync code", async () => {
+            [this.i18n.getSyncCode, async () => {
                 const [code, err] = await this.client.loginBegin()
                 if (err)
                     this.modalError(err, callback)
                 else
                     this.modalLoginBegin(code, callback)
             }],
-            ["Log out", async () => {
+            [this.i18n.logout, async () => {
                 const [success, err] = await this.client.logout()
                 if (err)
                     this.modalError(err, callback)
                 else {
-                    this.showDialog("Synk", "Logged out")
+                    this.showDialog(this.i18n.synk, this.i18n.loggedOut)
                     callback(null)
                 }
             }],
-            // ["Log out locally", async () => {
+            // [this.i18n.logoutLocally, async () => {
             //     this.client.clear()
-            //     this.showDialog("Synk", "Logged out locally")
+            //     this.showDialog(this.i18n.synk, this.i18n.loggedOutLocally)
             //     callback(null)
             // }],
-            ["Delete account", async () => {
+            [this.i18n.deleteAccount, async () => {
                 const [success, err] = await this.client.delete()
                 if (err)
                     this.modalError(err, callback)
                 else {
-                    this.showDialog("Synk", "Deleted account")
+                    this.showDialog(this.i18n.synk, this.i18n.deletedAccount)
                     callback(null)
                 }
             }],
-            ["Do nothing", () => this.removeDialogModal(callback)],
+            [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
     modalLoginBegin(code, callback) {
         this.showModal(
-            "Log in on new device",
-            `Sync code:
+            this.i18n.loginOnAnotherDevice,
+            `${this.i18n.syncCode}
             <strong>${code}</strong>`,
             false, [
-            ["Continue", async () => this.modalLoginVerify(code, callback)],
-            ["Cancel", () => this.removeDialogModal(callback)]
+            [this.i18n.continue, async () => this.modalLoginVerify(code, callback)],
+            [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
     modalLoginVerify(code, callback) {
         this.showModal(
-            "Log in on new device",
-            "Enter verify code:",
+            this.i18n.loginOnAnotherDevice,
+            this.i18n.enterVerifyCode,
             true, [
-            ["Continue", async () => {
+            [this.i18n.continue, async () => {
                 const verify = this.$("#synk_input").value
                 const [success, err] = await this.client.loginVerify(code, verify)
                 if (err === "InvalidCode")
@@ -528,11 +674,11 @@ class Synk {
                 else if (err)
                     this.modalError(err, callback)
                 else {
-                    this.showDialog("Synk", "New device ready")
+                    this.showDialog(this.i18n.synk, this.i18n.newDeviceReady)
                     callback(null)
                 }
             }],
-            ["Cancel", () => this.removeDialogModal(callback)]
+            [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
 }
