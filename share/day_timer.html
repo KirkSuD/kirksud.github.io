@@ -128,7 +128,8 @@ body {
 
     <script>
 
-navigator.serviceWorker.register("service_worker.js")
+if ("serviceWorker" in navigator)
+    navigator.serviceWorker.register("service_worker.js")
 
 function $(selectors, element=document) {
     return element.querySelector(selectors)

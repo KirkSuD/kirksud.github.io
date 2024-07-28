@@ -202,7 +202,8 @@ main p {
 
   <script>
 
-navigator.serviceWorker.register("service_worker.js")
+if ("serviceWorker" in navigator)
+  navigator.serviceWorker.register("service_worker.js")
 
 const localStorage_key = "kirksud_memo_app_data";
 const export_filename_prefix = "memo_export_";
