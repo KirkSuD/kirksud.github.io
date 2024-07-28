@@ -30,8 +30,6 @@
             user-select: none;
             position: relative;
             font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
-            --mu: 1vh;
-            /* min unit: min(1vw, 1vh) */
         }
         #game-head {
             position: absolute;
@@ -67,7 +65,7 @@
             justify-content: center;
             align-items: center;
             color: white;
-            border-radius: calc(1.2 * var(--mu));
+            border-radius: 1.2vmin;
             margin: 1px;
             font-size: 2.8vw;
         }
@@ -104,10 +102,10 @@
             position: absolute;
             left: calc(50vw - 50vh);
             top: 0;
-            width: calc(100 * var(--mu));
-            height: calc(100 * var(--mu));
+            width: 100vmin;
+            height: 100vmin;
             background-color: #bbada0;
-            border-radius: calc(1.2 * var(--mu));
+            border-radius: 1.2vmin;
         }
         #game-div > div {
             width: 100%;
@@ -124,7 +122,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: calc(10 * var(--mu));
+            font-size: 10vmin;
             font-weight: bold;
             opacity: 0;
             transition: opacity 1s;
@@ -139,28 +137,25 @@
         }
         .lose-div a {
             color: white;
-            font-size: calc(4 * var(--mu));
-            border-radius: calc(0.6 * var(--mu));
-            padding: calc(4 * var(--mu));
+            font-size: 4vmin;
+            border-radius: 0.6vmin;
+            padding: 4vmin;
             cursor: pointer;
             background-color: #8f7a66;
         }
         .grid {
             position: absolute;
-            /* --sp: 15px; */
-            --sp: calc(3 * var(--mu));
-            width: calc(25% - var(--sp) * 5 / 4);
-            height: calc(25% - var(--sp) * 5 / 4);
+            width: calc(25% - 3vmin * 5 / 4);
+            height: calc(25% - 3vmin * 5 / 4);
             background-color: rgba(238, 228, 218, 0.35);
-            border-radius: calc(0.6 * var(--mu));
+            border-radius: 0.6vmin;
         }
         .tile {
             position: absolute;
-            --sp: calc(3 * var(--mu));
-            width: calc(25% - var(--sp) * 5 / 4);
-            height: calc(25% - var(--sp) * 5 / 4);
-            border-radius: calc(0.8 * var(--mu));
-            font-size: calc(8 * var(--mu));
+            width: calc(25% - 3vmin * 5 / 4);
+            height: calc(25% - 3vmin * 5 / 4);
+            border-radius: 0.8vmin;
+            font-size: 8vmin;
             font-weight: bold;
             display: flex;
             justify-content: center;
@@ -200,10 +195,10 @@
             color: rgb(242, 246, 249);
         }
         .tile-1024, .tile-2048, .tile-4096, .tile-8192 {
-            font-size: calc(7 * var(--mu));
+            font-size: 7vmin;
         }
         .tile-16384, .tile-32768, .tile-65536 {
-            font-size: calc(6 * var(--mu));
+            font-size: 6vmin;
         }
         .tile-2 {
             background-color: rgb(238, 228, 218);
@@ -255,68 +250,68 @@
         }
 
         .pos-0-0{
-            top: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 0 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 0 / 4);
         }
         .pos-0-1{
-            top: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 0 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 1 / 4);
         }
         .pos-0-2{
-            top: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 0 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 2 / 4);
         }
         .pos-0-3{
-            top: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 0 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 3 / 4);
         }
         .pos-1-0{
-            top: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 1 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 0 / 4);
         }
         .pos-1-1{
-            top: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 1 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 1 / 4);
         }
         .pos-1-2{
-            top: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 1 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 2 / 4);
         }
         .pos-1-3{
-            top: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 1 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 3 / 4);
         }
         .pos-2-0{
-            top: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 2 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 0 / 4);
         }
         .pos-2-1{
-            top: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 2 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 1 / 4);
         }
         .pos-2-2{
-            top: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 2 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 2 / 4);
         }
         .pos-2-3{
-            top: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 2 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 3 / 4);
         }
         .pos-3-0{
-            top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 0 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 3 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 0 / 4);
         }
         .pos-3-1{
-            top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 1 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 3 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 1 / 4);
         }
         .pos-3-2{
-            top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 2 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 3 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 2 / 4);
         }
         .pos-3-3{
-            top: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
-            left: calc(var(--sp) + (100% - var(--sp)) * 3 / 4);
+            top: calc(3vmin + (100% - 3vmin) * 3 / 4);
+            left: calc(3vmin + (100% - 3vmin) * 3 / 4);
         }
         @media screen and (max-aspect-ratio:5/3) {
             #game-head {
@@ -348,11 +343,6 @@
             }
             #score-div, #best-div, #game-head a {
                 font-size: 3vh;
-            }
-        }
-        @media screen and (max-aspect-ratio:1/1) { /* w < h */
-            body {
-                --mu: 1vw;
             }
         }
         @media screen and (max-aspect-ratio:4/5) {
@@ -447,8 +437,8 @@
 //             for (let i=0; i<4; ++i) {
 //                 for (let j=0; j<4; ++j) {
 //                     console.log(`.pos-${i}-${j}{
-//     top: calc(var(--sp) + (100% - var(--sp)) * ${i} / 4);
-//     left: calc(var(--sp) + (100% - var(--sp)) * ${j} / 4);
+//     top: calc(3vmin + (100% - 3vmin) * ${i} / 4);
+//     left: calc(3vmin + (100% - 3vmin) * ${j} / 4);
 // }`
 //                     );
 //                 }
@@ -930,8 +920,6 @@
             }
         });
         /*
-(100%-15px)/4+15px
-(100%-15px)/4
 
 By cursor color:
 101 110 119 fg 2 4

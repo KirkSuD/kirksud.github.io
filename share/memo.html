@@ -515,6 +515,9 @@ function delete_folder_btn() {
     popcorn($(this), "right", "Can't delete only folder!");
     return;
   }
+  if (!confirm("Sure to delete?")) {
+    return;
+  }
   const folder_name = $(this).siblings("p").eq(0).text();
   delete current_folder_data[folder_name];
   if (folder_name === current_folder) { // delete using folder -> open latest folder

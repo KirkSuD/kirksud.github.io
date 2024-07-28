@@ -128,8 +128,7 @@ class SynkClient {
         return [err === null, err]
     }
     async loginBegin() {
-        const tzOffset = new Date().getTimezoneOffset() * 60_000
-        const deadline = new Date(Date.now() - tzOffset + this.expire).toISOString()
+        const deadline = new Date(Date.now() + this.expire).toISOString()
         const [res, err] = await this.request("/synk/login", {
             id: this.id, token: this.token, key: this.key, deadline: deadline
         })
@@ -205,19 +204,19 @@ class Synk {
     right: 0;
     bottom: 0;
 
-    margin: 10px;
-    padding: 10px;
+    margin: 0.63em;
+    padding: 0.63em;
 
     background: white;
-    border: 1px solid black;
-    border-radius: 10px;
+    border: thin solid black;
+    border-radius: 0.63em;
 
     user-select: none;
     cursor: pointer;
 }
 #synk_dialog > p {
     margin: 0;
-    padding: 10px;
+    padding: 0.63em;
 }
 #synk_dialog > hr {
     margin: 0;
@@ -230,30 +229,30 @@ class Synk {
     left: 0;
     right: 0;
 
-    margin: 10px;
-    padding: 10px;
+    margin: 0.63em;
+    padding: 0.63em;
 
     background: white;
-    border: 1px solid black;
-    border-radius: 10px;
+    border: thin solid black;
+    border-radius: 0.63em;
 
     display: flex;
     flex-direction: column;
 }
 #synk_modal > * {
-    margin: 10px;
+    margin: 0.63em;
 }
 #synk_modal > p {
     white-space: pre-line;
 }
 #synk_modal > p > strong {
     display: block;
-    margin: 15px;
+    margin: 0.95em;
     text-align: center;
     font-size: x-large;
 }
 #synk_modal > input, #synk_modal > button {
-    padding: 10px;
+    padding: 0.63em;
 }
 </style>
         `
