@@ -1,5 +1,95 @@
+class SynkCrypto {
+    async hash(data, algo="SHA-256") {
+        const hashArr = await crypto.subtle.digest(algo, new TextEncoder().encode(data))
+        return Array.from(new Uint8Array(hashArr))
+            .map(n => n.toString(16).padStart(2, "0")).join("")
+    }
+    toB64(arr) {
+        let binary = ""
+        const bytes = new Uint8Array(arr)
+        for (let i = 0; i < bytes.byteLength; i++)
+            binary += String.fromCharCode(bytes[i])
+        return window.btoa(binary)
+    }
+    toArr(b64) {
+        const binaryString = atob(b64)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++)
+            bytes[i] = binaryString.charCodeAt(i)
+        return bytes.buffer
+    }
+
+    async newAesKey() {
+        const key = await crypto.subtle.generateKey(
+            {name: "AES-GCM", length: 128}, true, ["encrypt", "decrypt"])
+        return this.toB64(await crypto.subtle.exportKey("raw", key))
+    }
+    async importAesKey(key) {
+        return await crypto.subtle.importKey(
+            "raw", this.toArr(key), {name: "AES-GCM"}, true, ["encrypt", "decrypt"])
+    }
+    async encryptAes(data, key) {
+        const iv = new Uint8Array(12)
+        crypto.getRandomValues(iv)
+        const algo = {name: "AES-GCM", iv: iv, tagLength: 128}
+        key = await this.importAesKey(key)
+        data = new TextEncoder().encode(data)
+
+        const cipherData = await crypto.subtle.encrypt(algo, key, data)
+        const res = new Uint8Array(iv.byteLength + cipherData.byteLength)
+        res.set(new Uint8Array(iv), 0)
+        res.set(new Uint8Array(cipherData), iv.byteLength)
+        return this.toB64(res.buffer)
+    }
+    async decryptAes(data, key) {
+        data = new Uint8Array(this.toArr(data))
+        const iv = data.slice(0, 12)
+        const algo = {name: "AES-GCM", iv: iv, tagLength: 128}
+        key = await this.importAesKey(key)
+        data = data.slice(12)
+
+        const plainData = await crypto.subtle.decrypt(algo, key, data)
+        return new TextDecoder().decode(plainData)
+    }
+
+    async newRsaKey() {
+        const algo = {
+            name: "RSA-OAEP",
+            modulusLength: 4096,
+            publicExponent: new Uint8Array([1, 0, 1]),
+            hash: "SHA-256"
+        }
+        const key = await crypto.subtle.generateKey(algo, true, ["encrypt", "decrypt"])
+        return [
+            JSON.stringify(await crypto.subtle.exportKey("jwk", key.publicKey)),
+            JSON.stringify(await crypto.subtle.exportKey("jwk", key.privateKey))
+        ]
+    }
+    async importRsaKey(key, usage="encrypt") {
+        const algo = {name: "RSA-OAEP", hash: "SHA-256"}
+        return await crypto.subtle.importKey(
+            "jwk", JSON.parse(key), algo, true, [usage])
+    }
+    async encryptRsa(data, key) {
+        const algo = {name: "RSA-OAEP"}
+        key = await this.importRsaKey(key, "encrypt")
+        data = new TextEncoder().encode(data)
+        const cipherData = await crypto.subtle.encrypt(algo, key, data)
+        return this.toB64(new Uint8Array(cipherData))
+    }
+    async decryptRsa(data, key) {
+        const algo = {name: "RSA-OAEP"}
+        key = await this.importRsaKey(key, "decrypt")
+        data = new Uint8Array(this.toArr(data))
+
+        const plainData = await crypto.subtle.decrypt(algo, key, data)
+        return new TextDecoder().decode(plainData)
+    }
+}
+
 class SynkClient {
     constructor(server, quota, localStorageKey, expire=300_000) {
+        this.crypto = new SynkCrypto()
         this.server = server
         this.quota = quota
         this.localStorageKey = localStorageKey
@@ -57,65 +147,10 @@ class SynkClient {
         this.load()
     }
 
-    toB64(arr) {
-        let binary = ""
-        const bytes = new Uint8Array(arr)
-        for (let i = 0; i < bytes.byteLength; i++)
-            binary += String.fromCharCode(bytes[i])
-        return window.btoa(binary)
-    }
-    toArr(b64) {
-        const binaryString = atob(b64)
-        const bytes = new Uint8Array(binaryString.length)
-        for (let i = 0; i < binaryString.length; i++)
-            bytes[i] = binaryString.charCodeAt(i)
-        return bytes.buffer
-    }
-    async encrypt(data) {
-        data = new TextEncoder().encode(data)
-        const iv = new Uint8Array(12)
-        crypto.getRandomValues(iv)
-        const cipherData = await crypto.subtle.encrypt(
-            {
-                name: "AES-GCM",
-                iv: iv,
-                tagLength: 128
-            },
-            await crypto.subtle.importKey(
-                "raw", this.toArr(this.key), {name: "AES-GCM"}, true, ["encrypt", "decrypt"]),
-            data
-        )
-        const res = new Uint8Array(iv.byteLength + cipherData.byteLength)
-        res.set(new Uint8Array(iv), 0)
-        res.set(new Uint8Array(cipherData), iv.byteLength)
-        return this.toB64(res.buffer)
-    }
-    async decrypt(data) {
-        data = new Uint8Array(this.toArr(data))
-        const iv = data.slice(0, 12)
-        data = data.slice(12)
-        return new TextDecoder().decode(await crypto.subtle.decrypt(
-            {
-                name: "AES-GCM",
-                iv: iv,
-                tagLength: 128
-            },
-            await crypto.subtle.importKey(
-                "raw", this.toArr(this.key), {name: "AES-GCM"}, true, ["encrypt", "decrypt"]),
-            data
-        ))
-    }
-    async hash(data, algo="SHA-256") {
-        const hashArr = await crypto.subtle.digest(algo, new TextEncoder().encode(data))
-        return Array.from(new Uint8Array(hashArr))
-            .map(n => n.toString(16).padStart(2, "0")).join("")
-    }
-
     async signup(data) {
-        this.key = this.toB64(await crypto.subtle.exportKey("raw", await crypto.subtle.generateKey(
-            {name: "AES-GCM", length: 128}, true, ["encrypt", "decrypt"])))
-        const hash = await this.hash(data)
-        data = await this.encrypt(data)
+        this.key = await this.crypto.newAesKey()
+        const hash = await this.crypto.hash(data)
+        data = await this.crypto.encryptAes(data, this.key)
         const [res, err] = await this.request("/synk/signup", {quota: this.quota, hash, data})
         if (err === null) {
             this.id = res.id
@@ -127,42 +162,47 @@ class SynkClient {
         }
         return [err === null, err]
     }
-    async loginBegin() {
+    async loginSetPubkey() {
+        const keyPair = await this.crypto.newRsaKey()
         const deadline = new Date(Date.now() + this.expire).toISOString()
         const [res, err] = await this.request("/synk/login", {
-            id: this.id, token: this.token, key: this.key, deadline: deadline
+            pubkey: keyPair[0], deadline
         })
-        return [res.code ?? null, err]
+        return [[res.code ?? null, keyPair[1]], err]
     }
-    async loginCode(code) {
-        const [res, err] = await this.request(`/synk/login/${code}`, {})
-        return [res.verify ?? null, err]
+    async loginGetPubkey(code) {
+        const [res, err] = await this.request(`/synk/login/${code}`, {
+            id: this.id, token: this.token})
+        return [[res.verify ?? null, res.pubkey ?? null], err]
     }
-    async loginVerify(code, verify) {
-        const [res, err] = await this.request(`/synk/login/${code}/${verify}`, {})
+    async loginSetKey(code, verify, pubkey) {
+        const [res, err] = await this.request(`/synk/login/${code}/${verify}`, {
+            token: await this.crypto.encryptRsa(this.token, pubkey),
+            key: await this.crypto.encryptRsa(this.key, pubkey)
+        })
         return [err === null, err]
     }
-    async loginEnd(code, verify) {
+    async loginGetKey(code, verify, privkey) {
         const [res, err] = await this.request(`/synk/login/${code}/${verify}/end`, {})
         if (err === null) {
             this.id = res.id
-            this.token = res.token
-            this.key = res.key
+            this.token = await this.crypto.decryptRsa(res.token, privkey)
+            this.key = await this.crypto.decryptRsa(res.key, privkey)
             this.device = res.device
             this.save()
         }
         return [err === null, err]
     }
     async sync(data, force="") {
-        const hash = await this.hash(data)
-        const encrypted = await this.encrypt(data)
+        const hash = await this.crypto.hash(data)
+        data = await this.crypto.encryptAes(data, this.key)
         const [res, err] = await this.request("/synk/sync", {
             id: this.id, token: this.token,
-            hash, data: encrypted, device: this.device, force
+            hash, data, device: this.device, force
         })
         if (err === null) {
             res.time *= 1000
-            res.data = await this.decrypt(res.data)
+            res.data = await this.crypto.decryptAes(res.data, this.key)
         }
         if (err === null && res.result !== "conflict") {
             this.time = res.time
@@ -308,7 +348,6 @@ class Synk {
                 deviceIs: "Device:",
                 lastSync: "Last sync:",
 
-                getSyncCode: "Get sync code",
                 logout: "Log out",
                 loggedOut: "Logged out",
                 logoutLocally: "Log out locally",
@@ -319,7 +358,6 @@ class Synk {
                 loginOnAnotherDevice: "Log in on another device",
                 syncCode: "Sync code:",
                 enterVerifyCode: "Enter verify code:",
-                newDeviceReady: "New device ready",
             },
 
             "zh-TW": {
@@ -371,7 +409,6 @@ class Synk {
                 deviceIs: "裝置：",
                 lastSync: "上次同步：",
 
-                getSyncCode: "取得同步碼",
                 logout: "登出",
                 loggedOut: "已登出",
                 logoutLocally: "刪除本地帳號資料",
@@ -379,10 +416,9 @@ class Synk {
                 deleteAccount: "刪除帳號",
                 deletedAccount: "已刪除帳號",
 
-                loginOnAnotherDevice: "在另一個裝置登入",
+                loginOnAnotherDevice: "登入另一個裝置",
                 syncCode: "同步碼：",
                 enterVerifyCode: "輸入驗證碼：",
-                newDeviceReady: "新裝置已準備好同步",
             },
 
             "en": "en-US",
@@ -566,37 +602,37 @@ class Synk {
                     callback(null)
                 }
             }],
-            [this.i18n.login, async () => this.modalLoginCode(data, callback)],
+            [this.i18n.login, async () => {
+                const [[code, privkey], err] = await this.client.loginSetPubkey()
+                if (err)
+                    this.modalError(err, callback)
+                else
+                    this.modalLoginSetPubkey(data, code, privkey, callback)
+            }],
             [this.i18n.noLater, () => this.removeDialogModal(callback)],
         ])
     }
-    modalLoginCode(data, callback) {
+    modalLoginSetPubkey(data, code, privkey, callback) {
         this.showModal(
             this.i18n.login,
-            this.i18n.enterSyncCode,
-            true, [
-            [this.i18n.continue, async () => {
-                const code = this.$("#synk_input").value
-                const [verify, err] = await this.client.loginCode(code)
-                if (err === "InvalidCode")
-                    this.modalError(err, null, () => this.modalLoginCode(data, callback))
-                else if (err)
-                    this.modalError(err, callback)
-                else
-                    this.modalLoginEnd(data, code, verify, callback)
-            }],
+            `${this.i18n.syncCode}
+            <strong>${code}</strong>`,
+            false, [
+            [this.i18n.continue, () => this.modalLoginGetKey(data, code, privkey, callback)],
             [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
-    modalLoginEnd(data, code, verify, callback) {
+    modalLoginGetKey(data, code, privkey, callback) {
         this.showModal(
             this.i18n.login,
-            `${this.i18n.verifyCode}
-            <strong>${verify}</strong>`,
-            false, [
+            this.i18n.enterVerifyCode,
+            true, [
             [this.i18n.continue, async () => {
-                const [success, err] = await this.client.loginEnd(code, verify)
-                if (err)
+                const verify = this.$("#synk_input").value
+                const [success, err] = await this.client.loginGetKey(code, verify, privkey)
+                if (err === "InvalidCode")
+                    this.modalLoginGetKey(data, code, privkey, callback)
+                else if (err)
                     this.modalError(err, callback)
                 else {
                     this.removeDialogModal()
@@ -617,13 +653,7 @@ class Synk {
             ${this.i18n.deviceIs} ${this.client.device}
             ${this.i18n.lastSync} ${new Date(this.client.time).toLocaleString()}`,
             false, [
-            [this.i18n.getSyncCode, async () => {
-                const [code, err] = await this.client.loginBegin()
-                if (err)
-                    this.modalError(err, callback)
-                else
-                    this.modalLoginBegin(code, callback)
-            }],
+            [this.i18n.loginOnAnotherDevice, () => this.modalLoginGetPubkey(callback)],
             [this.i18n.logout, async () => {
                 const [success, err] = await this.client.logout()
                 if (err)
@@ -650,34 +680,34 @@ class Synk {
             [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
-    modalLoginBegin(code, callback) {
+    modalLoginGetPubkey(callback) {
         this.showModal(
             this.i18n.loginOnAnotherDevice,
-            `${this.i18n.syncCode}
-            <strong>${code}</strong>`,
-            false, [
-            [this.i18n.continue, async () => this.modalLoginVerify(code, callback)],
+            this.i18n.enterSyncCode,
+            true, [
+            [this.i18n.continue, async () => {
+                const code = this.$("#synk_input").value
+                let verify, pubkey, success, err
+                [[verify, pubkey], err] = await this.client.loginGetPubkey(code)
+                if (err === "InvalidCode")
+                    return this.modalLoginGetPubkey(callback)
+                if (err)
+                    return this.modalError(err, callback);
+                [success, err] = await this.client.loginSetKey(code, verify, pubkey)
+                if (err)
+                    return this.modalError(err, callback)
+                this.modalLoginSetKey(verify, callback)
+            }],
             [this.i18n.cancel, () => this.removeDialogModal(callback)]
         ])
     }
-    modalLoginVerify(code, callback) {
+    modalLoginSetKey(verify, callback) {
         this.showModal(
             this.i18n.loginOnAnotherDevice,
-            this.i18n.enterVerifyCode,
-            true, [
-            [this.i18n.continue, async () => {
-                const verify = this.$("#synk_input").value
-                const [success, err] = await this.client.loginVerify(code, verify)
-                if (err === "InvalidCode")
-                    this.modalError(err, null, () => this.modalLoginVerify(code, callback))
-                else if (err)
-                    this.modalError(err, callback)
-                else {
-                    this.showDialog(this.i18n.synk, this.i18n.newDeviceReady)
-                    callback(null)
-                }
-            }],
-            [this.i18n.cancel, () => this.removeDialogModal(callback)]
+            `${this.i18n.verifyCode}
+            <strong>${verify}</strong>`,
+            false, [
+            [this.i18n.ok, () => this.removeDialogModal(callback)]
         ])
     }
 }
