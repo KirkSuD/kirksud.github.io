@@ -414,6 +414,19 @@
                 ["#a99cea", "#000000", "none"],
                 ["#9ceada", "#000000", "none"],
                 ["#000000", "#ff0000", "invert(12%) sepia(90%) saturate(7310%) hue-rotate(3deg) brightness(104%) contrast(113%)"]];
+            const audio = {
+                earn: "dtts_static/earn.mp3",
+                hint: "dtts_static/hint.mp3",
+                jump: "dtts_static/jump.mp3",
+                over: "dtts_static/over.mp3",
+                tap: "dtts_static/tap.mp3",
+            };
+            for (const key in audio) {
+                new Audio(audio[key]);
+            }
+            function playAudio(key) {
+                new Audio(audio[key]).play();
+            }
 
             setCharPos(10, 14.5);
             $(document).on("keydown", function(evt) {
@@ -457,6 +470,7 @@
                 $(".char").addClass("char-fly");
                 traceUntil = Date.now() + traceMs * traceTimes;
                 traceLeft = traceTimes;
+                playAudio("jump");
                 if (playing) {
                     return;
                 }
@@ -485,6 +499,7 @@
                 requestAnimationFrame(updateScreen);
             }
             function backToMenu() {
+                playAudio("hint");
                 $("#top-div").html("Don't touch<br>the spikes");
                 $("#score-div").text("");
                 $(`<div id="hint"></div>`).html("Tap<br>to jump").appendTo($("#score-div"));
@@ -522,6 +537,7 @@
             function die() {
                 // console.log("You touched the spike!");
                 playing = false;
+                playAudio("over");
                 if (score > best) {
                     best = score;
                 }
@@ -609,6 +625,7 @@
                     score++;
                     $("#score-div").text(score);
                     addSpike();
+                    playAudio("tap");
                     if (score % addSpikePer === 0 && spikeCount < 9) {
                         spikeCount++;
                     }
@@ -631,6 +648,7 @@
                     score++;
                     $("#score-div").text(score);
                     addSpike();
+                    playAudio("tap");
                     if (score % addSpikePer === 0 && spikeCount < 9) {
                         spikeCount++;
                     }
@@ -645,6 +663,7 @@
                     const toRm = $(".pine").text("+1").addClass("plus1");
                     setTimeout(() => toRm.remove(), 500);
                     addPine(-pineDir);
+                    playAudio("earn");
                 }
                 if (traceLeft > 0 && nowt > traceUntil - traceMs * traceLeft) {
                     // leave a trace

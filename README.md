@@ -59,13 +59,21 @@ Learn more about Boids:
 
 * [ChromecastLocalPlayer](https://github.com/KirkSuD/ChromecastLocalPlayer): A simple Python server with web UI to control Chromecast, play local media files via Chromecast.
 
-* [termux_api](https://github.com/KirkSuD/termux_api): A simple Python module to call [termux-api](https://wiki.termux.com/wiki/Termux:API) using [subprocess.run()](https://docs.python.org/3.7/library/subprocess.html#subprocess.run).
+* [termux_api](https://github.com/KirkSuD/termux_api): A simple Python module to call [termux-api](https://wiki.termux.com/wiki/Termux:API) using [subprocess.run()](https://docs.python.org/3/library/subprocess.html#subprocess.run).
 
 * [osu_db_kaitai_struct](https://github.com/KirkSuD/osu_db_kaitai_struct): A simple osu! DB parser written in Kaitai Struct, including an html music player and a collection to playlist converter.
 
-## Image copyright
+## Assets Copyright
+
+Images & sounds are used to make the web pages feel better.  
+I tried to create them on my own, or use the free ones.  
+If you think there's a copyright issue, please let me know.  
+I'll take them down ASAP.
 
 * `share/dtts_static/(pine|squirrel|squirrel_fly).png`: copyright belongs to original painter
 * `share/icon/squirrel_*.png`: copyright belongs to original painter
-* `share/icon/(edit|time)_*.png`: Inkscape recreate of material icon ModeEdit & AccessTime
+* `share/icon/(edit|time)_*.png`: Recreation of material icon ModeEdit & AccessTime using Inkscape
 * other images: I made them using Inkscape, or screenshot from html web page
+* `share/dtts_static/(tap|earn).mp3`: [Mixkit: Free Game Sound Effects](https://mixkit.co/free-sound-effects/game/): [Mixkit License](https://mixkit.co/license/#sfxFree): `can be used for free`.
+* `share/dtts_static/(jump|over).mp3`: [Uppbeat: Gaming sound effects](https://uppbeat.io/browse/sfx/gaming): `No copyright issues`, `Royalty-free`.
+* `share/dtts_static/hint.mp3`: [Freesound: dland: hint.wav](https://freesound.org/people/dland/sounds/320181/): CC0
