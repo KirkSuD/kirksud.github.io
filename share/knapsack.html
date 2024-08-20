@@ -9,7 +9,7 @@
         <meta property="og:title" content="Knapsack Visualization">
         <meta property="og:description" content="Knapsack 0-1 algorithm visualization. Options: recursion & exact.">
         <meta property="og:url" content="https://kirksud.github.io/share/knapsack.html">
-        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:card" content="summary">
         <meta property="og:site_name" content="kirksud.github.io">
 
         <link rel="icon" href="icon/icon.svg" sizes="any" type="image/svg+xml">
@@ -109,7 +109,9 @@
                 <tr><th>Index</th><th>Weight</th><th>Value</th><th>0</th><th>1</th><th>2</th></tr> -->
             </table>
         </main>
-        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+          integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+          crossorigin="anonymous"></script>
         <script>
 $(document).ready(function() {
   let weight=[], value=[], items=0, max_weight=0, dp=[], is_exact=true, is_recursive=true;
@@ -260,7 +262,7 @@ $(document).ready(function() {
     vis_delay = parseInt($("#vis_delay").val());
     is_recursive = $("#is_recursive").prop("checked");
     is_exact = $("#is_exact").prop("checked");
-    dp = new Array(items+1); // new Array(items+1).fill(new Array(max_weight+1).fill(0)); // wrong!!! same reference
+    dp = new Array(items+1);
     for (let i=0; i<=items; ++i) {
       dp[i] = new Array(max_weight+1).fill(0);
     }

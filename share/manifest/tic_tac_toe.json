@@ -1,0 +1,26 @@
+{
+    "name": "Tic Tac Toe",
+    "short_name": "OOXX",
+    "start_url": "../tic_tac_toe.html",
+    "scope": "../tic_tac_toe.html",
+    "display": "standalone",
+    "description": "Tic Tac Toe, aka OOXX, with solutions.",
+    "categories": ["education", "entertainment", "games"],
+    "icons": [
+        {
+            "src": "../icon/tic_tac_toe_892.png",
+            "sizes": "892x892",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/tic_tac_toe_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/tic_tac_toe_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

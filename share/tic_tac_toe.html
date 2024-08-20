@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Tic Tac Toe (OOXX)</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Tic Tac Toe, aka OOXX, with solutions." />
+    <meta property="og:title" content="Tic Tac Toe (OOXX)">
+    <meta property="og:description" content="Tic Tac Toe, aka OOXX, with solutions.">
+    <meta property="og:url" content="https://kirksud.github.io/share/tic_tac_toe.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <link rel="icon" href="icon/tic_tac_toe_892.png" sizes="892x892" type="image/png">
+    <link rel="icon" href="icon/tic_tac_toe_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/tic_tac_toe_192.png" sizes="192x192" type="image/png">
+
+    <link rel="manifest" href="manifest/tic_tac_toe.json">
+
+    <style>
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+
+    user-select: none;
+    position: relative;
+    font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+}
+#game-head {
+    position: absolute;
+    left: calc(30vw - 50vh);
+    width: 18vw;
+    height: 50vh;
+    margin: 0 1vw;
+    font-weight: bold;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 8fr 5fr 4fr;
+}
+#game-head h1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-row: 1 / span 1;
+    grid-column: 1 / span 2;
+    color: #776e65;
+    font-size: 8vh;
+    margin: 0;
+}
+#game-head div {
+    background-color: #bbada0;
+    grid-column: 1 / span 2;
+}
+#game-head a {
+    background-color: #8f7a66;
+}
+#game-head div, #game-head a {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 1.2vmin;
+    margin: 2px;
+    font-size: 2.8vw;
+}
+#game-head * {
+    cursor: pointer;
+}
+#game-div {
+    position: absolute;
+    left: calc(50vw - 50vh);
+    top: 0;
+    width: 100vmin;
+    height: 100vmin;
+    background-color: #bbada0;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+#game-div a {
+    cursor: pointer;
+    background-color: white;
+    color: #776e65;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18vmin;
+    margin: 1.2vmin;
+}
+#game-div a:nth-child(3n+1) {
+    margin-left: 2.4vmin;
+}
+#game-div a:nth-child(3n+3) {
+    margin-right: 2.4vmin;
+}
+#game-div a:nth-child(-n+3) {
+    margin-top: 2.4vmin;
+}
+#game-div a:nth-child(n+7) {
+    margin-bottom: 2.4vmin;
+}
+@media screen and (max-aspect-ratio:5/3) {
+    #game-head {
+        left: 0;
+    }
+    #game-div {
+        left: 20vw;
+    }
+}
+@media screen and (max-aspect-ratio:5/4) {
+    #game-head {
+        left: calc(50vw - 40vh);
+        width: 80vh;
+        height: 18vh;
+        margin: 1vh 0;
+        display: grid;
+        grid-template-columns: 5fr 2fr 2fr;
+        grid-template-rows: 5fr 4fr;
+    }
+    #game-div {
+        left: calc(50vw - 40vh);
+        top: 20vh;
+        height: 80vh;
+        width: 80vh;
+    }
+    #game-head h1 {
+        grid-row: 1 / span 2;
+        grid-column: 1 / span 1;
+    }
+    #game-head div {
+        grid-column: 2 / span 2;
+    }
+    #game-head div, #game-head a {
+        font-size: 3vh;
+    }
+}
+@media screen and (max-aspect-ratio:4/5) {
+    #game-head {
+        left: 0;
+        width: 100vw;
+    }
+    #game-div {
+        left: 0;
+        height: 100vw;
+        width: 100vw;
+    }
+}
+@media screen and (max-aspect-ratio:5/8) {
+    #game-head h1 {
+        font-size: 12.8vw;
+    }
+}
+    </style>
+</head>
+
+<body>
+    <div id="game-head">
+        <h1 id="title-h1">OOXX</h1>
+        <div id="state-div"></div>
+        <a id="new-btn">New</a>
+        <a id="undo-btn">Undo</a>
+    </div>
+    <div id="game-div">
+        <a></a> <a></a> <a></a>
+        <a></a> <a></a> <a></a>
+        <a></a> <a></a> <a></a>
+    </div>
+
+    <script>
+(function() {
+
+function $(selectors, element=document) {
+    return element.querySelector(selectors)
+}
+
+function $$(selectors, element=document) {
+    return element.querySelectorAll(selectors)
+}
+
+class Board {
+    constructor(symbols="XO ", board=null) {
+        this.symbols = symbols
+        this.board = board ?? new Array(9).fill(" ").join("")
+    }
+    count(symbol) {
+        let res = 0;
+        for (let i = 0; i < 9; i++)
+            if (this.board[i] === symbol)
+                res++
+        return res
+    }
+    round() {
+        return 9 - this.count(this.symbols[2])
+    }
+    full() {
+        return this.round() == 9
+    }
+    lineTable() {
+        return [
+            [0, 1, 2],
+            [3, 4, 5],
+            [6, 7, 8],
+            [0, 3, 6],
+            [1, 4, 7],
+            [2, 5, 8],
+            [0, 4, 8],
+            [2, 4, 6],
+        ]
+    }
+    lined(symbol) {
+        for (const line of this.lineTable())
+            if (this.board[line[0]] == symbol &&
+                this.board[line[1]] == symbol &&
+                this.board[line[2]] == symbol)
+                return true
+        return false
+    }
+    lines() {
+        const res = []
+        for (const line of this.lineTable())
+            if (this.board[line[0]] != this.symbols[2] &&
+                this.board[line[0]] == this.board[line[1]] &&
+                this.board[line[0]] == this.board[line[2]])
+                res.push(line)
+        return res
+    }
+    valid() {
+        const diff = this.count(this.symbols[0]) - this.count(this.symbols[1])
+        const bothWin = this.lined(this.symbols[0]) && this.lined(this.symbols[1])
+        return 0 <= diff && diff <= 1 && !bothWin
+    }
+    player() {
+        if (this.full())
+            return this.symbols[2]
+        return this.symbols[this.round() % 2]
+    }
+    opponent() {
+        if (this.full())
+            return this.symbols[2]
+        return this.symbols[(this.round() + 1) % 2]
+    }
+    empty() {
+        const res = []
+        for (let i = 0; i < 9; i++)
+            if (this.board[i] === this.symbols[2])
+                res.push(i)
+        return res
+    }
+    winner() {
+        const win0 = this.lined(this.symbols[0])
+        const win1 = this.lined(this.symbols[1])
+        if (win0 && !win1)
+            return this.symbols[0]
+        if (!win0 && win1)
+            return this.symbols[1]
+        if (this.full())
+            return this.symbols[2]
+        return null
+    }
+    play(pos, remove=false) {
+        let symbol = this.player()
+        if (this.board[pos] !== this.symbols[2]) {
+            if (!remove)
+                return null
+            symbol = this.symbols[2]
+        }
+        const res = this.board.slice(0, pos) + symbol + this.board.slice(pos+1)
+        return new Board(this.symbols, res)
+    }
+}
+
+function minimax(board, player=null, opponent=null) {
+    player = player ?? board.player()
+    opponent = opponent ?? board.opponent()
+    const isPlayer = board.player() == player
+    const winner = board.winner()
+    if (winner)
+        return {[player]: 1, [opponent]: -1, [board.symbols[2]]: 0}[winner]
+    let score = isPlayer ? -1 : 1
+    for (const pos of board.empty()) {
+        const newBoard = board.play(pos)
+        const newScore = minimax(newBoard, player, opponent)
+        if (isPlayer ? newScore > score : newScore < score)
+            score = newScore
+    }
+    return score
+}
+
+const bgColors = {willLose: "lightpink", willWin: "lightgreen", win: "gold", normal: "white"}
+const tiles = Array.from($$("#game-div a"))
+let board = new Board()
+let history = []
+let showSolution = false
+
+$("#title-h1").addEventListener("click", event => {
+    showSolution = !showSolution
+    if (showSolution)
+        $("#title-h1").style["text-decoration"] = "underline"
+    else
+        $("#title-h1").style.removeProperty("text-decoration")
+    update()
+})
+
+$("#state-div").addEventListener("click", event => {
+    if (board.round() !== 0)
+        return
+    board.symbols = board.symbols === "OX " ? "XO ": "OX "
+    update()
+})
+
+$("#new-btn").addEventListener("click", event => {
+    board = new Board(board.symbols)
+    history = []
+    update()
+})
+
+$("#undo-btn").addEventListener("click", event => {
+    if (history.length === 0)
+        return
+    board = history.pop()
+    update()
+})
+
+$("body").addEventListener("keydown", event => {
+    const hotKeys = {
+        "=": $("#title-h1"),
+        "-": $("#state-div"),
+        "Delete": $("#new-btn"),
+        "Escape": $("#undo-btn"),
+    }
+    for (let i = 0; i < 9; i++)
+        hotKeys[(i+1).toString()] = tiles[i]
+    if (event.key in hotKeys)
+        hotKeys[event.key].click()
+})
+
+tiles.forEach((tile, pos) => {
+    tile.addEventListener("click", event => {
+        if (board.board[pos] === board.symbols[2])
+            if (!board.valid() || board.winner())
+                return
+        history.push(board)
+        board = board.play(pos, true)
+        update()
+    })
+})
+
+function update() {
+    for (let i = 0; i < 9; i++) {
+        if (board.board[i] === board.symbols[2])
+            tiles[i].innerText = ""
+        else
+            tiles[i].innerText = board.board[i]
+        tiles[i].style.removeProperty("background-color")
+    }
+    const winner = board.winner()
+    if (!board.valid()) {
+        $("#state-div").innerText = "Invalid"
+        return
+    }
+    else if (winner) {
+        if (winner === board.symbols[2])
+            $("#state-div").innerText = "Tie"
+        else
+            $("#state-div").innerText = winner + " wins"
+    }
+    else
+        $("#state-div").innerText = board.player() + "'s turn"
+    if (winner) {
+        for (const line of board.lines())
+            for (const i of line)
+                tiles[i].style["background-color"] = bgColors.win
+    }
+    else if (showSolution && board.round() > 0)
+        for (const i of board.empty()) {
+            const newBoard = board.play(i)
+            let newWinner = newBoard.winner()
+            if (newWinner === null)
+                newWinner = [
+                    board.player(), board.symbols[2], board.opponent()
+                ][minimax(newBoard) + 1]
+            if (newWinner === board.symbols[2])
+                tiles[i].style.removeProperty("background-color")
+            else if (newWinner === board.player())
+                tiles[i].style["background-color"] = bgColors.willWin
+            else
+                tiles[i].style["background-color"] = bgColors.willLose
+        }
+}
+
+update()
+
+})()
+    </script>
+</body>
+
+</html>

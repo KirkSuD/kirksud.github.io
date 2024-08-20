@@ -39,6 +39,11 @@ Inspired by [mobile game - Don't Touch The Spikes](https://play.google.com/store
 but with different skin - a cute squirrel & pine cone.  
 You can pay 10 pine cones to make an RL trained neural net to play 1 game for you.
 
+* [[Game] Tic Tac Toe](https://kirksud.github.io/share/tic_tac_toe.html) (PWA)
+
+The classic Tic Tac Toe game, also known as OOXX in my country.  
+Click the title "OOXX" to show solutions (minimax algo).
+
 * [[Visualization] The knapsack 0-1 algorithm](https://kirksud.github.io/share/knapsack.html)
 
 A visualization of knapsack 0-1 algorithm.  
