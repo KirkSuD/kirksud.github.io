@@ -239,13 +239,9 @@ class Board {
         return 0 <= diff && diff <= 1 && !bothWin
     }
     player() {
-        if (this.full())
-            return this.symbols[2]
         return this.symbols[this.round() % 2]
     }
     opponent() {
-        if (this.full())
-            return this.symbols[2]
         return this.symbols[(this.round() + 1) % 2]
     }
     empty() {
@@ -278,24 +274,20 @@ class Board {
     }
 }
 
-function minimax(board, player=null, opponent=null) {
-    player = player ?? board.player()
-    opponent = opponent ?? board.opponent()
-    const isPlayer = board.player() == player
-    const winner = board.winner()
-    if (winner)
-        return {[player]: 1, [opponent]: -1, [board.symbols[2]]: 0}[winner]
-    let score = isPlayer ? -1 : 1
-    for (const pos of board.empty()) {
-        const newBoard = board.play(pos)
-        const newScore = minimax(newBoard, player, opponent)
-        if (isPlayer ? newScore > score : newScore < score)
-            score = newScore
-    }
+function negamax(board) {
+    if (board.winner())
+        return {
+            [board.player()]: 1,
+            [board.opponent()]: -1,
+            [board.symbols[2]]: 0
+        }[board.winner()]
+    let score = -1
+    for (const pos of board.empty())
+        score = Math.max(score, -negamax(board.play(pos)))
     return score
 }
 
-const bgColors = {willLose: "lightpink", willWin: "lightgreen", win: "gold", normal: "white"}
+const bgColors = {willLose: "lightpink", willWin: "lightgreen", win: "gold"}
 const tiles = Array.from($$("#game-div a"))
 let board = new Board()
 let history = []
@@ -362,6 +354,7 @@ function update() {
             tiles[i].innerText = board.board[i]
         tiles[i].style.removeProperty("background-color")
     }
+
     const winner = board.winner()
     if (!board.valid()) {
         $("#state-div").innerText = "Invalid"
@@ -375,6 +368,7 @@ function update() {
     }
     else
         $("#state-div").innerText = board.player() + "'s turn"
+
     if (winner) {
         for (const line of board.lines())
             for (const i of line)
@@ -382,15 +376,10 @@ function update() {
     }
     else if (showSolution && board.round() > 0)
         for (const i of board.empty()) {
-            const newBoard = board.play(i)
-            let newWinner = newBoard.winner()
-            if (newWinner === null)
-                newWinner = [
-                    board.player(), board.symbols[2], board.opponent()
-                ][minimax(newBoard) + 1]
-            if (newWinner === board.symbols[2])
+            const score = -negamax(board.play(i))
+            if (score === 0)
                 tiles[i].style.removeProperty("background-color")
-            else if (newWinner === board.player())
+            else if (score > 0)
                 tiles[i].style["background-color"] = bgColors.willWin
             else
                 tiles[i].style["background-color"] = bgColors.willLose

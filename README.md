@@ -42,7 +42,7 @@ You can pay 10 pine cones to make an RL trained neural net to play 1 game for yo
 * [[Game] Tic Tac Toe](https://kirksud.github.io/share/tic_tac_toe.html) (PWA)
 
 The classic Tic Tac Toe game, also known as OOXX in my country.  
-Click the title "OOXX" to show solutions (minimax algo).
+Click the title "OOXX" to show solutions (negamax algorithm (minimax variant)).
 
 * [[Visualization] The knapsack 0-1 algorithm](https://kirksud.github.io/share/knapsack.html)
 
