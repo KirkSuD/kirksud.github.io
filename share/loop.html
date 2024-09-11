@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Loop Game</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Loop, the puzzle game." />
+    <meta property="og:title" content="Loop Game">
+    <meta property="og:description" content="Loop, the puzzle game.">
+    <meta property="og:url" content="https://kirksud.github.io/share/loop.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <link rel="icon" href="icon/loop_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/loop_192.png" sizes="192x192" type="image/png">
+
+    <link rel="manifest" href="manifest/loop.json">
+
+    <style>
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+
+    user-select: none;
+    position: relative;
+    font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
+}
+#game-head {
+    position: absolute;
+    left: calc(30vw - 50vh);
+    width: 18vw;
+    height: 50vh;
+    margin: 0 1vw;
+    font-weight: bold;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 8fr 5fr 4fr;
+}
+#game-head h1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    grid-row: 1 / span 1;
+    grid-column: 1 / span 2;
+    color: #776e65;
+    font-size: 10vh;
+    margin: 0;
+}
+#game-head div {
+    background-color: #bbada0;
+    grid-column: 1 / span 2;
+}
+#game-head a {
+    background-color: #8f7a66;
+}
+#game-head div, #game-head a {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    border-radius: 1.2vmin;
+    margin: 2px;
+    font-size: 2.5vw;
+}
+#game-head div input {
+    align-self: stretch;
+    flex: 1;
+    margin: 1.5vmin;
+}
+#game-head * {
+    cursor: pointer;
+}
+#game-div {
+    position: absolute;
+    left: calc(50vw - 50vh);
+    top: 0;
+    width: 100vmin;
+    height: 100vmin;
+    /* background-color: #bbada0; */
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+}
+#game-div svg {
+    cursor: pointer;
+}
+#game-div svg circle { display: none; }
+#game-div svg.cell1 circle { display: initial; }
+#game-div svg.cell0 .edge0 { display: none; }
+#game-div svg.cell0 .edge1 { display: none; }
+#game-div svg.cell0 .edge2 { display: none; }
+#game-div svg.cell0 .edge3 { display: none; }
+#game-div svg.cell1 .edge1 { display: none; }
+#game-div svg.cell1 .edge2 { display: none; }
+#game-div svg.cell1 .edge3 { display: none; }
+#game-div svg.cell2 .edge2 { display: none; }
+#game-div svg.cell2 .edge3 { display: none; }
+#game-div svg.cell3 .edge1 { display: none; }
+#game-div svg.cell3 .edge3 { display: none; }
+#game-div svg.cell4 .edge0 { display: none; }
+@keyframes rotate0 { from { transform: rotate(270deg); } to { transform: rotate(360deg); } }
+@keyframes rotate1 { from { transform: rotate(0deg); } to { transform: rotate(90deg); } }
+@keyframes rotate2 { from { transform: rotate(90deg); } to { transform: rotate(180deg); } }
+@keyframes rotate3 { from { transform: rotate(180deg); } to { transform: rotate(270deg); } }
+#game-div svg.rotate0 { animation: rotate0 0.4s ease forwards;}
+#game-div svg.rotate1 { animation: rotate1 0.4s ease forwards;}
+#game-div svg.rotate2 { animation: rotate2 0.4s ease forwards;}
+#game-div svg.rotate3 { animation: rotate3 0.4s ease forwards;}
+
+@media screen and (max-aspect-ratio:5/3) {
+    #game-head {
+        left: 0;
+    }
+    #game-div {
+        left: 20vw;
+    }
+}
+@media screen and (max-aspect-ratio:5/4) {
+    #game-head {
+        left: calc(50vw - 40vh);
+        width: 80vh;
+        height: 18vh;
+        margin: 1vh 0;
+        display: grid;
+        grid-template-columns: 5fr 2fr 2fr;
+        grid-template-rows: 5fr 4fr;
+    }
+    #game-div {
+        left: calc(50vw - 40vh);
+        top: 20vh;
+        height: 80vh;
+        width: 80vh;
+    }
+    #game-head h1 {
+        grid-row: 1 / span 2;
+        grid-column: 1 / span 1;
+    }
+    #game-head div {
+        grid-column: 2 / span 2;
+    }
+    #game-head div, #game-head a {
+        font-size: 3vh;
+    }
+}
+@media screen and (max-aspect-ratio:4/5) {
+    #game-head {
+        left: 0;
+        width: 100vw;
+    }
+    #game-div {
+        left: 0;
+        height: 100vw;
+        width: 100vw;
+    }
+}
+@media screen and (max-aspect-ratio:5/8) {
+    #game-head h1 {
+        font-size: 16vw;
+    }
+}
+    </style>
+</head>
+
+<body>
+    <div id="game-head">
+        <h1>Loop</h1>
+        <div>
+            <input id="size-input" placeholder="size"
+                type="number" step="1" min="2" max="25" value="4">
+            <input id="thresh-input" placeholder="edge%"
+                type="number" step="1" min="1" max="100" value="50">
+        </div>
+        <a id="left-btn">Edit</a>
+        <a id="right-btn">Solve</a>
+    </div>
+    <div id="game-div"></div>
+
+    <script>
+
+if ("serviceWorker" in navigator)
+    navigator.serviceWorker.register("service_worker.js")
+
+function $(selectors, element=document) {
+    return element.querySelector(selectors)
+}
+
+function $$(selectors, element=document) {
+    return Array.from(element.querySelectorAll(selectors))
+}
+
+class LoopGame {
+    constructor() {
+        this.directions = [[0, -1], [-1, 0], [0, 1], [1, 0]]  // left up right down
+        this.connections = [
+            [[0, 0, 0, 0]],
+            [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+            [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]],
+            [[1, 0, 1, 0], [0, 1, 0, 1]],
+            [[0, 1, 1, 1], [1, 0, 1, 1], [1, 1, 0, 1], [1, 1, 1, 0]],
+            [[1, 1, 1, 1]],
+        ]
+        this.visuals = [  // https://en.wikipedia.org/wiki/Box-drawing_characters
+            ["X"],
+            // ["●", "●", "●", "●"],
+            // ["╸", "╹", "╺", "╻"],
+            ["<", "^", ">", "v"],
+            ["┘", "└", "┌", "┐"],
+            ["─", "│"],
+            ["├", "┬", "┤", "┴"],
+            ["┼"],
+        ]
+    }
+    randomPuzzle(rows, cols, threshold=0.5) {
+        const edges = []
+        for (let i=0; i<rows+1; i++) {
+            edges.push([])
+            for (let j=0; j<cols+1; j++)
+                edges[i].push([
+                    (Math.random() > threshold) ? 1 : 0,
+                    (Math.random() > threshold) ? 1 : 0
+                ])
+        }
+        for (let i=0; i<rows; i++) {
+            edges[i][0][0] = 0
+            edges[i][cols][0] = 0
+        }
+        for (let i=0; i<cols; i++) {
+            edges[0][i][1] = 0
+            edges[rows][i][1] = 0
+        }
+        const res = []
+        for (let i=0; i<rows; i++) {
+            res.push([])
+            for (let j=0; j<cols; j++) {
+                const cellEdges = [
+                    edges[i][j][0],
+                    edges[i][j][1],
+                    edges[i][j + 1][0],
+                    edges[i + 1][j][1],
+                ]
+                for (let k=0; k<this.connections.length; k++)
+                    if (this.connections[k].some(
+                        con => JSON.stringify(con) === JSON.stringify(cellEdges)
+                    )) {
+                        res[i].push(k)
+                        break
+                    }
+            }
+        }
+        return res
+    }
+    loadPuzzle(puzzleStr) {
+        const res = []
+        for (const line of puzzleStr.split("\n")) {
+            if (line.length === 0)
+                continue
+            res.push(Array.from(line).map(i => parseInt(i)))
+        }
+        return res
+    }
+    deepCopy(object) {
+        return JSON.parse(JSON.stringify(object))
+    }
+    addBorder(array2d, value) {
+        array2d = this.deepCopy(array2d)
+        for (const arr of array2d) {
+            arr.splice(0, 0, value)
+            arr.push(value)
+        }
+        array2d.splice(0, 0, new Array(array2d[0].length).fill(value))
+        array2d.push(new Array(array2d[0].length).fill(value))
+        return array2d
+    }
+    removeBorder(array2d) {
+        const res = []
+        for (let i=1; i<array2d.length-1; i++)
+            res.push(array2d[i].slice(1, -1))
+        return res
+    }
+    async solve(puzzle, setStateFunc=null, state=null, solutions=[]) {
+        if (state === null) {
+            state = new Array(puzzle.length).fill(0).map(
+                () => new Array(puzzle[0].length).fill(null))
+            puzzle = this.addBorder(puzzle, 0)
+            state = this.addBorder(state, 0)
+        }
+
+        let bruteForce = false
+        while (true) {
+            let found = false
+            let found1 = false
+            for (let i=1; i<puzzle.length-1; i++) {
+                for (let j=1; j<puzzle[0].length-1; j++) {
+                    if (state[i][j] !== null)
+                        continue
+                    found = true
+                    const possible = this.listPossible(puzzle, state, i, j)
+                    if (bruteForce) {
+                        for (const k of possible) {
+                            const nstate = this.deepCopy(state)
+                            nstate[i][j] = k
+                            if (setStateFunc !== null)
+                                await setStateFunc(i-1, j-1, k)
+                            await this.solve(puzzle, setStateFunc, nstate, solutions)
+                            if (setStateFunc !== null && solutions.length > 0)
+                                break
+                        }
+                        return solutions
+                    }
+                    if (possible.length === 0)
+                        return solutions
+                    if (possible.length === 1) {
+                        found1 = true
+                        state[i][j] = possible[0]
+                        if (setStateFunc !== null)
+                            await setStateFunc(i-1, j-1, possible[0])
+                    }
+                }
+            }
+            bruteForce = !found1
+            if (!found) {
+                solutions.push(this.deepCopy(this.removeBorder(state)))
+                return solutions
+            }
+        }
+    }
+    listPossible(puzzle, state, row, col) {
+        const cell = puzzle[row][col]
+        const res = []
+        for (let i=0; i<this.connections[cell].length; i++) {
+            let ok = true
+            for (let d=0; d<4; d++) {
+                const [dy, dx] = this.directions[d]
+                const [nrow, ncol] = [row + dy, col + dx]  // neighbor
+                const nstate = state[nrow][ncol]
+                if (nstate === null)
+                    continue
+                const ncell = puzzle[nrow][ncol]
+                const nd = (d + 2) % 4
+                if (this.connections[ncell][nstate][nd] !== this.connections[cell][i][d])
+                    ok = false
+            }
+            if (ok)
+                res.push(i)
+        }
+        return res
+    }
+    pretty(puzzle, state, noBorder=false) {
+        if (noBorder) {
+            puzzle = this.removeBorder(puzzle)
+            state = this.removeBorder(state)
+        }
+        return puzzle.map((row, i) =>
+            row.map((cell, j) =>
+                (state[i][j] === null) ? "?" : this.visuals[cell][state[i][j]]
+            ).join("")
+        ).join("\n")
+    }
+}
+
+class LoopGameApp {
+    constructor() {
+        this.loopGame = new LoopGame()
+        this.editing = false
+        this.puzzle = [[0]]
+        this.state = [[0]]
+        this.resize(4)
+        this.random()
+        $("#size-input").addEventListener("change", () => this.resize())
+        $("#left-btn").addEventListener("click", () => this.toggleMode())
+        $("#right-btn").addEventListener("click", () => {
+            if (this.editing)
+                this.random()
+            else
+                this.solve()
+        })
+    }
+    resize(defaultSize=null) {
+        let size = $("#size-input").value
+        if (size.length === 0) {
+            if (defaultSize === null)
+                return
+            size = defaultSize
+        }
+        else
+            size = parseInt(size)
+        this.puzzle = new Array(size).fill(0).map(() => new Array(size).fill(0))
+        this.state = new Array(size).fill(0).map(() => new Array(size).fill(0))
+
+        $("#game-div").innerHTML = ""
+        $("#game-div").style["grid-template-rows"] = `repeat(${size}, 1fr)`
+        $("#game-div").style["grid-template-columns"] = `repeat(${size}, 1fr)`
+        for (let i=0; i<size; i++)
+            for (let j=0; j<size; j++) {
+                $("#game-div").insertAdjacentHTML("beforeend", `
+                    <svg viewBox="0 0 100 100" fill="gray" stroke="gray"
+                        stroke-width="5%" stroke-linecap="square">
+                        <circle cx="50" cy="50" r="5%" />
+                        <line class="edge0" x1="50" y1="50" x2="0" y2="50" />
+                        <line class="edge1" x1="50" y1="50" x2="50" y2="0" />
+                        <line class="edge2" x1="50" y1="50" x2="100" y2="50" />
+                        <line class="edge3" x1="50" y1="50" x2="50" y2="100" />
+                    </svg>
+                `)
+                $$("#game-div svg").at(-1).addEventListener("click", () => {
+                    if (this.editing)
+                        this.edit(i, j)
+                    else
+                        this.rotate(i, j)
+                })
+            }
+        this.random()
+    }
+    toggleMode() {
+        this.editing = !this.editing
+        if (this.editing) {
+            $("#left-btn").innerText = "Play"
+            $("#right-btn").innerText = "Random"
+        }
+        else {
+            $("#left-btn").innerText = "Edit"
+            $("#right-btn").innerText = "Solve"
+        }
+    }
+    random() {
+        const size = this.puzzle.length
+        const threshold = 1 - parseInt($("#thresh-input").value) / 100
+        this.puzzle = this.loopGame.randomPuzzle(size, size, threshold)
+        for (let i=0; i<size; i++)
+            for (let j=0; j<size; j++) {
+                const n = this.loopGame.connections[this.puzzle[i][j]].length
+                this.state[i][j] = Math.floor(Math.random() * n)
+                this.update(i, j)
+            }
+    }
+    async solve() {
+        const solutions = await this.loopGame.solve(this.puzzle, async (row, col, state) => {
+            while (this.state[row][col] !== state) {
+                await new Promise(r => setTimeout(r, 400))
+                // this.state[row][col] = state
+                this.state[row][col] = (
+                    this.state[row][col] + 1
+                ) % this.loopGame.connections[this.puzzle[row][col]].length
+                this.update(row, col)
+            }
+        })
+        if (solutions.length > 0) {
+            console.log("solution:", solutions[0])
+            console.log(this.loopGame.pretty(this.puzzle, solutions[0]))
+        }
+        else
+            console.log("solution: not found")
+    }
+    edit(row, col) {
+        this.puzzle[row][col] = (this.puzzle[row][col] + 1) % 6
+        this.update(row, col)
+    }
+    rotate(row, col) {
+        this.state[row][col] = (
+            this.state[row][col] + 1
+        ) % this.loopGame.connections[this.puzzle[row][col]].length
+        this.update(row, col)
+    }
+    update(row, col) {
+        const elem = $$("#game-div svg").at(row * this.puzzle[0].length + col)
+        for (let i=0; i<6; i++)
+            if (elem.classList.contains(`cell${i}`))
+                elem.classList.remove(`cell${i}`)
+        for (let i=0; i<4; i++)
+            if (elem.classList.contains(`rotate${i}`))
+                elem.classList.remove(`rotate${i}`)
+        elem.classList.add(`cell${this.puzzle[row][col]}`)
+        elem.classList.add(`rotate${this.state[row][col]}`)
+    }
+    async autoPlay() {
+        while (true) {
+            this.random()
+            await this.solve()
+            await new Promise(r => setTimeout(r, 2000))
+        }
+    }
+}
+
+const loopGameApp = new LoopGameApp()
+
+    </script>
+</body>
+
+</html>

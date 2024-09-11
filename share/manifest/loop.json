@@ -1,0 +1,21 @@
+{
+    "name": "Loop Game",
+    "short_name": "Loop",
+    "start_url": "../loop.html",
+    "scope": "../loop.html",
+    "display": "standalone",
+    "description": "Loop, the puzzle game.",
+    "categories": ["entertainment", "games"],
+    "icons": [
+        {
+            "src": "../icon/loop_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/loop_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}
