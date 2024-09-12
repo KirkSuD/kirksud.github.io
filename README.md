@@ -44,6 +44,11 @@ You can pay 10 pine cones to make an RL trained neural net to play 1 game for yo
 The classic Tic Tac Toe game, also known as OOXX in my country.  
 Click the title "OOXX" to show solutions (negamax algorithm (minimax variant)).
 
+* [[Game] Loop](https://kirksud.github.io/share/loop.html) (PWA)
+
+Inspired by [mobile game - Infinity Loop](https://play.google.com/store/apps/details?id=com.balysv.loop),  
+with random puzzle generator & solver.
+
 * [[Visualization] The knapsack 0-1 algorithm](https://kirksud.github.io/share/knapsack.html)
 
 A visualization of knapsack 0-1 algorithm.  
