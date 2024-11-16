@@ -450,19 +450,12 @@ class DayTimerApp {
             if (evt.key === "Enter")
                 this.onAdd()
         }
-        this.updateIntervalId = null
-        this.load()
-
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
         this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
-        const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(localData, data => {
-            if (data === null || data === localData)
-                return
-            localStorage.setItem(this.localStorageKey, data)
-            this.load()
-        })
+        this.updateIntervalId = null
+        this.doneStartSync = false
+        this.load()
     }
     load(data=null) {
         if (data === null) {
@@ -546,6 +539,9 @@ class DayTimerApp {
             }
             this.save()
         }
+        else if (!this.doneStartSync)
+            this.save()
+        this.doneStartSync = true
 
         for (const name in this.timerWidgets)
             this.timerWidgets[name].update()
