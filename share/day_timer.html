@@ -19,6 +19,8 @@
 
     <link rel="manifest" href="manifest/day_timer.json">
 
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
     <style>
 html {
     height: 100%;
@@ -57,11 +59,11 @@ body {
 #root pre {
     padding: 10px 3px;
 }
-#root button {
-    padding: 10px 10px;
-}
 #root * {
     font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
+}
+#root .material-icons {
+    font-family: 'Material Icons';
 }
 
 #date > pre {
@@ -70,9 +72,6 @@ body {
 #add > label {
     padding: 0;
     margin: 0;
-}
-#add > label > button {
-    pointer-events: none;
 }
 #fileInput {
     display: none;
@@ -83,6 +82,22 @@ body {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.icon-button {
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    appearance: none;
+    cursor: pointer;
+    color: #000;
+    opacity: .5;
+}
+.icon-button:hover {
+    opacity: .75;
+}
+.icon-button > .material-icons {
+    vertical-align: middle;
 }
 
 @media (max-width: 1200px) {
@@ -116,12 +131,12 @@ body {
             <select class="grow" disabled></select>
         </div>
         <div id="add">
-            <button>v</button>
-            <label for="fileInput">
-                <button>^</button>
+            <button class="icon-button"><i class="material-icons">save</i></button>
+            <label for="fileInput" class="icon-button">
+                <i class="material-icons">folder_open</i>
                 <input id="fileInput" type="file" accept=".json,.txt">
             </label>
-            <button>x</button>
+            <button class="icon-button"><i class="material-icons">delete</i></button>
             <input type="text" class="grow", placeholder="new timer">
         </div>
     </div>
@@ -411,8 +426,8 @@ class TimerWidget {
                 <pre></pre>
                 <pre></pre>
                 <pre class="grow"></pre>
-                <button>=</button>
-                <button>x</button>
+                <button class="icon-button"><i class="material-icons">mode_edit</i></button>
+                <button class="icon-button"><i class="material-icons">delete</i></button>
             </div>`
         return template.content.children[0]
     }
@@ -454,8 +469,8 @@ class DayTimerApp {
         // const synkServer = "https://kirksud.pythonanywhere.com"
         this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
         this.updateIntervalId = null
-        this.doneStartSync = false
         this.load()
+        this.sync()
     }
     load(data=null) {
         if (data === null) {
@@ -518,7 +533,9 @@ class DayTimerApp {
             timing: this.dayTimer.timing,
             history: this.history,
         }))
-
+        this.sync()
+    }
+    sync() {
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
         this.synk.run(localData, data => {
             if (data === null || data === localData)
@@ -537,11 +554,7 @@ class DayTimerApp {
                 const yesterday = DateUtil.formatDate(DateUtil.day() - 86400)
                 this.history[yesterday] = yesterdayResult
             }
-            this.save()
         }
-        else if (!this.doneStartSync)
-            this.save()
-        this.doneStartSync = true
 
         for (const name in this.timerWidgets)
             this.timerWidgets[name].update()
