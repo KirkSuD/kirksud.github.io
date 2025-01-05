@@ -1,0 +1,26 @@
+{
+    "name": "Progress Tracker",
+    "short_name": "Progress",
+    "start_url": "../progress.html",
+    "scope": "../progress.html",
+    "display": "standalone",
+    "description": "Track progress in day/week/month.",
+    "categories": ["productivity"],
+    "icons": [
+        {
+            "src": "../icon/progress.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "../icon/progress_512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "../icon/progress_192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        }
+    ]
+}

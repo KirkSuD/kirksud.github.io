@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Progress Tracker</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Track progress in day/week/month.">
+    <meta property="og:title" content="Progress Tracker">
+    <meta property="og:description" content="Track progress in day/week/month.">
+    <meta property="og:url" content="https://kirksud.github.io/share/progress.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <link rel="icon" href="icon/progress.svg" sizes="any" type="image/svg+xml">
+    <link rel="icon" href="icon/progress_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/progress_192.png" sizes="192x192" type="image/png">
+
+    <link rel="manifest" href="manifest/progress.json">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <style>
+
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    height: 100%;
+}
+p {
+    margin: 0;
+}
+
+#main {
+    width: 100%;
+    gap: 3vmin;
+    padding: 3vmin;
+}
+#main > div {
+    border: 1px solid black;
+    padding: 2vmin;
+}
+#progressBarContainer {
+    height: 3vh;
+    margin: 1vh 0;
+    background-color: rgb(200, 200, 200);
+    border-radius: 1.5vh;
+}
+#progressBar {
+    background-color: rgb(40, 40, 40);
+    border-top-left-radius: 1.5vh;
+    border-bottom-left-radius: 1.5vh;
+    height: 100%;
+    width: 0%;
+}
+#progressRecord, #footer {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    /* justify-items: center; */
+}
+#progressRecord > div, #footer > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+#progressRecord > div {
+    margin: 2vh 0;
+}
+#main, .modal {
+    user-select: none;
+}
+
+.d-none {
+    display: none;
+}
+.d-flex {
+    display: flex;
+}
+.flex-column {
+    flex-direction: column;
+}
+.flex-1 {
+    flex: 1;
+}
+.overflow-auto {
+    overflow: auto;
+}
+.align-self-stretch {
+    align-self: stretch;
+}
+.align-self-end {
+    align-self: flex-end;
+}
+
+.modal {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+.modal-open {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.backdrop {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    
+    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(1px);
+}
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+
+    background-color: white;
+    border: 1px solid black;
+    padding: 3vmin;
+    gap: 2vh;
+}
+.modal-content > hr {
+    width: 100%;
+}
+
+.icon-button {
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    appearance: none;
+    cursor: pointer;
+    color: #000;
+    opacity: .5;
+}
+.icon-button:hover {
+    opacity: .75;
+}
+.icon-button > .material-icons {
+    vertical-align: middle;
+}
+
+    </style>
+
+    <script src="synk.js"></script>
+
+</head>
+
+<body class="d-flex">
+    <div id="main" class="d-flex flex-column">
+        <div id="header" class="d-flex">
+            <select id="selectTracker"></select>
+            <button id="editTracker" class="icon-button">
+                <i class="material-icons">mode_edit</i>
+            </button>
+            <button id="deleteTracker" class="icon-button">
+                <i class="material-icons">delete</i>
+            </button>
+            <button id="addTracker" class="icon-button">
+                <i class="material-icons">add</i>
+            </button>
+
+            <div class="flex-1"></div>
+            <button id="exportData" class="icon-button">
+                <i class="material-icons">save</i>
+            </button>
+            <label for="importData" class="icon-button">
+                <i class="material-icons">folder_open</i>
+                <input id="importData" class="d-none" type="file" accept=".json,.txt">
+            </label>
+        </div>
+        <div>
+            <div id="progressDisplay" class="d-flex">
+                <select id="selectTime"></select>
+                <input id="selectDate" type="date" class="d-none"></select>
+                <div class="flex-1"></div>
+                <p>
+                    <span id="currentProgress"></span>
+                    /
+                    <span id="totalProgress"></span>
+                </p>
+            </div>
+            <div id="progressBarContainer">
+                <div id="progressBar"></div>
+            </div>
+        </div>
+        <div class="flex-1 overflow-auto">
+            <div id="progressRecord">
+                <!-- <div><b>10</b><p>01-01</p></div> -->
+            </div>
+        </div>
+        <div id="footer">
+            <button class="icon-button"><i class="material-icons">add</i></button>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
+    </div>
+    
+    <div id="trackerModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <b>Progress tracker:</b>
+            <hr>
+            <label>Name: <input type="text"></label>
+            <label>
+                Period:
+                <select>
+                    <option value="day">day</option>
+                    <option value="week">week</option>
+                    <option value="month">month</option>
+                </select>
+            </label>
+            <label>Target: <input type="number"></label>
+            <hr>
+            <div class="align-self-end">
+                <button class="modal-close-button">Cancel</button>
+                <button class="modal-submit-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="recordModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <b>Edit progress:</b>
+            <hr>
+            <label>Value: <input type="number"></label>
+            <div class="align-self-stretch d-flex">
+                <input class="flex-1" type="button" value="1/3">
+                <input class="flex-1" type="button" value="1/2">
+                <input class="flex-1" type="button" value="2/3">
+            </div>
+            <label>Date: <input type="date"></label>
+            <label>Time: <input type="time"></label>
+            <label>Comment: <input type="text"></label>
+            <hr>
+            <div class="align-self-stretch d-flex">
+                <button class="modal-delete-button">Delete</button>
+                <div class="flex-1"></div>
+                <button class="modal-close-button">Cancel</button>
+                <button class="modal-submit-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="valueModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <b>Add value:</b>
+            <hr>
+            <label>Value: <input type="number"></label>
+            <hr>
+            <div class="align-self-end">
+                <button class="modal-close-button">Cancel</button>
+                <button class="modal-submit-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+(function() {
+
+    if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("service_worker.js")
+
+    function $(selectors, element=document) {
+        return element.querySelector(selectors)
+    }
+    function $$(selectors, element=document) {
+        return Array.from(element.querySelectorAll(selectors))
+    }
+    function $on(type, element, handler) {
+        if (typeof element === "string")
+            element = $(element)
+        element.addEventListener(type, handler)
+    }
+    function $$on(type, elements, handler) {
+        if (typeof elements === "string")
+            elements = [elements]
+        const processed = []
+        for (const element of elements) {
+            if (typeof element === "string")
+                processed.push(...$$(element))
+            else
+                processed.push(element)
+        }
+        processed.forEach(element => $on(type, element, handler))
+    }
+    function $html(html) {
+        const template = document.createElement("template")
+        template.innerHTML = html
+        return template.content.children[0]
+    }
+
+    function openModal(modalElement) {
+        if (typeof modalElement === "string")
+            modalElement = $(modalElement)
+        modalElement.classList.add("modal-open")
+    }
+    function closeModal() {
+        $$(".modal.modal-open").forEach(element => {
+            element.classList.remove("modal-open")
+        })
+    }
+    $$on("click",
+        [".modal", ".modal .backdrop", ".modal .modal-close-button"],
+        event => {
+            if (event.target === event.currentTarget)
+                closeModal()
+        }
+    )
+
+    class DateUtil {
+        static isoWeekDay(d) {  // 0 sun - 6 sat -> 1 mon - 7 sun
+            return (d.getDay() + 6) % 7 + 1
+        }
+        static weekStartDate(d) {
+            return new Date(
+                d.getFullYear(), d.getMonth(), d.getDate() - DateUtil.isoWeekDay(d) - 1)
+        }
+        static isoWeekDate(d) {
+            // https://en.wikipedia.org/wiki/ISO_week_date
+            const weekStart = DateUtil.weekStartDate(d)
+            const year = weekStart.getFullYear()
+            const yearWeekStart = DateUtil.weekStartDate(new Date(
+                year, 0, (DateUtil.isoWeekDay(new Date(year, 0, 1)) === 1) ? 1 : 8))
+            const week = (weekStart - yearWeekStart) / 86400_000 / 7 + 1
+            const day = DateUtil.isoWeekDay(d)
+            return [year, week, day]
+        }
+        static pad2(n) {
+            return (n < 10) ? `0${n}` : `${n}`
+        }
+        static formatTime(d) {
+            return `${DateUtil.pad2(d.getHours())}:${DateUtil.pad2(d.getMinutes())}`
+        }
+        static formatDate(d, noYear=false) {
+            const pad2 = DateUtil.pad2
+            if (noYear)
+                return `${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`
+            return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`
+        }
+        static formatWeek(d) {
+            const pad2 = DateUtil.pad2
+            const [year, week, day] = DateUtil.isoWeekDate(d)
+            const weekStart = DateUtil.weekStartDate(d)
+            const weekEnd = new Date(
+                weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6)
+            let pretty = `${year}-W${week}`
+            pretty += `(${pad2(weekStart.getMonth()+1)}-${pad2(weekStart.getDate())}`
+            pretty += `~${pad2(weekEnd.getMonth()+1)}-${pad2(weekEnd.getDate())})`
+            return pretty
+        }
+        static formatMonth(d) {
+            return `${d.getFullYear()}-${DateUtil.pad2(d.getMonth()+1)}`
+        }
+        static formatPeriod(d, period) {
+            return {
+                day: DateUtil.formatDate, week: DateUtil.formatWeek, month: DateUtil.formatMonth
+            }[period](d)
+        }
+    }
+    class ProgressTrackerApp {
+        constructor(localStorageKey="kirksud_progress_tracker") {
+            this.localStorageKey = localStorageKey
+
+            $on("change", "#selectTracker", e => this.onSelectTracker(e))
+            $on("change", "#selectDate", e => this.onSelectDateTime(e))
+            $on("change", "#selectTime", e => this.onSelectDateTime(e))
+
+            $on("click", "#addTracker", e => this.onAddTracker(e))
+            $on("click", "#editTracker", e => this.onEditTracker(e))
+            $on("click", "#deleteTracker", e => this.onDeleteTracker(e))
+
+            $on("click", "#footer button", e => this.onAddValue(e))
+            $$on("click", "#footer div", e => this.onAddRecord(e))
+
+            $on("click", "#exportData", e => this.onExportData(e))
+            $on("change", "#importData", e => this.onImportData(e))
+
+            $on("click",
+                "#trackerModal .modal-submit-button",
+                e => this.onTrackerModal(e))
+            $$on("click",
+                '#recordModal input[type="button"]',
+                e => this.onMultiplyRecord(e))
+            $on("click",
+                "#recordModal .modal-delete-button",
+                e => this.onDeleteRecord(e))
+            $on("click",
+                "#recordModal .modal-submit-button",
+                e => this.onRecordModal(e))
+            $on("click",
+                "#valueModal .modal-submit-button",
+                e => this.onValueModal(e))
+
+            const synkServer = "https://kirk.alwaysdata.net"
+            // const synkServer = "https://kirksud.pythonanywhere.com"
+            this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+            this.load()
+            this.sync()
+        }
+        load(data=null) {
+            if (data === null) {
+                data = localStorage.getItem(this.localStorageKey)
+                if (data === null)
+                    data = {
+                        trackers: {
+                            /*
+                            name: {
+                                period: "day"/"week"/"month",
+                                target: Number,
+                                records: [[time, value, comment], ],
+                                values: [10, 20, 30],
+                            },
+                            */
+                        },
+                        usingTracker: ""
+                    }
+                else
+                    data = JSON.parse(data)
+            }
+            this.trackers = data.trackers
+
+            $("#selectTracker").innerHTML = ""
+            Object.keys(data.trackers).forEach(trackerName => {
+                $("#selectTracker").insertAdjacentHTML("beforeend", `
+                    <option value="${trackerName}">${trackerName}</option>`)
+            })
+
+            $("#selectTracker").value = data.usingTracker
+            if (data.usingTracker !== "")
+                this.onSelectTracker()
+            else if (Object.keys(data.trackers).length === 0)
+                $("#addTracker").click()
+        }
+        save(usingTracker=null) {
+            usingTracker = usingTracker ?? $("#selectTracker").value
+            const data = {trackers: this.trackers, usingTracker}
+            localStorage.setItem(this.localStorageKey, JSON.stringify(data))
+            this.sync()
+        }
+        sync() {
+            const localData = localStorage.getItem(this.localStorageKey) ?? "null"
+            this.synk.run(localData, data => {
+                if (data === null || data === localData)
+                    return
+                localStorage.setItem(this.localStorageKey, data)
+                this.load()
+            })
+        }
+        onExportData(event) {
+            const text = localStorage.getItem(this.localStorageKey)
+            const file = new Blob([text], {type: "application/json"})
+            const fileUrl = URL.createObjectURL(file)
+            const timestamp = DateUtil.formatDate(new Date()).replaceAll("-", "")
+            const fileName = `progress_tracker_${timestamp}.json`
+            const exportLink = $html(`
+                <a href="${fileUrl}" download="${fileName}"></a>`)
+            document.body.insertAdjacentElement("beforeend", exportLink)
+            exportLink.click()
+            exportLink.remove()
+        }
+        onImportData(event) {
+            const file = event.currentTarget.files[0]
+            const file_reader = new FileReader()
+            file_reader.onload = evt => {
+                this.load(JSON.parse(evt.target.result))
+                this.save()
+            }
+            file_reader.readAsText(file)
+        }
+
+        onSelectTracker(event=null) {
+            const name = $("#selectTracker").value
+            if (name === "")
+                return
+            const tracker = this.trackers[name]
+            if (tracker.period === "day") {
+                $("#selectTime").classList.add("d-none")
+                $("#selectDate").classList.remove("d-none")
+                $("#selectDate").value = DateUtil.formatDate(new Date())
+            }
+            else {
+                const recordsTimes = []
+                for (const [time, value, comment] of tracker.records) {
+                    const d = new Date(time)
+                    const prettyTime = DateUtil.formatPeriod(d, tracker.period)
+                    if (recordsTimes.length === 0 || recordsTimes.at(-1) !== prettyTime)
+                        recordsTimes.push(prettyTime)
+                }
+                const d = new Date()
+                const prettyTime = DateUtil.formatPeriod(d, tracker.period)
+                if (recordsTimes.length === 0 || recordsTimes.at(-1) !== prettyTime)
+                    recordsTimes.push(prettyTime)
+                recordsTimes.reverse()
+
+                $("#selectDate").classList.add("d-none")
+                $("#selectTime").classList.remove("d-none")
+                $("#selectTime").innerHTML = ""
+                for (const prettyTime of recordsTimes)
+                    $("#selectTime").insertAdjacentHTML("beforeend", `
+                        <option value=${prettyTime}>${prettyTime}</option>`)
+                $("#selectTime").value = recordsTimes[0]
+            }
+            $("#totalProgress").innerText = tracker.target
+            for (let i=0; i<3; i++)
+                $$("#footer div")[i].innerText = tracker.values[i]
+            if (event !== null)
+                this.save()
+            this.onSelectDateTime()
+        }
+        onSelectDateTime(event=null) {
+            const name = $("#selectTracker").value
+            if (name === "")
+                return
+            const tracker = this.trackers[name]
+            let selected = (
+                tracker.period === "day") ? $("#selectDate").value : $("#selectTime").value
+            if (selected === "") {
+                selected = DateUtil.formatDate(new Date())
+                $("#selectDate").value = selected
+            }
+            const filtered = tracker.records.filter(([time, value, comment]) =>
+                DateUtil.formatPeriod(new Date(time), tracker.period) === selected)
+            const valueSum = filtered.reduce(
+                (total, [time, value, comment]) => total + value, 0)
+            const percent = valueSum / tracker.target * 100
+            $("#currentProgress").innerText = valueSum
+            $("#progressBar").style.width = `${percent}%`
+
+            $("#progressRecord").innerHTML = ""
+            for (const [time, value, comment] of filtered) {
+                let prettyTime = DateUtil.formatDate(new Date(time), true)
+                if (tracker.period === "day")
+                    prettyTime = DateUtil.formatTime(new Date(time))
+                const element = $html(`<div><b>${value}</b><p>${prettyTime}</p></div>`)
+                element.dataset.time = time
+                element.dataset.value = value
+                element.dataset.comment = comment
+                $on("click", element, e => this.onEditRecord(e))
+                $("#progressRecord").append(element)
+            }
+        }
+
+        onAddTracker(event) {
+            $("#trackerModal").dataset.editingTracker = ""
+            $("#trackerModal b").innerText = "Add progress tracker:"
+            $$("#trackerModal input").forEach(inputElement => inputElement.value = "")
+            $("#trackerModal select").value = "day"
+            openModal("#trackerModal")
+        }
+        onEditTracker(event) {
+            const name = $("#selectTracker").value
+            if (name === "")
+                return
+            $("#trackerModal").dataset.editingTracker = name
+            $("#trackerModal b").innerText = "Edit progress tracker:"
+            $$("#trackerModal input")[0].value = name
+            $("#trackerModal select").value = this.trackers[name].period
+            $$("#trackerModal input")[1].value = this.trackers[name].target
+            openModal("#trackerModal")
+        }
+        onDeleteTracker(event) {
+            const name = $("#selectTracker").value
+            if (name === "")
+                return
+            if (!confirm(`Delete progress tracker "${name}"?`))
+                return
+            delete this.trackers[name]
+            this.save("")
+            this.load()
+        }
+        onTrackerModal(event) {
+            const name = $$("#trackerModal input")[0].value
+            const period = $("#trackerModal select").value
+            let target = $$("#trackerModal input")[1].value
+            if (name === "" || target === "")
+                return alert("Tracker name, target can't be empty!")
+            target = Number(target)
+            const editingTracker = $("#trackerModal").dataset.editingTracker
+            if (editingTracker === "") {
+                // add new tracker
+                if (name in this.trackers)
+                    return alert("Tracker name exists!")
+                this.trackers[name] = {period, target, records: [], values: [0, 0, 0]}
+            }
+            else {
+                // edit tracker
+                if (name in this.trackers && name !== editingTracker)
+                    return alert("Tracker name exists!")
+                const tracker = this.trackers[editingTracker]
+                tracker.period = period
+                tracker.target = target
+                this.trackers[name] = tracker
+                if (name !== editingTracker)
+                    delete this.trackers[editingTracker]
+            }
+            closeModal()
+            this.save(name)
+            this.load()
+        }
+
+        deleteRecord(records, time, value, comment) {  // in-place
+            time = Number(time)
+            value = Number(value)
+            for (const [i, record] of records.entries())
+                if (record[0] === time &&
+                    record[1] === value &&
+                    record[2] === comment) {
+                    records.splice(i, 1)
+                    return records
+                }
+        }
+        addRecord(records, time, value, comment) {  // in-place
+            let index = records.length
+            for (const [i, record] of records.entries())
+                if (record[0] > time) {
+                    index = i
+                    break
+                }
+            records.splice(index, 0, [time, value, comment])
+            return records
+        }
+        onEditRecord(event) {
+            const record = event.currentTarget.dataset
+            $("#recordModal").dataset.time = record.time
+            $("#recordModal").dataset.value = record.value
+            $("#recordModal").dataset.comment = record.comment
+            $('#recordModal input[type="number"]').value = record.value
+            $('#recordModal input[type="date"]').value = DateUtil.formatDate(
+                new Date(Number(record.time)))
+            $('#recordModal input[type="time"]').value = DateUtil.formatTime(
+                new Date(Number(record.time)))
+            $('#recordModal input[type="text"]').value = record.comment
+            openModal("#recordModal")
+        }
+        onMultiplyRecord(event) {
+            const [dividend, divisor] = event.currentTarget.value.split("/")
+            let value = $('#recordModal input[type="number"]').value
+            value = Math.round(value * dividend / divisor)
+            $('#recordModal input[type="number"]').value = value
+        }
+        onDeleteRecord(event) {
+            const name = $("#selectTracker").value
+            const records = this.trackers[name].records
+            this.deleteRecord(
+                records,
+                $("#recordModal").dataset.time,
+                $("#recordModal").dataset.value,
+                $("#recordModal").dataset.comment)
+            closeModal()
+            this.save()
+            this.onSelectTracker()
+        }
+        onRecordModal(event) {
+            let value = $('#recordModal input[type="number"]').value
+            const date = $('#recordModal input[type="date"]').value
+            let time = $('#recordModal input[type="time"]').value
+            if (value === "" || date === "" || time === "")
+                return alert("Progress record value, date, time can't be empty!")
+            time = new Date(Date.parse(date + " " + time)).getTime()
+            value = Number(value)
+            const comment = $('#recordModal input[type="text"]').value
+
+            const name = $("#selectTracker").value
+            const records = this.trackers[name].records
+            this.deleteRecord(
+                records,
+                $("#recordModal").dataset.time,
+                $("#recordModal").dataset.value,
+                $("#recordModal").dataset.comment)
+            this.addRecord(records, time, value, comment)
+
+            closeModal()
+            this.save()
+            this.onSelectTracker()
+        }
+
+        onAddValue(event=null) {
+            $("#valueModal input").value = ""
+            openModal("#valueModal")
+        }
+        onAddRecord(event) {
+            const time = new Date().getTime()
+            const value = Number(event.currentTarget.innerText)
+            const comment = ""
+            const name = $("#selectTracker").value
+            const records = this.trackers[name].records
+            if (value === 0)
+                return this.onAddValue()
+            this.addRecord(records, time, value, comment)
+            this.save()
+            this.onSelectTracker()
+        }
+        onValueModal(event) {
+            let value = $("#valueModal input").value
+            if (value === "")
+                return alert("Value can't be empty!")
+            value = Number(value)
+            const name = $("#selectTracker").value
+            const tracker = this.trackers[name]
+            tracker.values.push(value)
+            tracker.values.splice(0, 1)
+            for (let i=0; i<3; i++)
+                $$("#footer div")[i].innerText = tracker.values[i]
+            closeModal()
+            $$("#footer div")[2].click()
+        }
+    }
+    const progressTrackerApp = new ProgressTrackerApp()
+
+})()
+
+    </script>
+</body>
+</html>
