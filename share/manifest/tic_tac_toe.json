@@ -8,8 +8,8 @@
     "categories": ["education", "entertainment", "games"],
     "icons": [
         {
-            "src": "../icon/tic_tac_toe_892.png",
-            "sizes": "892x892",
+            "src": "../icon/tic_tac_toe_714.png",
+            "sizes": "714x714",
             "type": "image/png"
         },
         {

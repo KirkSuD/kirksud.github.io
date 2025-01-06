@@ -8,17 +8,17 @@
     "categories": ["education", "entertainment", "games"],
     "icons": [
         {
-            "src": "../icon/icon.svg",
+            "src": "../icon/boid.svg",
             "sizes": "any",
             "type": "image/svg+xml"
         },
         {
-            "src": "../icon/icon_512.png",
+            "src": "../icon/boid_512.png",
             "sizes": "512x512",
             "type": "image/png"
         },
         {
-            "src": "../icon/icon_192.png",
+            "src": "../icon/boid_192.png",
             "sizes": "192x192",
             "type": "image/png"
         }
