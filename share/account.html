@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Account Book</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="Simple account book web app.">
+    <meta property="og:title" content="Account Book">
+    <meta property="og:description" content="Simple account book web app.">
+    <meta property="og:url" content="https://kirksud.github.io/share/account.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <link rel="icon" href="icon/money.svg" sizes="any" type="image/svg+xml">
+    <link rel="icon" href="icon/money_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/money_192.png" sizes="192x192" type="image/png">
+
+    <link rel="manifest" href="manifest/account.json">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <style>
+
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    height: 100%;
+    justify-content: center;
+}
+p {
+    margin: 0;
+}
+
+#main {
+    width: 100%;
+    max-width: 576px;
+    padding: 3vmin;
+    padding-bottom: 0;
+}
+#summary {
+    gap: 1vh;
+}
+#actions {
+    padding: 2vmin;
+}
+#summary, #records > div {
+    padding: 2vmin;
+    border: 1px solid black;
+    border-radius: 2vmin;
+}
+#records > div {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 3vh;
+    cursor: pointer;
+}
+#records > div > div {
+    display: flex;
+}
+#records .material-icons {
+    opacity: .5;
+}
+#recordModal label {
+    align-self: stretch;
+    display: flex;
+}
+#recordModal p {
+    white-space: pre;
+    flex: 1;
+}
+#main, .modal {
+    user-select: none;
+}
+
+.d-none {
+    display: none;
+}
+.d-flex {
+    display: flex;
+}
+.flex-column {
+    flex-direction: column;
+}
+.flex-1 {
+    flex: 1;
+}
+.flex-break {
+    flex-basis: 100%;
+    height: 0;
+}
+.overflow-auto {
+    overflow: auto;
+}
+.align-self-start {
+    align-self: flex-start;
+}
+.align-self-stretch {
+    align-self: stretch;
+}
+.white-space-pre {
+    white-space: pre;
+}
+
+.modal {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+.modal-open {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.backdrop {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    
+    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(1px);
+}
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+
+    background-color: white;
+    border: 1px solid black;
+    padding: 3vmin;
+    gap: 2vh;
+}
+.modal-content > hr {
+    width: 100%;
+}
+
+.icon-button {
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    appearance: none;
+    cursor: pointer;
+    color: #000;
+    opacity: .5;
+}
+.icon-button:hover {
+    opacity: .75;
+}
+.icon-button > .material-icons {
+    vertical-align: middle;
+}
+
+    </style>
+
+    <script src="synk.js"></script>
+
+</head>
+
+<body class="d-flex">
+    <div id="main" class="d-flex flex-column">
+        <div id="summary" class="d-flex flex-column">
+            <div class="d-flex">
+                <input id="startDate" type="date">
+                <p class="white-space-pre"> - </p>
+                <input id="endDate" type="date">
+            </div>
+            <select id="selectCategory" class="align-self-start"></select>
+            <div id="accounts">
+                <!--
+                <div class="d-flex">
+                    <p class="flex-1">Wallet</p>
+                    <p>+$30 -$20 =$10</p>
+                </div>
+                -->
+            </div>
+        </div>
+        <div id="actions" class="d-flex">
+            <select id="selectMonth"></select>
+            <button id="addRecord" class="icon-button">
+                <i class="material-icons">add</i>
+            </button>
+            <div class="flex-1"></div>
+            <button id="exportData" class="icon-button">
+                <i class="material-icons">save</i>
+            </button>
+            <label for="importData" class="icon-button">
+                <i class="material-icons">folder_open</i>
+                <input id="importData" class="d-none" type="file" accept=".json,.txt">
+            </label>
+        </div>
+        <div id="records" class="flex-1 overflow-auto">
+            <!--
+            <div>
+                <div>
+                    <p>2025-01-01</p>
+                    <div class="flex-1"></div>
+                    <p>Bank</p>
+                    <i class="material-icons">arrow_forward</i>
+                    <p>Wallet</p>
+                    <div class="flex-1"></div>
+                    <p>=$10</p>
+                </div>
+
+                <div>
+                    <p class="flex-1">Content</p>
+                    <i class="material-icons">category</i>
+                    <p>Category</p>
+                </div>
+                
+                <div>
+                    <p class="flex-1">Comment</p>
+                    <i class="material-icons">location_on</i>
+                    <p>Location</p>
+                </div>
+            </div>
+            -->
+        </div>
+    </div>
+
+    <div id="recordModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <input type="date">
+            <label>
+                <p>Out: </p>
+                <input type="text" id="outInput" list="outList">
+                <datalist id="outList"></datalist>
+            </label>
+            <label>
+                <p>In: </p>
+                <input type="text" id="inInput" list="inList">
+                <datalist id="inList"></datalist>
+            </label>
+            <label>
+                <p>Category: </p>
+                <input type="text" id="categoryInput" list="categoryList">
+                <datalist id="categoryList"></datalist>
+            </label>
+            <label>
+                <p>Location: </p>
+                <input type="text" id="locationInput" list="locationList">
+                <datalist id="locationList"></datalist>
+            </label>
+            <label>
+                <p>Content: </p>
+                <input type="text" id="contentInput" list="contentList">
+                <datalist id="contentList"></datalist>
+            </label>
+            <label>
+                <p>Comment: </p>
+                <input type="text" id="commentInput" class="commentList">
+                <datalist id="commentList"></datalist>
+            </label>
+            <label>
+                <p>Amount: </p>
+                <input type="number" id="amountInput" class="amountList">
+                <datalist id="amountList"></datalist>
+            </label>
+            <hr>
+            <div class="align-self-stretch d-flex">
+                <button class="modal-delete-button">Delete</button>
+                <div class="flex-1"></div>
+                <button class="modal-close-button">Cancel</button>
+                <button class="modal-submit-button">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+(function() {
+
+    if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("service_worker.js")
+
+    function $(selectors, element=document) {
+        return element.querySelector(selectors)
+    }
+    function $$(selectors, element=document) {
+        return Array.from(element.querySelectorAll(selectors))
+    }
+    function $on(type, element, handler) {
+        if (typeof element === "string")
+            element = $(element)
+        element.addEventListener(type, handler)
+    }
+    function $$on(type, elements, handler) {
+        if (typeof elements === "string")
+            elements = [elements]
+        const processed = []
+        for (const element of elements) {
+            if (typeof element === "string")
+                processed.push(...$$(element))
+            else
+                processed.push(element)
+        }
+        processed.forEach(element => $on(type, element, handler))
+    }
+    function $html(html) {
+        const template = document.createElement("template")
+        template.innerHTML = html
+        return template.content.children[0]
+    }
+
+    function openModal(modalElement) {
+        if (typeof modalElement === "string")
+            modalElement = $(modalElement)
+        modalElement.classList.add("modal-open")
+    }
+    function closeModal() {
+        $$(".modal.modal-open").forEach(element => {
+            element.classList.remove("modal-open")
+        })
+    }
+    $$on("click",
+        [".modal", ".modal .backdrop", ".modal .modal-close-button"],
+        event => {
+            if (event.target === event.currentTarget)
+                closeModal()
+        }
+    )
+
+    class AccountBookApp {
+        constructor(localStorageKey="kirksud_account_book") {
+            this.localStorageKey = localStorageKey
+            this.recordColumns = [
+                "year", "month", "day", "out", "in", "amount",
+                "category", "content", "location", "comment"
+            ]
+
+            $$on("change",
+                ["#startDate", "#endDate", "#selectCategory"],
+                e => this.onSelectSummary(e))
+            $on("change", "#selectMonth", e => this.onSelectMonth(e))
+
+            $on("click", "#addRecord", e => this.onAddRecord(e))
+            $on("click",
+                "#recordModal .modal-delete-button",
+                e => this.onDeleteRecord(e))
+            $on("click",
+                "#recordModal .modal-submit-button",
+                e => this.onRecordModal(e))
+            $$on("change",
+                ["#categoryInput", "#locationInput", "#contentInput"],
+                e => this.setDataList(e))
+
+            $on("click", "#exportData", e => this.onExportData(e))
+            $on("change", "#importData", e => this.onImportData(e))
+
+            const synkServer = "https://kirk.alwaysdata.net"
+            // const synkServer = "https://kirksud.pythonanywhere.com"
+            this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+            this.load()
+            this.sync()
+        }
+        load(data=null) {
+            if (data === null) {
+                data = localStorage.getItem(this.localStorageKey)
+                if (data === null)
+                    data = []
+                else
+                    data = JSON.parse(data)
+            }
+            this.records = []
+            for (const [i, record] of data.entries()) {
+                this.records.push({})
+                for (const [j, c] of this.recordColumns.entries())
+                    this.records[i][c] = record[j]
+            }
+
+            $("#startDate").value = ""
+            $("#endDate").value = ""
+            if (this.records.length > 0) {
+                let year, month, day;
+                ({year, month, day} = this.records[0]);
+                $("#startDate").value = this.formatDate(new Date(year, month - 1, day));
+                ({year, month, day} = this.records[this.records.length - 1]);
+                $("#endDate").value = this.formatDate(new Date(year, month - 1, day))
+            }
+            $("#selectCategory").innerHTML = `<option value="">[All]</option>`
+            for (const category of this.uniqueValues(this.records, "category"))
+                if (category !== "")
+                    $("#selectCategory").insertAdjacentHTML("beforeend", `
+                        <option value="${category}">${category}</option>`)
+            $("#selectCategory").value = ""
+            this.onSelectSummary()
+
+            $("#selectMonth").innerHTML = ""
+            const months = this.uniqueValues(
+                this.records, record => this.formatMonth(record))
+            for (const month of months)
+                $("#selectMonth").insertAdjacentHTML("beforeend", `
+                    <option value="${month}">${month}</option>`)
+            this.onSelectMonth()
+        }
+        save() {
+            const data = []
+            for (const [i, record] of this.records.entries()) {
+                data.push([])
+                for (const c of this.recordColumns)
+                    data[i].push(record[c])
+            }
+            localStorage.setItem(this.localStorageKey, JSON.stringify(data))
+            this.sync()
+        }
+        sync() {
+            const localData = localStorage.getItem(this.localStorageKey) ?? "null"
+            this.synk.run(localData, data => {
+                if (data === null || data === localData)
+                    return
+                localStorage.setItem(this.localStorageKey, data)
+                this.load()
+            })
+        }
+        onExportData(event) {
+            const text = localStorage.getItem(this.localStorageKey)
+            const file = new Blob([text], {type: "application/json"})
+            const fileUrl = URL.createObjectURL(file)
+            const timestamp = this.formatDate(new Date()).replaceAll("-", "")
+            const fileName = `account_book_${timestamp}.json`
+            const exportLink = $html(`
+                <a href="${fileUrl}" download="${fileName}"></a>`)
+            document.body.insertAdjacentElement("beforeend", exportLink)
+            exportLink.click()
+            exportLink.remove()
+        }
+        onImportData(event) {
+            const file = event.currentTarget.files[0]
+            const file_reader = new FileReader()
+            file_reader.onload = evt => {
+                this.load(JSON.parse(evt.target.result))
+                this.save()
+            }
+            file_reader.readAsText(file)
+        }
+        pad2(n) {
+            return (n < 10) ? `0${n}` : `${n}`
+        }
+        formatDate(d) {
+            return `${d.getFullYear()}-${this.pad2(d.getMonth()+1)}-${this.pad2(d.getDate())}`
+        }
+        formatMonth(record) {
+            return `${record.year}-${this.pad2(record.month)}`
+        }
+        filterRecords(records, filters) {
+            function evalCondition(record, key, relation, value) {
+                const v = (typeof key === "string") ? record[key] : key(record)
+                if (relation === "<") return v < value
+                if (relation === "<=") return v <= value
+                if (relation === "==") return v === value
+                if (relation === "!=") return v !== value
+                if (relation === ">=") return v >= value
+                if (relation === ">") return v > value
+            }
+            const res = []
+            for (const record of records)
+                if (filters.every(([k, r, v]) => evalCondition(record, k, r, v)))
+                    res.push(record)
+            return res
+        }
+        uniqueValues(records, key, reverse=true) {
+            const res = new Set()
+            if (reverse)
+                records = records.slice().reverse()
+            for (const record of records)
+                res.add((typeof key === "string") ? record[key] : key(record))
+            return Array.from(res)
+        }
+
+        onSelectSummary(event=null) {
+            const startDate = $("#startDate").value
+            const endDate = $("#endDate").value
+            const category = $("#selectCategory").value
+            let records = this.records
+            if (startDate !== "")
+                records = this.filterRecords(records, [[
+                    record => new Date(record.year, record.month - 1, record.day),
+                    ">=", new Date(startDate + " 0:0")
+                ]])
+            if (endDate !== "")
+                records = this.filterRecords(records, [[
+                    record => new Date(record.year, record.month - 1, record.day),
+                    "<=", new Date(endDate + " 0:0")
+                ]])
+            if (category !== "")
+                records = this.filterRecords(records, [[
+                    "category", "==", category
+                ]])
+
+            const accounts = new Set(
+                this.uniqueValues(records, "out").concat(
+                this.uniqueValues(records, "in")))
+            $("#accounts").innerHTML = ""
+            for (const account of accounts) {
+                if (account === "")
+                    continue
+                const inAmount = this.filterRecords(records, [["in", "==", account]])
+                    .reduce((total, record) => total + record.amount, 0)
+                const outAmount = this.filterRecords(records, [["out", "==", account]])
+                    .reduce((total, record) => total + record.amount, 0)
+                const amount = inAmount - outAmount
+                $("#accounts").insertAdjacentHTML("beforeend", `
+                    <div class="d-flex">
+                        <p class="flex-1">${account}</p>
+                        <p>+$${inAmount} -$${outAmount} =$${amount}</p>
+                    </div>`)
+            }
+
+            const inAmount = this.filterRecords(
+                records, [["in", "!=", ""], ["out", "==", ""]])
+                .reduce((total, record) => total + record.amount, 0)
+            const outAmount = this.filterRecords(
+                records, [["in", "==", ""], ["out", "!=", ""]])
+                .reduce((total, record) => total + record.amount, 0)
+            const amount = inAmount - outAmount
+            $("#accounts").insertAdjacentHTML("beforeend", `
+                <div class="d-flex">
+                    <p class="flex-1">[Total]</p>
+                    <p>+$${inAmount} -$${outAmount} =$${amount}</p>
+                </div>`)
+        }
+        onSelectMonth(event=null) {
+            const month = $("#selectMonth").value
+            if (month === "")
+                return
+            const records = this.filterRecords(this.records, [[
+                record => this.formatMonth(record), "==", month
+            ]])
+            $("#records").innerHTML = ""
+            for (const record of records.slice().reverse()) {
+                let h = "<div>"
+                const date = new Date(record.year, record.month - 1, record.day)
+                h += `
+                    <div>
+                        <p>${this.formatDate(date)}</p>`
+                if (record.out !== "" || record.in !== "")
+                    h += `
+                        <div class="flex-1"></div>
+                        <p>${record.out}</p>
+                        <i class="material-icons">arrow_forward</i>
+                        <p>${record.in}</p>`
+
+                let symbol = "?"
+                if (record.in !== "" && record.out !== "")
+                    symbol = "="
+                else if (record.in !== "")
+                    symbol = "+"
+                else if (record.out !== "")
+                    symbol = "-"
+                h += `
+                        <div class="flex-1"></div>
+                        <p>${symbol}$${record.amount}</p>
+                    </div>`
+
+                if (record.content !== "" || record.category !== "") {
+                    h += `
+                    <div>
+                        <p class="flex-1">${record.content}</p>`
+                    if (record.category !== "")
+                        h += `
+                        <i class="material-icons">category</i>
+                        <p>${record.category}</p>`
+                    h += `
+                    </div>`
+                }
+
+                if (record.comment !== "" || record.location !== "") {
+                    h += `
+                    <div>
+                        <p class="flex-1">${record.comment}</p>`
+                    if (record.location !== "")
+                        h += 
+                        `<i class="material-icons">location_on</i>
+                        <p>${record.location}</p>`
+                    h += `
+                    </div>`
+                }
+
+                h += "</div>"
+                const element = $html(h)
+                $on("click", element, e => this.onEditRecord(e, record))
+                $("#records").append(element)
+            }
+        }
+
+        deleteRecord(records, record) { // in-place
+            for (const [i, r] of records.entries())
+                if (Object.keys(r).every(k => r[k] === record[k])) {
+                    records.splice(i, 1)
+                    return records
+                }
+        }
+        addRecord(records, record) { // in-place
+            let index = records.length
+            const recordDate = new Date(record.year, record.month - 1, record.day)
+            for (const [i, r] of records.entries())
+                if (new Date(r.year, r.month - 1, r.day) > recordDate) {
+                    index = i
+                    break
+                }
+            records.splice(index, 0, record)
+            return records
+        }
+        onAddRecord(event) {
+            this.editingRecord = null
+            $('#recordModal input[type="date"]').value = this.formatDate(new Date())
+            const modalInputs = [
+                "#outInput", "#inInput",
+                "#categoryInput", "#locationInput",
+                "#contentInput", "#commentInput", "#amountInput"
+            ]
+            modalInputs.forEach(elem => $(elem).value = "")
+            $("#recordModal .modal-delete-button").classList.add("d-none")
+            this.setDataList()
+            openModal("#recordModal")
+        }
+        onEditRecord(event, record) {
+            this.editingRecord = record
+            const modalInputs = {
+                '#recordModal input[type="date"]': this.formatDate(
+                    new Date(record.year, record.month - 1, record.day)),
+                "#outInput": record.out,
+                "#inInput": record.in,
+                "#categoryInput": record.category,
+                "#locationInput": record.location,
+                "#contentInput": record.content,
+                "#commentInput": record.comment,
+                "#amountInput": record.amount,
+            }
+            for (const [elem, value] of Object.entries(modalInputs))
+                $(elem).value = value
+            $("#recordModal .modal-delete-button").classList.remove("d-none")
+            this.setDataList()
+            openModal("#recordModal")
+        }
+        onDeleteRecord(event) {
+            this.deleteRecord(this.records, this.editingRecord)
+            this.save()
+            closeModal()
+            this.load()
+        }
+        onRecordModal(event) {
+            let dateValue = $('#recordModal input[type="date"]').value
+            if (dateValue === "")
+                dateValue = this.formatDate(new Date())
+            const record = {
+                year: new Date(dateValue).getFullYear(),
+                month: new Date(dateValue).getMonth() + 1,
+                day: new Date(dateValue).getDate(),
+                out: $("#outInput").value,
+                in: $("#inInput").value,
+                amount: Number($("#amountInput").value),
+                category: $("#categoryInput").value,
+                content: $("#contentInput").value,
+                location: $("#locationInput").value,
+                comment: $("#commentInput").value,
+            }
+            if (this.editingRecord !== null)
+                this.deleteRecord(this.records, this.editingRecord)
+            this.addRecord(this.records, record)
+            this.save()
+            closeModal()
+            this.load()
+        }
+        setDataList(event=null) {
+            function addOptions(selector, optionValues) {
+                const element = $(selector)
+                element.innerHTML = ""
+                for (const v of optionValues)
+                    element.insertAdjacentHTML("beforeend", `
+                        <option value="${v}"></option>`)
+            }
+
+            const accounts = new Set(
+                this.uniqueValues(this.records, "out").concat(
+                this.uniqueValues(this.records, "in")))
+            addOptions("#outList", accounts)
+            addOptions("#inList", accounts)
+            addOptions("#categoryList",
+                this.uniqueValues(this.records, "category"))
+
+            const categoryValue = $("#categoryInput").value
+            const locationValue = $("#locationInput").value
+            const contentValue = $("#contentInput").value
+            
+            // category,content || category -> location
+            let locations = this.uniqueValues(this.records, "location")
+            if (categoryValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue]
+                ])
+                locations = Array.from(new Set(
+                    this.uniqueValues(records, "location").concat(locations)))
+            }
+            if (categoryValue !== "" && contentValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue],
+                    ["content", "==", contentValue],
+                ])
+                locations = Array.from(new Set(
+                    this.uniqueValues(records, "location").concat(locations)))
+            }
+            addOptions("#locationList", locations)
+
+            // category,location || category -> content
+            let contents = this.uniqueValues(this.records, "content")
+            if (categoryValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue]
+                ])
+                contents = Array.from(new Set(
+                    this.uniqueValues(records, "content").concat(contents)))
+            }
+            if (categoryValue !== "" && locationValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue],
+                    ["location", "==", locationValue],
+                ])
+                contents = Array.from(new Set(
+                    this.uniqueValues(records, "content").concat(contents)))
+            }
+            addOptions("#contentList", contents)
+
+            // category,location,content || category,content -> comment,amount
+            let comments = this.uniqueValues(this.records, "comment")
+            let amounts = this.uniqueValues(this.records, "amount")
+            if (categoryValue !== "" && contentValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue],
+                    ["content", "==", contentValue],
+                ])
+                comments = Array.from(new Set(
+                    this.uniqueValues(records, "comment").concat(comments)))
+                amounts = Array.from(new Set(
+                    this.uniqueValues(records, "amount").concat(amounts)))
+            }
+            if (categoryValue !== "" && locationValue !== "" && contentValue !== "") {
+                const records = this.filterRecords(this.records, [
+                    ["category", "==", categoryValue],
+                    ["location", "==", locationValue],
+                    ["content", "==", contentValue],
+                ])
+                comments = Array.from(new Set(
+                    this.uniqueValues(records, "comment").concat(comments)))
+                amounts = Array.from(new Set(
+                    this.uniqueValues(records, "amount").concat(amounts)))
+            }
+            addOptions("#commentList", comments)
+            addOptions("#amountList", amounts)
+        }
+    }
+    const accountBookApp = new AccountBookApp()
+
+})()
+
+    </script>
+</body>
+</html>

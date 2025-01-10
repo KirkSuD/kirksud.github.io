@@ -29,6 +29,7 @@ html {
 body {
     margin: 0;
     height: 100%;
+    justify-content: center;
 }
 p {
     margin: 0;
@@ -36,6 +37,7 @@ p {
 
 #main {
     width: 100%;
+    max-width: 576px;
     gap: 3vmin;
     padding: 3vmin;
 }
@@ -671,6 +673,7 @@ p {
             if (value === "" || date === "" || time === "")
                 return alert("Progress record value, date, time can't be empty!")
             time = new Date(Date.parse(date + " " + time)).getTime()
+            time -= time % 60_000
             value = Number(value)
             const comment = $('#recordModal input[type="text"]').value
 
@@ -693,7 +696,8 @@ p {
             openModal("#valueModal")
         }
         onAddRecord(event) {
-            const time = new Date().getTime()
+            let time = new Date().getTime()
+            time -= time % 60_000
             const value = Number(event.currentTarget.innerText)
             const comment = ""
             const name = $("#selectTracker").value
