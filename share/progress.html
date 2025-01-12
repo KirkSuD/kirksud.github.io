@@ -45,16 +45,21 @@ p {
     border: 1px solid black;
     padding: 2vmin;
 }
+#header > * {
+    padding: 1vh 0.5vw;
+}
+#progressDisplay > * {
+    padding: 1vh 0;
+}
 #progressBarContainer {
     height: 3vh;
     margin: 1vh 0;
     background-color: rgb(200, 200, 200);
     border-radius: 1.5vh;
+    overflow: hidden;
 }
 #progressBar {
     background-color: rgb(40, 40, 40);
-    border-top-left-radius: 1.5vh;
-    border-bottom-left-radius: 1.5vh;
     height: 100%;
     width: 0%;
 }
@@ -62,6 +67,7 @@ p {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     /* justify-items: center; */
+    gap: 1vw;
 }
 #progressRecord > div, #footer > div {
     display: flex;
@@ -69,12 +75,19 @@ p {
     justify-content: center;
     align-items: center;
     cursor: pointer;
+    border-radius: 2vmin;
+    background-color: rgb(220, 220, 220);
 }
 #progressRecord > div {
     margin: 2vh 0;
+    padding: 1vh 0;
+}
+#footer > div {
+    padding: 2vh 0;
 }
 #main, .modal {
     user-select: none;
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 }
 
 .d-none {
@@ -129,10 +142,16 @@ p {
     background-color: white;
     border: 1px solid black;
     padding: 3vmin;
-    gap: 2vh;
+    gap: 1.5vh;
 }
 .modal-content > hr {
     width: 100%;
+}
+.modal-content > div {
+    gap: 1.5vw;
+}
+.modal-content input, .modal-content select, .modal-content button {
+    padding: 1vh 1vw;
 }
 
 .icon-button {
@@ -201,10 +220,10 @@ p {
             </div>
         </div>
         <div id="footer">
+            <div></div>
+            <div></div>
+            <div></div>
             <button class="icon-button"><i class="material-icons">add</i></button>
-            <div></div>
-            <div></div>
-            <div></div>
         </div>
     </div>
     
@@ -538,7 +557,7 @@ p {
                 DateUtil.formatPeriod(new Date(time), tracker.period) === selected)
             const valueSum = filtered.reduce(
                 (total, [time, value, comment]) => total + value, 0)
-            const percent = valueSum / tracker.target * 100
+            const percent = Math.min(100, valueSum / tracker.target * 100)
             $("#currentProgress").innerText = valueSum
             $("#progressBar").style.width = `${percent}%`
 

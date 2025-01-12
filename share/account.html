@@ -44,6 +44,23 @@ p {
 #summary {
     gap: 1vh;
 }
+#summary input, #summary select, #actions > * {
+    padding: 1vh 0.5vw;
+}
+#summary > div:first-child {
+    align-items: center;
+}
+#accounts {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 0 2vw;
+}
+#accounts > p {
+    text-align: right;
+}
+#accounts > p:nth-child(4n+1) {
+    text-align: left;
+}
 #actions {
     padding: 2vmin;
 }
@@ -67,13 +84,17 @@ p {
 #recordModal label {
     align-self: stretch;
     display: flex;
+    align-items: center;
 }
 #recordModal p {
     white-space: pre;
     flex: 1;
 }
-#main, .modal {
+#records, .modal {
     user-select: none;
+}
+#main, .modal {
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 }
 
 .d-none {
@@ -135,10 +156,16 @@ p {
     background-color: white;
     border: 1px solid black;
     padding: 3vmin;
-    gap: 2vh;
+    gap: 1.5vh;
 }
 .modal-content > hr {
     width: 100%;
+}
+.modal-content > div {
+    gap: 1.5vw;
+}
+.modal-content input, .modal-content select, .modal-content button {
+    padding: 1vh 1vw;
 }
 
 .icon-button {
@@ -506,11 +533,8 @@ p {
                 const outAmount = this.filterRecords(records, [["out", "==", account]])
                     .reduce((total, record) => total + record.amount, 0)
                 const amount = inAmount - outAmount
-                $("#accounts").insertAdjacentHTML("beforeend", `
-                    <div class="d-flex">
-                        <p class="flex-1">${account}</p>
-                        <p>+$${inAmount} -$${outAmount} =$${amount}</p>
-                    </div>`)
+                for (const p of [account, `+$${inAmount}`, `-$${outAmount}`, `=$${amount}`])
+                    $("#accounts").insertAdjacentHTML("beforeend", `<p>${p}</p>`)
             }
 
             const inAmount = this.filterRecords(
@@ -520,11 +544,8 @@ p {
                 records, [["in", "==", ""], ["out", "!=", ""]])
                 .reduce((total, record) => total + record.amount, 0)
             const amount = inAmount - outAmount
-            $("#accounts").insertAdjacentHTML("beforeend", `
-                <div class="d-flex">
-                    <p class="flex-1">[Total]</p>
-                    <p>+$${inAmount} -$${outAmount} =$${amount}</p>
-                </div>`)
+            for (const p of ["[Total]", `+$${inAmount}`, `-$${outAmount}`, `=$${amount}`])
+                $("#accounts").insertAdjacentHTML("beforeend", `<p>${p}</p>`)
         }
         onSelectMonth(event=null) {
             const month = $("#selectMonth").value

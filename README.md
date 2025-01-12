@@ -17,6 +17,14 @@ You can organize your thoughts, plan your todos using the folder functionality.
 
 A productivity app similar to chess clock to track what you do every day.
 
+* [[App] Progress tracker](https://kirksud.github.io/share/progress.html) (PWA, Sync)
+
+A simple app to track progress in day/week/month.
+
+* [[App] Account book](https://kirksud.github.io/share/account.html) (PWA, Sync)
+
+A simple app to track spending, and see the money flow amount in specific period.
+
 * [[App] Time record](https://kirksud.github.io/share/time_record.html) (PWA, Sync)
 
 A very simple little app to record time,  
