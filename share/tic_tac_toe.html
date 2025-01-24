@@ -186,7 +186,7 @@ function $(selectors, element=document) {
 }
 
 function $$(selectors, element=document) {
-    return element.querySelectorAll(selectors)
+    return Array.from(element.querySelectorAll(selectors))
 }
 
 class Board {
@@ -291,7 +291,7 @@ function negamax(board) {
 }
 
 const bgColors = {willLose: "lightpink", willWin: "lightgreen", win: "gold"}
-const tiles = Array.from($$("#game-div a"))
+const tiles = $$("#game-div a")
 let board = new Board()
 let history = []
 let showSolution = false

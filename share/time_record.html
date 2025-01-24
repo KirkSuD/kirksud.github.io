@@ -69,7 +69,7 @@ function $(selectors, element=document) {
 }
 
 function $$(selectors, element=document) {
-    return element.querySelectorAll(selectors)
+    return Array.from(element.querySelectorAll(selectors))
 }
 
 class DateUtil {

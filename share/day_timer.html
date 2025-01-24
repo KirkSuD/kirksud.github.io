@@ -154,7 +154,7 @@ function $(selectors, element=document) {
 }
 
 function $$(selectors, element=document) {
-    return element.querySelectorAll(selectors)
+    return Array.from(element.querySelectorAll(selectors))
 }
 
 class DateUtil {
@@ -494,9 +494,8 @@ class DayTimerApp {
         this.history = data.history
         this.elements.ddayInput.value = data.dday
 
-        const timerElements = $$("#root > div.timer")
-        for (let i=0; i<timerElements.length; i++)
-            timerElements[i].remove()
+        for (const timerElement of $$("#root > div.timer"))
+            timerElement.remove()
 
         const names = Object.keys(data.timers).sort()
         for (const name of names) {
@@ -620,9 +619,8 @@ class DayTimerApp {
         $("#transfer").style.display = "none"
         $("#add").style.display = "none"
 
-        const timerElements = $$("#root > div.timer")
-        for (let i=0; i<timerElements.length; i++)
-            timerElements[i].remove()
+        for (const timerElement of $$("#root > div.timer"))
+            timerElement.remove()
 
         if (!(day in this.history)) {
             this.elements.root.insertAdjacentHTML("beforeend", `

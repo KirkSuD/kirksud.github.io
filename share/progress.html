@@ -301,13 +301,8 @@ p {
     function $$(selectors, element=document) {
         return Array.from(element.querySelectorAll(selectors))
     }
-    function $on(type, element, handler) {
-        if (typeof element === "string")
-            element = $(element)
-        element.addEventListener(type, handler)
-    }
-    function $$on(type, elements, handler) {
-        if (typeof elements === "string")
+    function $on(type, elements, handler) {
+        if (!Array.isArray(elements))
             elements = [elements]
         const processed = []
         for (const element of elements) {
@@ -316,7 +311,7 @@ p {
             else
                 processed.push(element)
         }
-        processed.forEach(element => $on(type, element, handler))
+        processed.forEach(element => element.addEventListener(type, handler))
     }
     function $html(html) {
         const template = document.createElement("template")
@@ -334,8 +329,8 @@ p {
             element.classList.remove("modal-open")
         })
     }
-    $$on("click",
-        [".modal", ".modal .backdrop", ".modal .modal-close-button"],
+    $on("click",
+        [".modal .backdrop", ".modal .modal-close-button"],
         event => {
             if (event.target === event.currentTarget)
                 closeModal()
@@ -405,7 +400,7 @@ p {
             $on("click", "#deleteTracker", e => this.onDeleteTracker(e))
 
             $on("click", "#footer button", e => this.onAddValue(e))
-            $$on("click", "#footer div", e => this.onAddRecord(e))
+            $on("click", "#footer div", e => this.onAddRecord(e))
 
             $on("click", "#exportData", e => this.onExportData(e))
             $on("change", "#importData", e => this.onImportData(e))
@@ -413,7 +408,7 @@ p {
             $on("click",
                 "#trackerModal .modal-submit-button",
                 e => this.onTrackerModal(e))
-            $$on("click",
+            $on("click",
                 '#recordModal input[type="button"]',
                 e => this.onMultiplyRecord(e))
             $on("click",
@@ -503,7 +498,7 @@ p {
             file_reader.readAsText(file)
         }
 
-        onSelectTracker(event=null) {
+        onSelectTracker(event=null, keepDateTimeValue=false) {
             const name = $("#selectTracker").value
             if (name === "")
                 return
@@ -511,7 +506,8 @@ p {
             if (tracker.period === "day") {
                 $("#selectTime").classList.add("d-none")
                 $("#selectDate").classList.remove("d-none")
-                $("#selectDate").value = DateUtil.formatDate(new Date())
+                if (!keepDateTimeValue)
+                    $("#selectDate").value = DateUtil.formatDate(new Date())
             }
             else {
                 const recordsTimes = []
@@ -529,11 +525,16 @@ p {
 
                 $("#selectDate").classList.add("d-none")
                 $("#selectTime").classList.remove("d-none")
+
+                const oldTime = $("#selectTime").value
                 $("#selectTime").innerHTML = ""
                 for (const prettyTime of recordsTimes)
                     $("#selectTime").insertAdjacentHTML("beforeend", `
                         <option value=${prettyTime}>${prettyTime}</option>`)
-                $("#selectTime").value = recordsTimes[0]
+
+                $("#selectTime").value = keepDateTimeValue ? oldTime : ""
+                if ($("#selectTime").value === "")
+                    $("#selectTime").value = recordsTimes[0]
             }
             $("#totalProgress").innerText = tracker.target
             for (let i=0; i<3; i++)
@@ -683,7 +684,7 @@ p {
                 $("#recordModal").dataset.comment)
             closeModal()
             this.save()
-            this.onSelectTracker()
+            this.onSelectTracker(null, true)
         }
         onRecordModal(event) {
             let value = $('#recordModal input[type="number"]').value
@@ -707,7 +708,7 @@ p {
 
             closeModal()
             this.save()
-            this.onSelectTracker()
+            this.onSelectTracker(null, true)
         }
 
         onAddValue(event=null) {

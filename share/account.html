@@ -282,12 +282,12 @@ p {
             </label>
             <label>
                 <p>Comment: </p>
-                <input type="text" id="commentInput" class="commentList">
+                <input type="text" id="commentInput" list="commentList">
                 <datalist id="commentList"></datalist>
             </label>
             <label>
                 <p>Amount: </p>
-                <input type="number" id="amountInput" class="amountList">
+                <input type="number" id="amountInput" list="amountList">
                 <datalist id="amountList"></datalist>
             </label>
             <hr>
@@ -313,13 +313,8 @@ p {
     function $$(selectors, element=document) {
         return Array.from(element.querySelectorAll(selectors))
     }
-    function $on(type, element, handler) {
-        if (typeof element === "string")
-            element = $(element)
-        element.addEventListener(type, handler)
-    }
-    function $$on(type, elements, handler) {
-        if (typeof elements === "string")
+    function $on(type, elements, handler) {
+        if (!Array.isArray(elements))
             elements = [elements]
         const processed = []
         for (const element of elements) {
@@ -328,7 +323,7 @@ p {
             else
                 processed.push(element)
         }
-        processed.forEach(element => $on(type, element, handler))
+        processed.forEach(element => element.addEventListener(type, handler))
     }
     function $html(html) {
         const template = document.createElement("template")
@@ -346,8 +341,8 @@ p {
             element.classList.remove("modal-open")
         })
     }
-    $$on("click",
-        [".modal", ".modal .backdrop", ".modal .modal-close-button"],
+    $on("click",
+        [".modal .backdrop", ".modal .modal-close-button"],
         event => {
             if (event.target === event.currentTarget)
                 closeModal()
@@ -362,7 +357,7 @@ p {
                 "category", "content", "location", "comment"
             ]
 
-            $$on("change",
+            $on("change",
                 ["#startDate", "#endDate", "#selectCategory"],
                 e => this.onSelectSummary(e))
             $on("change", "#selectMonth", e => this.onSelectMonth(e))
@@ -374,7 +369,7 @@ p {
             $on("click",
                 "#recordModal .modal-submit-button",
                 e => this.onRecordModal(e))
-            $$on("change",
+            $on("change",
                 ["#categoryInput", "#locationInput", "#contentInput"],
                 e => this.setDataList(e))
 
@@ -387,7 +382,7 @@ p {
             this.load()
             this.sync()
         }
-        load(data=null) {
+        load(data=null, keepValue=false) {
             if (data === null) {
                 data = localStorage.getItem(this.localStorageKey)
                 if (data === null)
@@ -402,30 +397,22 @@ p {
                     this.records[i][c] = record[j]
             }
 
-            $("#startDate").value = ""
-            $("#endDate").value = ""
-            if (this.records.length > 0) {
+            if (!keepValue && this.records.length > 0) {
                 let year, month, day;
                 ({year, month, day} = this.records[0]);
                 $("#startDate").value = this.formatDate(new Date(year, month - 1, day));
                 ({year, month, day} = this.records[this.records.length - 1]);
                 $("#endDate").value = this.formatDate(new Date(year, month - 1, day))
             }
+
+            const oldCategory = $("#selectCategory").value
             $("#selectCategory").innerHTML = `<option value="">[All]</option>`
             for (const category of this.uniqueValues(this.records, "category"))
                 if (category !== "")
                     $("#selectCategory").insertAdjacentHTML("beforeend", `
                         <option value="${category}">${category}</option>`)
-            $("#selectCategory").value = ""
-            this.onSelectSummary()
-
-            $("#selectMonth").innerHTML = ""
-            const months = this.uniqueValues(
-                this.records, record => this.formatMonth(record))
-            for (const month of months)
-                $("#selectMonth").insertAdjacentHTML("beforeend", `
-                    <option value="${month}">${month}</option>`)
-            this.onSelectMonth()
+            $("#selectCategory").value = keepValue ? oldCategory : ""
+            this.onSelectSummary(null, keepValue)
         }
         save() {
             const data = []
@@ -501,7 +488,7 @@ p {
             return Array.from(res)
         }
 
-        onSelectSummary(event=null) {
+        filterRecordsBySelected() {
             const startDate = $("#startDate").value
             const endDate = $("#endDate").value
             const category = $("#selectCategory").value
@@ -520,6 +507,23 @@ p {
                 records = this.filterRecords(records, [[
                     "category", "==", category
                 ]])
+            return records
+        }
+        onSelectSummary(event=null, keepValue=false) {
+            const records = this.filterRecordsBySelected()
+
+            const oldMonth = $("#selectMonth").value
+            $("#selectMonth").innerHTML = ""
+            const months = this.uniqueValues(
+                this.filterRecordsBySelected(),
+                record => this.formatMonth(record))
+            for (const month of months)
+                $("#selectMonth").insertAdjacentHTML("beforeend", `
+                    <option value="${month}">${month}</option>`)
+            $("#selectMonth").value = keepValue ? oldMonth : ""
+            if ($("#selectMonth").value === "")
+                $("#selectMonth").value = months[0]
+            this.onSelectMonth()
 
             const accounts = new Set(
                 this.uniqueValues(records, "out").concat(
@@ -551,7 +555,8 @@ p {
             const month = $("#selectMonth").value
             if (month === "")
                 return
-            const records = this.filterRecords(this.records, [[
+            const records = this.filterRecords(
+                this.filterRecordsBySelected(), [[
                 record => this.formatMonth(record), "==", month
             ]])
             $("#records").innerHTML = ""
@@ -665,7 +670,7 @@ p {
             this.deleteRecord(this.records, this.editingRecord)
             this.save()
             closeModal()
-            this.load()
+            this.load(null, true)
         }
         onRecordModal(event) {
             let dateValue = $('#recordModal input[type="date"]').value
@@ -688,7 +693,7 @@ p {
             this.addRecord(this.records, record)
             this.save()
             closeModal()
-            this.load()
+            this.load(null, this.editingRecord !== null)
         }
         setDataList(event=null) {
             function addOptions(selector, optionValues) {
