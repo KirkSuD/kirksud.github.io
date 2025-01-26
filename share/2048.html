@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>2048</title>
-    
+
     <meta name="description" content="The classic 2048. Play on laptop & phone!" />
     <meta property="og:title" content="2048">
     <meta property="og:description" content="The classic 2048. Play on laptop & phone!">
@@ -519,7 +519,7 @@
                     this.element = (
                         typeof(element) === 'string'
                     ) ? document.querySelector(element) : element;
-            
+
                     this.element.addEventListener('touchstart', function(evt) {
                         this.xDown = evt.touches[0].clientX;
                         this.yDown = evt.touches[0].clientY;
@@ -547,10 +547,10 @@
                     }
                     var xUp = evt.touches[0].clientX;
                     var yUp = evt.touches[0].clientY;
-            
+
                     this.xDiff = this.xDown - xUp;
                     this.yDiff = this.yDown - yUp;
-            
+
                     if ( Math.abs( this.xDiff ) > Math.abs( this.yDiff ) ) {
                         // Most significant.
                         if ( this.xDiff > 0 ) {

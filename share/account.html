@@ -44,7 +44,7 @@ p {
 #summary {
     gap: 1vh;
 }
-#summary input, #summary select, #actions > * {
+#summary input, #summary select, #summary button, #actions > * {
     padding: 1vh 0.5vw;
 }
 #summary > div:first-child {
@@ -109,15 +109,8 @@ p {
 .flex-1 {
     flex: 1;
 }
-.flex-break {
-    flex-basis: 100%;
-    height: 0;
-}
 .overflow-auto {
     overflow: auto;
-}
-.align-self-start {
-    align-self: flex-start;
 }
 .align-self-stretch {
     align-self: stretch;
@@ -142,7 +135,7 @@ p {
     position: fixed;
     width: 100%;
     height: 100%;
-    
+
     z-index: -1;
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(1px);
@@ -198,7 +191,12 @@ p {
                 <p class="white-space-pre"> - </p>
                 <input id="endDate" type="date">
             </div>
-            <select id="selectCategory" class="align-self-start"></select>
+            <div class="d-flex">
+                <select id="selectCategory"></select>
+                <button id="toggleVisibility" class="icon-button">
+                    <i class="material-icons">visibility_off</i>
+                </button>
+            </div>
             <div id="accounts">
                 <!--
                 <div class="d-flex">
@@ -240,7 +238,7 @@ p {
                     <i class="material-icons">category</i>
                     <p>Category</p>
                 </div>
-                
+
                 <div>
                     <p class="flex-1">Comment</p>
                     <i class="material-icons">location_on</i>
@@ -361,6 +359,7 @@ p {
                 ["#startDate", "#endDate", "#selectCategory"],
                 e => this.onSelectSummary(e))
             $on("change", "#selectMonth", e => this.onSelectMonth(e))
+            $on("click", "#toggleVisibility", e => this.onToggleVisibility(e))
 
             $on("click", "#addRecord", e => this.onAddRecord(e))
             $on("click",
@@ -404,14 +403,7 @@ p {
                 ({year, month, day} = this.records[this.records.length - 1]);
                 $("#endDate").value = this.formatDate(new Date(year, month - 1, day))
             }
-
-            const oldCategory = $("#selectCategory").value
-            $("#selectCategory").innerHTML = `<option value="">[All]</option>`
-            for (const category of this.uniqueValues(this.records, "category"))
-                if (category !== "")
-                    $("#selectCategory").insertAdjacentHTML("beforeend", `
-                        <option value="${category}">${category}</option>`)
-            $("#selectCategory").value = keepValue ? oldCategory : ""
+            this.summaryVisible = false
             this.onSelectSummary(null, keepValue)
         }
         save() {
@@ -488,7 +480,7 @@ p {
             return Array.from(res)
         }
 
-        filterRecordsBySelected() {
+        filterRecordsBySelected(filterCategory=true) {
             const startDate = $("#startDate").value
             const endDate = $("#endDate").value
             const category = $("#selectCategory").value
@@ -503,14 +495,24 @@ p {
                     record => new Date(record.year, record.month - 1, record.day),
                     "<=", new Date(endDate + " 0:0")
                 ]])
-            if (category !== "")
+            if (category !== "" && filterCategory)
                 records = this.filterRecords(records, [[
                     "category", "==", category
                 ]])
             return records
         }
-        onSelectSummary(event=null, keepValue=false) {
-            const records = this.filterRecordsBySelected()
+        onSelectSummary(event=null, keepValue=true) {
+            const oldCategory = $("#selectCategory").value
+            $("#selectCategory").innerHTML = `<option value="">[All]</option>`
+            const categories = this.uniqueValues(
+                this.filterRecordsBySelected(false), "category")
+            for (const category of categories)
+                if (category !== "")
+                    $("#selectCategory").insertAdjacentHTML("beforeend", `
+                        <option value="${category}">${category}</option>`)
+            $("#selectCategory").value = keepValue ? oldCategory : ""
+            if ($("#selectCategory").value === "")
+                $("#selectCategory").value = ""
 
             const oldMonth = $("#selectMonth").value
             $("#selectMonth").innerHTML = ""
@@ -525,10 +527,15 @@ p {
                 $("#selectMonth").value = months[0]
             this.onSelectMonth()
 
+            $("#accounts").innerHTML = ""
+            $("#accounts").style.display = this.summaryVisible ? "" : "none"
+            if (!this.summaryVisible)
+                return
+
+            const records = this.filterRecordsBySelected()
             const accounts = new Set(
                 this.uniqueValues(records, "out").concat(
                 this.uniqueValues(records, "in")))
-            $("#accounts").innerHTML = ""
             for (const account of accounts) {
                 if (account === "")
                     continue
@@ -553,14 +560,12 @@ p {
         }
         onSelectMonth(event=null) {
             const month = $("#selectMonth").value
-            if (month === "")
-                return
             const records = this.filterRecords(
                 this.filterRecordsBySelected(), [[
                 record => this.formatMonth(record), "==", month
-            ]])
+            ]]).slice().reverse()
             $("#records").innerHTML = ""
-            for (const record of records.slice().reverse()) {
+            for (const record of records) {
                 let h = "<div>"
                 const date = new Date(record.year, record.month - 1, record.day)
                 h += `
@@ -614,6 +619,12 @@ p {
                 $on("click", element, e => this.onEditRecord(e, record))
                 $("#records").append(element)
             }
+        }
+        onToggleVisibility(event=null) {
+            this.summaryVisible = !this.summaryVisible
+            $("#toggleVisibility .material-icons").innerHTML = (
+                this.summaryVisible ? "visibility" : "visibility_off")
+            this.onSelectSummary()
         }
 
         deleteRecord(records, record) { // in-place
@@ -715,7 +726,7 @@ p {
             const categoryValue = $("#categoryInput").value
             const locationValue = $("#locationInput").value
             const contentValue = $("#contentInput").value
-            
+
             // category,content || category -> location
             let locations = this.uniqueValues(this.records, "location")
             if (categoryValue !== "") {

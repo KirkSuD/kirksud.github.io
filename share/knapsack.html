@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-        
+
         <title>Knapsack Visualization</title>
         <meta name="description" content="Knapsack 0-1 algorithm visualization. Options: recursion & exact." />
         <meta property="og:title" content="Knapsack Visualization">
@@ -272,7 +272,7 @@ $(document).ready(function() {
     console.log("Items:", items);
     console.log("Max weight:", max_weight);
     console.log(dp);
-  
+
     let vis = $("#vis_table").html("");
     let new_tr;
     // first row
@@ -309,7 +309,7 @@ $(document).ready(function() {
   $("#pause_btn").on("click", function() {
     vis_move = 0;
   });
-  
+
   $("#next_btn").on("click", function() {
     vis_move = 1;
     if (vis_playing) {
@@ -322,7 +322,7 @@ $(document).ready(function() {
       play_vis();
     }
   });
-  
+
   $("#play_btn").on("click", function() {
     vis_move = Number.POSITIVE_INFINITY;
     if (vis_playing) {
@@ -340,7 +340,7 @@ $(document).ready(function() {
   function getURLParameter(url, name) {
     return (RegExp(name + '=' + '(.+?)(&|$)').exec(url)||[,null])[1];
   }
-  
+
   if (getURLParameter(window.location.href, "recursive") !== null) {
     if (getURLParameter(window.location.href, "recursive") === "0") {
       $("#is_recursive").prop("checked", false);
