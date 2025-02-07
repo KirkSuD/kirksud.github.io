@@ -333,16 +333,33 @@ p {
                     <option value="${company}">${company}</option>`)
             $("#company").value = this.load().company
 
+            const synkServer = "https://kirk.alwaysdata.net"
+            // const synkServer = "https://kirksud.pythonanywhere.com"
+            this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+            this.sync()
+
             this.show()
         }
         load() {
             return JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
                 company: "",
-                favorites: []
+                favorites: [],
+                doSync: false,
             }
         }
         save(data) {
             localStorage.setItem(this.localStorageKey, JSON.stringify(data))
+            this.sync()
+        }
+        sync() {
+            if (!this.load().doSync)
+                return
+            const localData = localStorage.getItem(this.localStorageKey) ?? "null"
+            this.synk.run(localData, data => {
+                if (data === null || data === localData)
+                    return
+                localStorage.setItem(this.localStorageKey, data)
+            })
         }
         company() {
             const data = this.load()
@@ -365,6 +382,7 @@ p {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
+
             if (search === "") {
                 let element = $html(`
                     <div>
@@ -386,6 +404,7 @@ p {
                 $on("click", element, e => redirectSearchParams({"favorites": ""}))
                 $("#items").appendChild(element)
             }
+
             this.appendSongs(KtvData.filterSong(ktvData.songs, search))
         }
         showSingers() {
@@ -408,6 +427,7 @@ p {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = "我的最愛"
+
             const uniqueSongs = new Set()
             for (const [name, singer] of this.load().favorites) {
                 let songs = KtvData.filterSong(ktvData.songs, name, ["name"])
@@ -416,12 +436,28 @@ p {
                     uniqueSongs.add(song)
             }
             this.appendSongs(Array.from(uniqueSongs))
+
+            const element = $html(`
+                <div>
+                    <div class="d-flex">
+                        <i class="material-symbols-outlined opacity-half">arrow_forward</i>
+                        <p class="font-large">${this.load().doSync ? "關閉" : "啟用"}同步</p>
+                    </div>
+                </div>`)
+            $on("click", element, e => {
+                const data = this.load()
+                data.doSync = !data.doSync
+                this.save(data)
+                this.showFavorites()
+            })
+            $("#items").appendChild(element)
         }
         appendSongs(songs) {
             const maxItems = 1000
             const selectedCompany = $("#company").value
             const favorites = this.load().favorites
             $("#title").innerText = `(${songs.length}首) ` + $("#title").innerText
+
             for (const song of songs.slice(0, maxItems)) {
                 let name = ""
                 let singer = ""
@@ -464,6 +500,7 @@ p {
                         <p class="flex-1">${escapeHtml(singer)}</p>
                         <p>${lang} / ${company}</p>
                     </div>`
+
                 if ("rankings" in song) {
                     const r = song.rankings
                     html += `
@@ -472,6 +509,7 @@ p {
                             <p>#${r.top} / ${r.first} ~ ${r.last}</p>
                         </div>`
                 }
+
                 const element = $html(`<div>${html}</div>`)
                 $on("click", $("button", element), e => this.toggleFavorite(e, song))
                 $on("click", element, e => this.showDetail(song))
@@ -557,6 +595,7 @@ p {
                 "artistID": ["KKBOX 歌手", "https://www.kkbox.com/tw/tc/artist/"],
                 "albumID": ["KKBOX 專輯", "https://www.kkbox.com/tw/tc/album/"]
             }
+
             $("#detail").innerHTML = ""
             for (const [key, title] of Object.entries(fields)) {
                 if (key === "code")

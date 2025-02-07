@@ -30,7 +30,7 @@ A simple app to track spending, and see the money flow amount in specific period
 A very simple little app to record time,  
 ideal for saving when you take meds the last time.
 
-* [[App] KKBOX KTV](https://kirksud.github.io/share/ktv.html) (PWA)
+* [[App] KKBOX KTV](https://kirksud.github.io/share/ktv.html) (PWA, Sync)
 
 List KTV song codes ranked by [KKBOX weekly rankings](https://kma.kkbox.com/charts/weekly/song).
 
