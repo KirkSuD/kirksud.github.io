@@ -323,12 +323,21 @@ p {
         if (typeof modalElement === "string")
             modalElement = $(modalElement)
         modalElement.classList.add("modal-open")
+        if (!history.state || !history.state.modalOpen)
+            history.pushState({modalOpen: true}, "")
     }
     function closeModal() {
         $$(".modal.modal-open").forEach(element => {
             element.classList.remove("modal-open")
         })
+        if (history.state && history.state.modalOpen)
+            history.back()
     }
+    history.replaceState({modalClose: true}, "")
+    window.addEventListener("popstate", e => {
+        if (e.state && e.state.modalClose)
+            closeModal()
+    })
     $on("click",
         [".modal .backdrop", ".modal .modal-close-button"],
         event => {

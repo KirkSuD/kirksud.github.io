@@ -237,12 +237,21 @@ p {
         if (typeof modalElement === "string")
             modalElement = $(modalElement)
         modalElement.classList.add("modal-open")
+        if (!history.state || !history.state.modalOpen)
+            history.pushState({modalOpen: true}, "")
     }
     function closeModal() {
         $$(".modal.modal-open").forEach(element => {
             element.classList.remove("modal-open")
         })
+        if (history.state && history.state.modalOpen)
+            history.back()
     }
+    history.replaceState({modalClose: true}, "")
+    window.addEventListener("popstate", e => {
+        if (e.state && e.state.modalClose)
+            closeModal()
+    })
     $on("click",
         [".modal .backdrop", ".modal .modal-close-button"],
         event => {
@@ -336,9 +345,8 @@ p {
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
             this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
-            this.sync()
-
             this.show()
+            this.sync()
         }
         load() {
             return JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
@@ -359,6 +367,7 @@ p {
                 if (data === null || data === localData)
                     return
                 localStorage.setItem(this.localStorageKey, data)
+                this.show()
             })
         }
         company() {
@@ -429,7 +438,7 @@ p {
             $("#title").innerText = "我的最愛"
 
             const uniqueSongs = new Set()
-            for (const [name, singer] of this.load().favorites) {
+            for (const [name, singer] of this.load().favorites.reverse()) {
                 let songs = KtvData.filterSong(ktvData.songs, name, ["name"])
                 songs = KtvData.filterSong(songs, singer, ["singer"])
                 for (const song of KtvData.filterSong(songs, search))
@@ -604,9 +613,10 @@ p {
                     addInfoBlock(key, title)
             }
             for (const [key, [title, linkPrefix]] of Object.entries(linkFields))
-                addInfoBlock(
-                    key, title, value => `<p><a href="${linkPrefix}${value}">${value}</a></p>`)
+                addInfoBlock(key, title,
+                    value => `<p><a target="_blank" href="${linkPrefix}${value}">${value}</a></p>`)
             openModal("#detailModal")
+            $("#detail").scrollTop = 0
         }
     }
     const ktvApp = new KtvApp()
