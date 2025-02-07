@@ -30,6 +30,10 @@ A simple app to track spending, and see the money flow amount in specific period
 A very simple little app to record time,  
 ideal for saving when you take meds the last time.
 
+* [[App] KKBOX KTV](https://kirksud.github.io/share/ktv.html) (PWA)
+
+List KTV song codes ranked by [KKBOX weekly rankings](https://kma.kkbox.com/charts/weekly/song).
+
 * [[App] PPG (photoplethysmogram)](https://kirksud.github.io/share/ppg.html) (PWA)
 
 Do [photoplethysmogram](https://en.wikipedia.org/wiki/Photoplethysmogram) using camera,

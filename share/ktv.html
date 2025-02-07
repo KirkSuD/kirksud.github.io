@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>KTV KKBOX</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
+
+    <meta name="description" content="KTV code with KKBOX rankings.">
+    <meta property="og:title" content="KTV KKBOX">
+    <meta property="og:description" content="KTV code with KKBOX rankings.">
+    <meta property="og:url" content="https://kirksud.github.io/share/ktv.html">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:site_name" content="kirksud.github.io">
+
+    <link rel="icon" href="icon/icon.svg" sizes="any" type="image/svg+xml">
+    <link rel="icon" href="icon/icon_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/icon_192.png" sizes="192x192" type="image/png">
+
+    <link rel="manifest" href="manifest/ktv.json">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:FILL@0..1">
+
+    <style>
+
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    height: 100%;
+    justify-content: center;
+}
+p {
+    margin: 0;
+}
+
+#main {
+    width: 100%;
+    max-width: 576px;
+    padding: 1vh 3vw 0;
+}
+#main > * {
+    margin: 1vmin;
+}
+#items {
+    overflow: auto;
+}
+#items > div:nth-child(2n+1) {
+    background-color: rgb(240, 240, 240);
+}
+#items > div:first-child {
+    border-top: 1px solid rgb(200, 200, 200);
+}
+#items > div {
+    border-bottom: 1px solid rgb(200, 200, 200);
+    padding: 1vh 1vw;
+    cursor: pointer;
+    user-select: none;
+}
+#items > div > div {
+    margin: 1.5vh 0;
+}
+#title, #company, #search {
+    padding: 1vh 0.5vw;
+}
+#detail > p {
+    margin: 1vh 0;
+}
+#detail > hr {
+    margin: 2vh 0;
+}
+
+.d-none {
+    display: none;
+}
+.d-flex {
+    display: flex;
+}
+.flex-column {
+    flex-direction: column;
+}
+.flex-1 {
+    flex: 1;
+}
+.font-small {
+    font-size: small;
+}
+.font-large {
+    font-size: large;
+}
+.font-bold {
+    font-weight: bold;
+}
+
+.modal {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 3vmin;
+    display: none;
+}
+.modal-open {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.backdrop {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+
+    z-index: -1;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(1px);
+}
+.modal-content {
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    background-color: white;
+    border: 1px solid black;
+}
+.modal-header, .modal-body, .modal-footer {
+    padding: 20px;
+}
+.modal-header {
+    border-bottom: 1px solid black;
+}
+.modal-body {
+    overflow: auto;
+}
+.modal-footer {
+    border-top: 1px solid black;
+}
+
+.icon-button {
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    appearance: none;
+    cursor: pointer;
+    color: #000;
+    opacity: .5;
+}
+.icon-button:hover {
+    opacity: .75;
+}
+.icon-button > .material-symbols-outlined {
+    vertical-align: middle;
+}
+.opacity-half {
+    opacity: .5;
+}
+.font-fill {
+    font-variation-settings: 'FILL' 1;
+}
+
+    </style>
+
+    <script src="ktv_data.js"></script>
+
+    <script src="synk.js"></script>
+
+</head>
+
+<body class="d-flex">
+    <div id="main" class="d-flex flex-column">
+        <div id="nav" class="d-flex">
+            <p id="title" class="flex-1 font-large"></p>
+            <select id="company"></select>
+        </div>
+        <input id="search" type="search" placeholder="搜尋">
+        <div id="items" class="d-flex flex-column"></div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header d-flex">
+                <p class="flex-1">歌曲資訊</p>
+                <button class="icon-button">
+                    <i class="material-symbols-outlined modal-close-button">close</i>
+                </button>
+            </div>
+            <div id="detail" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+
+(function() {
+
+    if ("serviceWorker" in navigator)
+        navigator.serviceWorker.register("service_worker.js")
+
+    function $(selectors, element=document) {
+        return element.querySelector(selectors)
+    }
+    function $$(selectors, element=document) {
+        return Array.from(element.querySelectorAll(selectors))
+    }
+    function $on(type, elements, handler) {
+        if (!Array.isArray(elements))
+            elements = [elements]
+        const processed = []
+        for (const element of elements) {
+            if (typeof element === "string")
+                processed.push(...$$(element))
+            else
+                processed.push(element)
+        }
+        processed.forEach(element => element.addEventListener(type, handler))
+    }
+    function $html(html) {
+        const template = document.createElement("template")
+        template.innerHTML = html
+        return template.content.children[0]
+    }
+
+    function getSearchParam(k) {
+        return new URL(location.href).searchParams.get(k)
+    }
+    function redirectSearchParams(params) {
+        location.href = "?" + new URLSearchParams(params).toString()
+    }
+    function escapeHtml(unsafe) {
+        return unsafe.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;").replace(/'/g, "&#039;")
+    }
+
+    function openModal(modalElement) {
+        if (typeof modalElement === "string")
+            modalElement = $(modalElement)
+        modalElement.classList.add("modal-open")
+    }
+    function closeModal() {
+        $$(".modal.modal-open").forEach(element => {
+            element.classList.remove("modal-open")
+        })
+    }
+    $on("click",
+        [".modal .backdrop", ".modal .modal-close-button"],
+        event => {
+            if (event.target === event.currentTarget)
+                closeModal()
+        }
+    )
+
+    class KtvData {
+        static allCompanies(songs) {
+            let res = new Set()
+            for (const song of songs) {
+                if (!("code" in song))
+                    continue
+                for (const [company, code] of song.code)
+                    res.add(company)
+            }
+            res = Array.from(res)
+            res.sort()
+            return res
+        }
+        static filterSinger(singers, keyword) {
+            const res = []
+            for (const singer of singers)
+                if (singer.name.includes(keyword))
+                    res.push(singer)
+            return res
+        }
+        static filterSong(songs, keyword, keys=["name", "singer", "albumName"]) {
+            const res = []
+            for (const song of songs) {
+                for (const key of keys) {
+                    if (!(key in song))
+                        continue
+                    let values = song[key]
+                    if (!Array.isArray(values))
+                        values = [values]
+                    if (values.some(v => v.includes(keyword))) {
+                        res.push(song)
+                        break
+                    }
+                }
+            }
+            return res
+        }
+        static matchFavorite(song, favorite) {
+            if (!("name" in song) || !("singer" in song))
+                return false
+            let names = song.name
+            let singers = song.singer
+            if (!Array.isArray(names))
+                names = [names]
+            if (!Array.isArray(singers))
+                singers = [singers]
+            const [name, singer] = favorite
+            return names.includes(name) && singers.includes(singer)
+        }
+        static inFavorites(song, favorites) {
+            return favorites.some(
+                favorite => KtvData.matchFavorite(song, favorite))
+        }
+        static removeFavorite(song, favorites) {
+            return favorites.filter(
+                favorite => !KtvData.matchFavorite(song, favorite))
+        }
+        static addFavorite(song, favorites) { // in-place
+            if (!("name" in song) || !("singer" in song))
+                return
+            let names = song.name
+            let singers = song.singer
+            if (!Array.isArray(names))
+                names = [names]
+            if (!Array.isArray(singers))
+                singers = [singers]
+            favorites.push([names[0], singers[0]])
+        }
+    }
+    class KtvApp {
+        constructor(localStorageKey="kirksud_ktv_kkbox") {
+            this.localStorageKey = localStorageKey
+            
+            $on("change", "#company", e => this.company())
+            $on("change", "#search", e => this.show())
+
+            $("#company").innerHTML = `<option value="">未選擇</option>`
+            for (const company of KtvData.allCompanies(ktvData.songs))
+                $("#company").insertAdjacentHTML("beforeend", `
+                    <option value="${company}">${company}</option>`)
+            $("#company").value = this.load().company
+
+            this.show()
+        }
+        load() {
+            return JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
+                company: "",
+                favorites: []
+            }
+        }
+        save(data) {
+            localStorage.setItem(this.localStorageKey, JSON.stringify(data))
+        }
+        company() {
+            const data = this.load()
+            data.company = $("#company").value
+            this.save(data)
+            this.show()
+        }
+        show() {
+            // ?singers ?singer= ?favorites
+            if (getSearchParam("singers") !== null)
+                this.showSingers()
+            else if (getSearchParam("singer") !== null)
+                this.showSingerSongs()
+            else if (getSearchParam("favorites") !== null)
+                this.showFavorites()
+            else
+                this.showSongs()
+        }
+        showSongs() {
+            const search = $("#search").value
+            $("#items").innerHTML = ""
+            $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
+            if (search === "") {
+                let element = $html(`
+                    <div>
+                        <div class="d-flex">
+                            <i class="material-symbols-outlined opacity-half">arrow_forward</i>
+                            <p class="font-large">所有歌手</p>
+                        </div>
+                    </div>`)
+                $on("click", element, e => redirectSearchParams({"singers": ""}))
+                $("#items").appendChild(element)
+                
+                element = $html(`
+                    <div>
+                        <div class="d-flex">
+                            <i class="material-symbols-outlined opacity-half">arrow_forward</i>
+                            <p class="font-large">我的最愛</p>
+                        </div>
+                    </div>`)
+                $on("click", element, e => redirectSearchParams({"favorites": ""}))
+                $("#items").appendChild(element)
+            }
+            this.appendSongs(KtvData.filterSong(ktvData.songs, search))
+        }
+        showSingers() {
+            const search = $("#search").value
+            $("#items").innerHTML = ""
+            $("#title").innerText = (search === "") ? "所有歌手" : `歌手「${search}」`
+            this.appendSingers(KtvData.filterSinger(ktvData.singers, search))
+        }
+        showSingerSongs() {
+            const search = $("#search").value
+            $("#items").innerHTML = ""
+            const singer = getSearchParam("singer")
+            $("#title").innerText = (
+                search === "") ? `「${singer}」的歌曲` : `「${singer}」的「${search}」`
+            const singerSongs = KtvData.filterSong(
+                ktvData.songs, singer, ["singer"])
+            this.appendSongs(KtvData.filterSong(singerSongs, search))
+        }
+        showFavorites() {
+            const search = $("#search").value
+            $("#items").innerHTML = ""
+            $("#title").innerText = "我的最愛"
+            const uniqueSongs = new Set()
+            for (const [name, singer] of this.load().favorites) {
+                let songs = KtvData.filterSong(ktvData.songs, name, ["name"])
+                songs = KtvData.filterSong(songs, singer, ["singer"])
+                for (const song of KtvData.filterSong(songs, search))
+                    uniqueSongs.add(song)
+            }
+            this.appendSongs(Array.from(uniqueSongs))
+        }
+        appendSongs(songs) {
+            const maxItems = 1000
+            const selectedCompany = $("#company").value
+            const favorites = this.load().favorites
+            $("#title").innerText = `(${songs.length}首) ` + $("#title").innerText
+            for (const song of songs.slice(0, maxItems)) {
+                let name = ""
+                let singer = ""
+                let lang = ""
+                if ("name" in song)
+                    name = Array.isArray(song.name) ? song.name[0] : song.name
+                if ("singer" in song)
+                    singer = Array.isArray(song.singer) ? song.singer[0] : song.singer
+                if ("lang" in song)
+                    lang = Array.isArray(song.lang) ? song.lang[0] : song.lang
+
+                let code = ""
+                if ("code" in song && selectedCompany === "")
+                    code = (song.code.length === 1) ?
+                        song.code[0][1] : `${song.code.length}個`
+                else if ("code" in song && selectedCompany !== "") {
+                    code = song.code
+                        .filter(([company, code]) => company === selectedCompany)
+                        .map(([company, code]) => code)
+                    code = (code.length === 1) ? code[0] : code.join(" / ")
+                }
+                let company = ""
+                if ("code" in song && code !== "")
+                    company = (selectedCompany !== "") ? selectedCompany : (
+                        (song.code.length === 1) ? song.code[0][0] : `${song.code.length}個`)
+                if (code === "")
+                    code = "無"
+                const inFavorites = KtvData.inFavorites(song, favorites)
+
+                let html = `
+                    <div class="d-flex font-large">
+                        <button class="icon-button ${inFavorites ? "font-fill" : ""}">
+                            <i class="material-symbols-outlined">
+                                star</i>
+                        </button>
+                        <p class="flex-1">${escapeHtml(name)}</p>
+                        <p>${code}</p>
+                    </div>
+                    <div class="d-flex">
+                        <p class="flex-1">${escapeHtml(singer)}</p>
+                        <p>${lang} / ${company}</p>
+                    </div>`
+                if ("rankings" in song) {
+                    const r = song.rankings
+                    html += `
+                        <div class="d-flex font-small">
+                            <p class="flex-1">${r.score} 分 / ${r.weeks} 次</p>
+                            <p>#${r.top} / ${r.first} ~ ${r.last}</p>
+                        </div>`
+                }
+                const element = $html(`<div>${html}</div>`)
+                $on("click", $("button", element), e => this.toggleFavorite(e, song))
+                $on("click", element, e => this.showDetail(song))
+                $("#items").appendChild(element)
+            }
+        }
+        appendSingers(singers) {
+            const maxItems = 1000
+            $("#title").innerText = `(${singers.length}位) ` + $("#title").innerText
+            for (const singer of singers.slice(0, maxItems)) {
+                const songCount = KtvData.filterSong(
+                    ktvData.songs, singer.name, ["singer"]).length
+                const element = $html(`
+                    <div>
+                        <div class="d-flex">
+                            <p class="flex-1 font-large">${escapeHtml(singer.name)}</p>
+                            <p>${songCount} 首</p>
+                        </div>
+                        <div class="d-flex font-small">
+                            <p class="flex-1">${singer.score} 分 / ${singer.weeks} 次</p>
+                            <p>#${singer.top} / ${singer.first} ~ ${singer.last}</p>
+                        </div>
+                    </div>`)
+                $on("click", element, e => redirectSearchParams({"singer": singer.name}))
+                $("#items").appendChild(element)
+            }
+        }
+        toggleFavorite(event, song) {
+            event.stopPropagation()
+            if (!("name" in song) || !("singer" in song))
+                return
+            const data = this.load()
+            if (KtvData.inFavorites(song, data.favorites)) {
+                data.favorites = KtvData.removeFavorite(song, data.favorites)
+                event.currentTarget.classList.remove("font-fill")
+            }
+            else {
+                KtvData.addFavorite(song, data.favorites)
+                event.currentTarget.classList.add("font-fill")
+            }
+            this.save(data)
+        }
+        showDetail(song) {
+            function addInfoBlock(key, title, formatter=null) {
+                if (!(key in song))
+                    return
+                let values = song[key]
+                if (!Array.isArray(values))
+                    values = [values]
+                if ($("#detail").innerHTML !== "")
+                    $("#detail").insertAdjacentHTML("beforeend", "<hr>")
+                $("#detail").insertAdjacentHTML("beforeend",
+                    `<p class="font-bold">${title}</p>`)
+                for (let value of values) {
+                    if (formatter === null) {
+                        if ((typeof value) !== "string")
+                            value = `${value}`
+                        $("#detail").insertAdjacentHTML("beforeend",
+                            `<p>${escapeHtml(value)}</p>`)
+                    }
+                    else
+                        $("#detail").insertAdjacentHTML("beforeend",
+                            formatter(value))
+                }
+            }
+
+            const fields = {
+                "name": "曲名",
+                "subname": "副名稱",
+                "singer": "歌手",
+                "albumName": "專輯",
+                "releaseDate": "發行日",
+                "albumDate": "專輯發行日",
+                "lang": "語言",
+                "sex": "性別",
+                "isVariousArtists": "多作者",
+                "code": "KTV 代碼",
+                "songDate": "KTV 日期"
+            }
+            const linkFields = {
+                "youtubeID": ["YouTube", "https://youtu.be/"],
+                "trackID": ["KKBOX 歌曲", "https://www.kkbox.com/tw/tc/song/"],
+                "artistID": ["KKBOX 歌手", "https://www.kkbox.com/tw/tc/artist/"],
+                "albumID": ["KKBOX 專輯", "https://www.kkbox.com/tw/tc/album/"]
+            }
+            $("#detail").innerHTML = ""
+            for (const [key, title] of Object.entries(fields)) {
+                if (key === "code")
+                    addInfoBlock(key, title, ([company, code]) => `<p>${company}: ${code}</p>`)
+                else
+                    addInfoBlock(key, title)
+            }
+            for (const [key, [title, linkPrefix]] of Object.entries(linkFields))
+                addInfoBlock(
+                    key, title, value => `<p><a href="${linkPrefix}${value}">${value}</a></p>`)
+            openModal("#detailModal")
+        }
+    }
+    const ktvApp = new KtvApp()
+
+})()
+
+    </script>
+</body>
+</html>

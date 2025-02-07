@@ -43,6 +43,8 @@ p {
 }
 #summary {
     gap: 1vh;
+    padding: 2vmin;
+    border: 1px solid black;
 }
 #summary input, #summary select, #summary button, #actions > * {
     padding: 1vh 0.5vw;
@@ -64,15 +66,18 @@ p {
 #actions {
     padding: 2vmin;
 }
-#summary, #records > div {
-    padding: 2vmin;
-    border: 1px solid black;
-    border-radius: 2vmin;
+#records > div:nth-child(2n+1) {
+    background-color: rgb(240, 240, 240);
+}
+#records > div:first-child {
+    border-top: 1px solid rgb(200, 200, 200);
 }
 #records > div {
+    border-bottom: 1px solid rgb(200, 200, 200);
+    padding: 2vmin;
+
     display: flex;
     flex-direction: column;
-    margin-bottom: 3vh;
     cursor: pointer;
 }
 #records > div > div {
@@ -197,14 +202,7 @@ p {
                     <i class="material-icons">visibility_off</i>
                 </button>
             </div>
-            <div id="accounts">
-                <!--
-                <div class="d-flex">
-                    <p class="flex-1">Wallet</p>
-                    <p>+$30 -$20 =$10</p>
-                </div>
-                -->
-            </div>
+            <div id="accounts"></div>
         </div>
         <div id="actions" class="d-flex">
             <select id="selectMonth"></select>
@@ -220,33 +218,7 @@ p {
                 <input id="importData" class="d-none" type="file" accept=".json,.txt">
             </label>
         </div>
-        <div id="records" class="flex-1 overflow-auto">
-            <!--
-            <div>
-                <div>
-                    <p>2025-01-01</p>
-                    <div class="flex-1"></div>
-                    <p>Bank</p>
-                    <i class="material-icons">arrow_forward</i>
-                    <p>Wallet</p>
-                    <div class="flex-1"></div>
-                    <p>=$10</p>
-                </div>
-
-                <div>
-                    <p class="flex-1">Content</p>
-                    <i class="material-icons">category</i>
-                    <p>Category</p>
-                </div>
-
-                <div>
-                    <p class="flex-1">Comment</p>
-                    <i class="material-icons">location_on</i>
-                    <p>Location</p>
-                </div>
-            </div>
-            -->
-        </div>
+        <div id="records" class="flex-1 overflow-auto"></div>
     </div>
 
     <div id="recordModal" class="modal">
