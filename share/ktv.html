@@ -30,6 +30,7 @@ body {
     margin: 0;
     height: 100%;
     justify-content: center;
+    overflow-y: hidden; /* to disable chrome mobile pull-to-refresh */
 }
 p {
     margin: 0;
@@ -529,13 +530,11 @@ p {
             const maxItems = 1000
             $("#title").innerText = `(${singers.length}位) ` + $("#title").innerText
             for (const singer of singers.slice(0, maxItems)) {
-                const songCount = KtvData.filterSong(
-                    ktvData.songs, singer.name, ["singer"]).length
                 const element = $html(`
                     <div>
                         <div class="d-flex">
                             <p class="flex-1 font-large">${escapeHtml(singer.name)}</p>
-                            <p>${songCount} 首</p>
+                            <p>${singer.count} 首</p>
                         </div>
                         <div class="d-flex font-small">
                             <p class="flex-1">${singer.score} 分 / ${singer.weeks} 次</p>
@@ -568,6 +567,8 @@ p {
                 let values = song[key]
                 if (!Array.isArray(values))
                     values = [values]
+                if (key === "code")
+                    values.sort()
                 if ($("#detail").innerHTML !== "")
                     $("#detail").insertAdjacentHTML("beforeend", "<hr>")
                 $("#detail").insertAdjacentHTML("beforeend",
@@ -598,6 +599,13 @@ p {
                 "code": "KTV 代碼",
                 "songDate": "KTV 日期"
             }
+            const rankingFields = {
+                "score": "總分",
+                "top": "最高排名",
+                "weeks": "上榜週數",
+                "first": "初次上榜",
+                "last": "最後上榜",
+            }
             const linkFields = {
                 "youtubeID": ["YouTube", "https://youtu.be/"],
                 "trackID": ["KKBOX 歌曲", "https://www.kkbox.com/tw/tc/song/"],
@@ -611,6 +619,14 @@ p {
                     addInfoBlock(key, title, ([company, code]) => `<p>${company}: ${code}</p>`)
                 else
                     addInfoBlock(key, title)
+            }
+            if ("rankings" in song) {
+                $("#detail").insertAdjacentHTML("beforeend", "<hr>")
+                $("#detail").insertAdjacentHTML("beforeend",
+                    `<p class="font-bold">KKBOX 華語單曲週榜</p>`)
+                for (const [key, title] of Object.entries(rankingFields))
+                    $("#detail").insertAdjacentHTML("beforeend",
+                        `<p>${title}: ${song.rankings[key]}</p>`)
             }
             for (const [key, [title, linkPrefix]] of Object.entries(linkFields))
                 addInfoBlock(key, title,
