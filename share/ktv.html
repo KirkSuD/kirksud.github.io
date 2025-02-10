@@ -32,7 +32,7 @@ body {
     justify-content: center;
     overflow-y: hidden; /* to disable chrome mobile pull-to-refresh */
 }
-p {
+p, pre {
     margin: 0;
 }
 
@@ -62,8 +62,14 @@ p {
 #items > div > div {
     margin: 1.5vh 0;
 }
-#title, #company, #search {
+#title, #company, #search, #selectStart, #selectEnd {
     padding: 1vh 0.5vw;
+}
+#nav, #filterBar {
+    align-items: center;
+}
+#filterBar label {
+    user-select: none;
 }
 #detail > p {
     margin: 1vh 0;
@@ -171,10 +177,28 @@ p {
 <body class="d-flex">
     <div id="main" class="d-flex flex-column">
         <div id="nav" class="d-flex">
-            <p id="title" class="flex-1 font-large"></p>
+            <button id="back" class="icon-button">
+                <i class="material-symbols-outlined">arrow_back</i>
+            </button>
+            <p id="title" class="flex-1 font-large">載入中...</p>
             <select id="company"></select>
         </div>
-        <input id="search" type="search" placeholder="搜尋">
+        <input id="search" list="searchList" type="search" placeholder="搜尋">
+        <datalist id="searchList"></datalist>
+        <div id="filterBar" class="d-flex">
+            <label>
+                <input id="favCheckbox" type="checkbox">
+                我的最愛
+            </label>
+            <div class="flex-1"></div>
+            <select id="selectStart">
+                <option value=""></option>
+            </select>
+            <pre> ~ </pre>
+            <select id="selectEnd">
+                <option value=""></option>
+            </select>
+        </div>
         <div id="items" class="d-flex flex-column"></div>
     </div>
 
@@ -298,7 +322,37 @@ p {
             }
             return res
         }
-        static matchFavorite(song, favorite) {
+
+        static isFavSinger(singer, favSingers) {
+            return favSingers.includes(singer.name)
+        }
+        static removeFavSinger(singer, favSingers) {
+            return favSingers.filter(favSinger => singer.name !== favSinger)
+        }
+        static addFavSinger(singer, favSingers) {
+            return favSingers.concat([singer.name])
+        }
+        static toggleFavSinger(singer, favSingers) {
+            if (KtvData.isFavSinger(singer, favSingers))
+                return [false, KtvData.removeFavSinger(singer, favSingers)]
+            else
+                return [true, KtvData.addFavSinger(singer, favSingers)]
+        }
+
+        static favSongsTable(favSongs) {
+            const nameSet = new Set()
+            const singerTable = {}
+            for (const [name, singer] of favSongs) {
+                if (!nameSet.has(name)) {
+                    nameSet.add(name)
+                    singerTable[name] = new Set()
+                }
+                singerTable[name].add(singer)
+            }
+            return [nameSet, singerTable]
+        }
+        static isFavSong(song, favSongsTable) {
+            const [nameSet, singerTable] = favSongsTable
             if (!("name" in song) || !("singer" in song))
                 return false
             let names = song.name
@@ -307,18 +361,29 @@ p {
                 names = [names]
             if (!Array.isArray(singers))
                 singers = [singers]
-            const [name, singer] = favorite
+            for (const name of names)
+                if (nameSet.has(name) && singers.some(
+                    singer => singerTable[name].has(singer)))
+                    return true
+            return false
+        }
+        static matchFavSong(song, favSong) {
+            if (!("name" in song) || !("singer" in song))
+                return false
+            let names = song.name
+            let singers = song.singer
+            if (!Array.isArray(names))
+                names = [names]
+            if (!Array.isArray(singers))
+                singers = [singers]
+            const [name, singer] = favSong
             return names.includes(name) && singers.includes(singer)
         }
-        static inFavorites(song, favorites) {
-            return favorites.some(
-                favorite => KtvData.matchFavorite(song, favorite))
+        static removeFavSong(song, favSongs) {
+            return favSongs.filter(
+                favSong => !KtvData.matchFavSong(song, favSong))
         }
-        static removeFavorite(song, favorites) {
-            return favorites.filter(
-                favorite => !KtvData.matchFavorite(song, favorite))
-        }
-        static addFavorite(song, favorites) { // in-place
+        static addFavSong(song, favSongs) {
             if (!("name" in song) || !("singer" in song))
                 return
             let names = song.name
@@ -327,15 +392,27 @@ p {
                 names = [names]
             if (!Array.isArray(singers))
                 singers = [singers]
-            favorites.push([names[0], singers[0]])
+            return favSongs.concat([[names[0], singers[0]]])
+        }
+        static toggleFavSong(song, favSongs) {
+            const favSongsTable = KtvData.favSongsTable(favSongs)
+            if (KtvData.isFavSong(song, favSongsTable))
+                return [false, KtvData.removeFavSong(song, favSongs)]
+            else
+                return [true, KtvData.addFavSong(song, favSongs)]
         }
     }
+
     class KtvApp {
         constructor(localStorageKey="kirksud_ktv_kkbox") {
             this.localStorageKey = localStorageKey
             
+            $on("click", "#back", e => history.back())
             $on("change", "#company", e => this.company())
             $on("change", "#search", e => this.show())
+            $on("change", "#favCheckbox", e => this.show())
+            $on("change", "#selectStart", e => this.show())
+            $on("change", "#selectEnd", e => this.show())
 
             $("#company").innerHTML = `<option value="">未選擇</option>`
             for (const company of KtvData.allCompanies(ktvData.songs))
@@ -343,18 +420,36 @@ p {
                     <option value="${company}">${company}</option>`)
             $("#company").value = this.load().company
 
+            for (let y=new Date().getFullYear(); y>=1960; y--) {
+                const h = `<option value="${y}">${y}</option>`
+                $("#selectStart").insertAdjacentHTML("beforeend", h)
+                $("#selectEnd").insertAdjacentHTML("beforeend", h)
+            }
+
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
             this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+
+            this.initDataList()
             this.show()
             this.sync()
         }
         load() {
-            return JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
+            const data = JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
+                version: "0.1",
                 company: "",
-                favorites: [],
+                favSongs: [],
+                favSingers: [],
                 doSync: false,
             }
+            if (!("version" in data)) {
+                // no version to version 0.1
+                data.version = "0.1"
+                data.favSongs = data.favorites
+                data.favSingers = []
+                delete data.favorites
+            }
+            return data
         }
         save(data) {
             localStorage.setItem(this.localStorageKey, JSON.stringify(data))
@@ -377,14 +472,79 @@ p {
             this.save(data)
             this.show()
         }
+
+        filterSinger() {
+            let singers = ktvData.singers
+            if ($("#favCheckbox").checked) {
+                const favSingers = this.load().favSingers
+                singers = singers.filter(singer => KtvData.isFavSinger(singer, favSingers))
+            }
+
+            let startYear = $("#selectStart").value
+            let endYear = $("#selectEnd").value
+            if (startYear === "" && endYear === "")
+                return singers
+            startYear = (startYear === "") ? -Infinity : Number(startYear)
+            endYear = (endYear === "") ? Infinity : Number(endYear)
+
+            const res = []
+            for (const singer of singers) {
+                const singerYear = ("first" in singer) ?
+                    new Date(singer.first).getFullYear() :
+                    (singer.album ?? singer.guessAlbum ?? 0)
+                if (singerYear >= startYear && singerYear <= endYear)
+                    res.push(singer)
+            }
+            return res
+        }
+        filterSong() {
+            let songs = ktvData.songs
+            if ($("#favCheckbox").checked) {
+                const favSongsTable = KtvData.favSongsTable(this.load().favSongs)
+                songs = songs.filter(song => KtvData.isFavSong(song, favSongsTable))
+            }
+
+            let startYear = $("#selectStart").value
+            let endYear = $("#selectEnd").value
+            if (startYear === "" && endYear === "")
+                return songs
+            startYear = (startYear === "") ? -Infinity : Number(startYear)
+            endYear = (endYear === "") ? Infinity : Number(endYear)
+
+            const res = []
+            for (const song of songs) {
+                const songDate = ("rankings" in song) ?
+                    song.rankings.first :
+                    (song.releaseDate ?? song.albumDate)
+                const songYear = songDate ? new Date(songDate).getFullYear() : 0
+                if (songYear >= startYear && songYear <= endYear)
+                    res.push(song)
+            }
+            return res
+        }
+
+        initDataList() {
+            const querySinger = getSearchParam("singer")
+            let values
+            if (querySinger === "")
+                values = ktvData.singers.map(singer => singer.name)
+            else {
+                let songs = ktvData.songs
+                if (querySinger !== null)
+                    songs = KtvData.filterSong(songs, querySinger, ["singer"])
+                values = songs.filter(song => "name" in song)
+                    .map(song => Array.isArray(song.name) ? song.name[0] : song.name)
+            }
+            for (const v of values)
+                $("#searchList").insertAdjacentHTML("beforeend", `
+                    <option value="${v}"></option>`)
+        }
         show() {
-            // ?singers ?singer= ?favorites
-            if (getSearchParam("singers") !== null)
+            const querySinger = getSearchParam("singer")
+            if (querySinger === "")
                 this.showSingers()
-            else if (getSearchParam("singer") !== null)
+            else if (querySinger !== null)
                 this.showSingerSongs()
-            else if (getSearchParam("favorites") !== null)
-                this.showFavorites()
             else
                 this.showSongs()
         }
@@ -393,79 +553,61 @@ p {
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
 
-            if (search === "") {
-                let element = $html(`
-                    <div>
-                        <div class="d-flex">
-                            <i class="material-symbols-outlined opacity-half">arrow_forward</i>
-                            <p class="font-large">所有歌手</p>
-                        </div>
-                    </div>`)
-                $on("click", element, e => redirectSearchParams({"singers": ""}))
-                $("#items").appendChild(element)
-                
-                element = $html(`
-                    <div>
-                        <div class="d-flex">
-                            <i class="material-symbols-outlined opacity-half">arrow_forward</i>
-                            <p class="font-large">我的最愛</p>
-                        </div>
-                    </div>`)
-                $on("click", element, e => redirectSearchParams({"favorites": ""}))
-                $("#items").appendChild(element)
+            if (search === "" && !$("#favCheckbox").checked &&
+                $("#selectStart").value === "" && $("#selectEnd").value === "")
+                $("#items").appendChild(
+                    this.simpleItem("arrow_forward", "所有歌手",
+                    e => redirectSearchParams({"singer": ""})))
+            else if (search === "dosynk") {
+                const data = this.load()
+                data.doSync = !data.doSync
+                this.save(data)
             }
 
-            this.appendSongs(KtvData.filterSong(ktvData.songs, search))
+            const songs = this.filterSong(ktvData.songs)
+            this.appendSongs(KtvData.filterSong(songs, search))
         }
         showSingers() {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌手" : `歌手「${search}」`
-            this.appendSingers(KtvData.filterSinger(ktvData.singers, search))
+            const singers = this.filterSinger(ktvData.singers)
+            this.appendSingers(KtvData.filterSinger(singers, search))
         }
         showSingerSongs() {
             const search = $("#search").value
-            $("#items").innerHTML = ""
             const singer = getSearchParam("singer")
+            $("#items").innerHTML = ""
             $("#title").innerText = (
                 search === "") ? `「${singer}」的歌曲` : `「${singer}」的「${search}」`
-            const singerSongs = KtvData.filterSong(
-                ktvData.songs, singer, ["singer"])
+            const songs = this.filterSong(ktvData.songs)
+            const singerSongs = KtvData.filterSong(songs, singer, ["singer"])
             this.appendSongs(KtvData.filterSong(singerSongs, search))
         }
-        showFavorites() {
-            const search = $("#search").value
-            $("#items").innerHTML = ""
-            $("#title").innerText = "我的最愛"
 
-            const uniqueSongs = new Set()
-            for (const [name, singer] of this.load().favorites.reverse()) {
-                let songs = KtvData.filterSong(ktvData.songs, name, ["name"])
-                songs = KtvData.filterSong(songs, singer, ["singer"])
-                for (const song of KtvData.filterSong(songs, search))
-                    uniqueSongs.add(song)
-            }
-            this.appendSongs(Array.from(uniqueSongs))
-
+        simpleItem(icon, text, click) {
             const element = $html(`
                 <div>
                     <div class="d-flex">
-                        <i class="material-symbols-outlined opacity-half">arrow_forward</i>
-                        <p class="font-large">${this.load().doSync ? "關閉" : "啟用"}同步</p>
+                        <i class="material-symbols-outlined opacity-half">${icon}</i>
+                        <p class="font-large">${text}</p>
                     </div>
                 </div>`)
-            $on("click", element, e => {
-                const data = this.load()
-                data.doSync = !data.doSync
-                this.save(data)
-                this.showFavorites()
-            })
-            $("#items").appendChild(element)
+            $on("click", element, click)
+            return element
         }
+        clearSearch() {
+            $("#search").value = ""
+            $("#favCheckbox").checked = false
+            $("#selectStart").value = ""
+            $("#selectEnd").value = ""
+            this.show()
+        }
+
         appendSongs(songs) {
-            const maxItems = 1000
+            const maxItems = 500
             const selectedCompany = $("#company").value
-            const favorites = this.load().favorites
+            const favSongsTable = KtvData.favSongsTable(this.load().favSongs)
             $("#title").innerText = `(${songs.length}首) ` + $("#title").innerText
 
             for (const song of songs.slice(0, maxItems)) {
@@ -495,13 +637,12 @@ p {
                         (song.code.length === 1) ? song.code[0][0] : `${song.code.length}個`)
                 if (code === "")
                     code = "無"
-                const inFavorites = KtvData.inFavorites(song, favorites)
+                const isFavSong = KtvData.isFavSong(song, favSongsTable)
 
                 let html = `
                     <div class="d-flex font-large">
-                        <button class="icon-button ${inFavorites ? "font-fill" : ""}">
-                            <i class="material-symbols-outlined">
-                                star</i>
+                        <button class="icon-button ${isFavSong ? "font-fill" : ""}">
+                            <i class="material-symbols-outlined">star</i>
                         </button>
                         <p class="flex-1">${escapeHtml(name)}</p>
                         <p>${code}</p>
@@ -519,47 +660,99 @@ p {
                             <p>#${r.top} / ${r.first} ~ ${r.last}</p>
                         </div>`
                 }
+                else if ("releaseDate" in song) {
+                    const d = Array.isArray(song.releaseDate) ? song.releaseDate[0] : song.releaseDate
+                    html += `
+                        <div class="d-flex font-small">
+                            <p class="flex-1">發行 ${d}</p>
+                        </div>`
+                }
+                else if ("albumDate" in song) {
+                    const d = Array.isArray(song.albumDate) ? song.albumDate[0] : song.albumDate
+                    html += `
+                        <div class="d-flex font-small">
+                            <p class="flex-1">專輯發行 ${d}</p>
+                        </div>`
+                }
 
                 const element = $html(`<div>${html}</div>`)
-                $on("click", $("button", element), e => this.toggleFavorite(e, song))
+                $on("click", $("button", element), e => this.toggleFavSong(e, song))
                 $on("click", element, e => this.showDetail(song))
                 $("#items").appendChild(element)
             }
+            if (songs.length === 0)
+                $("#items").appendChild(
+                    this.simpleItem("close", "無結果", e => this.clearSearch()))
         }
+
         appendSingers(singers) {
-            const maxItems = 1000
+            const maxItems = 500
+            const favSingers = this.load().favSingers
             $("#title").innerText = `(${singers.length}位) ` + $("#title").innerText
+
             for (const singer of singers.slice(0, maxItems)) {
-                const element = $html(`
-                    <div>
-                        <div class="d-flex">
-                            <p class="flex-1 font-large">${escapeHtml(singer.name)}</p>
-                            <p>${singer.count} 首</p>
-                        </div>
+                const isFavSinger = KtvData.isFavSinger(singer, favSingers)
+                let html = `
+                    <div class="d-flex">
+                        <button class="icon-button ${isFavSinger ? "font-fill" : ""}">
+                            <i class="material-symbols-outlined">star</i>
+                        </button>
+                        <p class="flex-1 font-large">${escapeHtml(singer.name)}</p>
+                        <p>${singer.count} 首</p>
+                    </div>`
+                if ("score" in singer)
+                    html += `
                         <div class="d-flex font-small">
                             <p class="flex-1">${singer.score} 分 / ${singer.weeks} 次</p>
                             <p>#${singer.top} / ${singer.first} ~ ${singer.last}</p>
-                        </div>
-                    </div>`)
+                        </div>`
+                else if (["start", "end", "birth", "album"].some(i => i in singer)) {
+                    html += `<div class="d-flex font-small">`
+                    html += `<p class="flex-1">`
+                    if ("birth" in singer)
+                        html += `${singer.birth} 生`
+                    else if (("start" in singer) || ("end" in singer))
+                        html += `${singer.start ?? ""} ~ ${singer.end ?? ""}`
+                    html += "</p>"
+                    if ("album" in singer)
+                        html += `<p>首發 ${singer.album}</p>`
+                    html += "</div>"
+                }
+                const element = $html(`<div>${html}</div>`)
+                $on("click", $("button", element), e => this.toggleFavSinger(e, singer))
                 $on("click", element, e => redirectSearchParams({"singer": singer.name}))
                 $("#items").appendChild(element)
             }
+            if (singers.length === 0)
+                $("#items").appendChild(
+                    this.simpleItem("close", "無結果", e => this.clearSearch()))
         }
-        toggleFavorite(event, song) {
+
+        toggleFavSong(event, song) {
             event.stopPropagation()
             if (!("name" in song) || !("singer" in song))
                 return
             const data = this.load()
-            if (KtvData.inFavorites(song, data.favorites)) {
-                data.favorites = KtvData.removeFavorite(song, data.favorites)
-                event.currentTarget.classList.remove("font-fill")
-            }
-            else {
-                KtvData.addFavorite(song, data.favorites)
+            let isFav
+            [isFav, data.favSongs] = KtvData.toggleFavSong(song, data.favSongs)
+            if (isFav)
                 event.currentTarget.classList.add("font-fill")
-            }
+            else
+                event.currentTarget.classList.remove("font-fill")
             this.save(data)
         }
+        toggleFavSinger(event, singer) {
+            event.stopPropagation()
+            const data = this.load()
+            let isFav
+            [isFav, data.favSingers] = KtvData.toggleFavSinger(singer, data.favSingers)
+            if (isFav)
+                event.currentTarget.classList.add("font-fill")
+            else
+                event.currentTarget.classList.remove("font-fill")
+            this.save(data)
+        }
+
         showDetail(song) {
             function addInfoBlock(key, title, formatter=null) {
                 if (!(key in song))
@@ -588,16 +781,16 @@ p {
 
             const fields = {
                 "name": "曲名",
-                "subname": "副名稱",
+                // "subname": "副名稱",
                 "singer": "歌手",
                 "albumName": "專輯",
                 "releaseDate": "發行日",
                 "albumDate": "專輯發行日",
                 "lang": "語言",
                 "sex": "性別",
-                "isVariousArtists": "多作者",
+                // "isVariousArtists": "多作者",
                 "code": "KTV 代碼",
-                "songDate": "KTV 日期"
+                // "songDate": "KTV 日期"
             }
             const rankingFields = {
                 "score": "總分",
@@ -635,7 +828,7 @@ p {
             $("#detail").scrollTop = 0
         }
     }
-    const ktvApp = new KtvApp()
+    $on("load", window, e => new KtvApp())
 
 })()
 
