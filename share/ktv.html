@@ -42,11 +42,15 @@ p, pre {
     max-width: 576px;
     padding: 1vh 3vw 0;
 }
-#main > * {
+#nav, #search, #filterBar, #items {
     margin: 1vmin;
+}
+#singerButton {
+    align-items: center;
 }
 #items {
     overflow: auto;
+    margin-bottom: 0;
 }
 #items > div:nth-child(2n+1) {
     background-color: rgb(240, 240, 240);
@@ -62,6 +66,9 @@ p, pre {
 }
 #items > div > div {
     margin: 1.5vh 0;
+}
+#items .flex-1 {
+    margin-right: 0.5em;
 }
 #title, #company, #search, #selectStart, #selectEnd {
     padding: 1vh 0.5vw;
@@ -79,6 +86,48 @@ p, pre {
     margin: 2vh 0;
 }
 
+#player {
+    border-top: 1px solid rgb(200, 200, 200);
+    margin: 0 1vmin;
+    display: none;
+}
+#player.player-open {
+    display: flex;
+}
+#player.player-minimize #playerCaptionsContainer,
+#player.player-minimize #playerTitleContainer,
+#player.player-minimize #playerButtons {
+    display: none;
+}
+#player.player-no-captions #playerCaptionsContainer {
+    display: none;
+}
+#player.player-no-captions #playerTitleContainer {
+    padding-top: 1vh;
+}
+#player > * > p {
+    margin: 1vh 1vw;
+}
+#player > * > button {
+    padding: 1vh 1vw;
+}
+#playerCaptionsContainer {
+    justify-content: center;
+    border-bottom: 1px solid rgb(200, 200, 200);
+}
+#playerButtons {
+    justify-content: space-evenly;
+}
+#playerCaptions {
+    color: white;
+    background-color: rgb(80, 80, 80);
+    padding: 0.4em;
+    border-radius: 0.4em;
+}
+
+.v-hidden {
+    visibility: hidden;
+}
 .d-none {
     display: none;
 }
@@ -160,9 +209,6 @@ p, pre {
 .icon-button > .material-symbols-outlined {
     vertical-align: middle;
 }
-.opacity-half {
-    opacity: .5;
-}
 .font-fill {
     font-variation-settings: 'FILL' 1;
 }
@@ -192,6 +238,11 @@ p, pre {
                 我的最愛
             </label>
             <div class="flex-1"></div>
+            <button id="singerButton" class="d-none">
+                <i class="material-symbols-outlined">arrow_forward</i>
+                歌手
+            </button>
+            <div class="flex-1"></div>
             <select id="selectStart">
                 <option value=""></option>
             </select>
@@ -200,7 +251,47 @@ p, pre {
                 <option value=""></option>
             </select>
         </div>
-        <div id="items" class="d-flex flex-column"></div>
+        <div id="items" class="d-flex flex-column flex-1"></div>
+        <div id="player" class="flex-column">
+            <div id="playerCaptionsContainer" class="d-flex">
+                <p id="playerCaptions" class="v-hidden">歌詞</p>
+            </div>
+            <div id="playerTitleContainer" class="d-flex">
+                <p id="playerSong" class="flex-1 font-large">歌名</p>
+                <p id="playerSinger">歌手</p>
+            </div>
+            <div id="playerButtons" class="d-flex">
+                <button id="playerMode" class="icon-button">
+                    <i class="material-symbols-outlined">looks_one</i>
+                </button>
+                <button id="playerPrev" class="icon-button font-fill">
+                    <i class="material-symbols-outlined">skip_previous</i>
+                </button>
+                <button id="playerRewind" class="icon-button">
+                    <i class="material-symbols-outlined">replay_10</i>
+                </button>
+                <button id="playerPlay" class="icon-button font-fill">
+                    <i class="material-symbols-outlined">play_arrow</i>
+                </button>
+                <button id="playerForward" class="icon-button">
+                    <i class="material-symbols-outlined">forward_10</i>
+                </button>
+                <button id="playerNext" class="icon-button font-fill">
+                    <i class="material-symbols-outlined">skip_next</i>
+                </button>
+                <button id="playerLink" class="icon-button">
+                    <i class="material-symbols-outlined">open_in_new</i>
+                </button>
+            </div>
+            <div class="d-flex">
+                <audio class="flex-1" controls crossorigin="anonymous">
+                    <track default kind="captions" />
+                </audio>
+                <button id="playerMinimize" class="icon-button">
+                    <i class="material-symbols-outlined">keyboard_arrow_down</i>
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="detailModal" class="modal">
@@ -213,6 +304,23 @@ p, pre {
                 </button>
             </div>
             <div id="detail" class="modal-body"></div>
+        </div>
+    </div>
+
+    <div id="ytapApproveModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header d-flex">
+                <p class="flex-1">開通播放服務</p>
+                <button class="icon-button">
+                    <i class="material-symbols-outlined modal-close-button">close</i>
+                </button>
+            </div>
+            <div class="modal-body">
+                需開通播放服務，請告知網站管理員開通代碼為「
+                <span class="font-bold"></span>
+                」（代碼 10 分鐘內有效）
+            </div>
         </div>
     </div>
 
@@ -252,32 +360,42 @@ p, pre {
             .replace(/"/g, "&quot;").replace(/'/g, "&#039;")
     }
 
-    function openModal(selectors) {
-        $(selectors).classList.add("modal-open")
-        if (!history.state || !history.state.modalOpen)
-            history.pushState({modalOpen: selectors}, "")
-    }
-    function closeModal() {
-        $$(".modal.modal-open").forEach(element =>
-            element.classList.remove("modal-open"))
-        if (history.state && history.state.modalOpen)
-            history.back()
-    }
-    $on("popstate", window, e => {
-        if (history.state && history.state.modalOpen)
-            openModal(history.state.modalOpen)
-        else
-            closeModal()
-    })
-    $on("click",
-        [".modal .backdrop", ".modal .modal-close-button"],
-        event => {
-            if (event.target === event.currentTarget)
-                closeModal()
+    class Modal {
+        constructor(saveStateFunc=null) {
+            this.saveStateFunc = saveStateFunc
+            $on("popstate", window, e => {
+                if (history.state && history.state.modalOpen)
+                    this.openModal(history.state.modalOpen)
+                else
+                    this.closeModal()
+            })
+            $on("click",
+                [".modal .backdrop", ".modal .modal-close-button"],
+                event => {
+                    if (event.target === event.currentTarget)
+                        this.closeModal()
+                }
+            )
         }
-    )
+        openModal(selectors) {
+            if (this.saveStateFunc)
+                this.saveStateFunc()
+            $(selectors).classList.add("modal-open")
+            if (!history.state || !history.state.modalOpen)
+                history.pushState({modalOpen: selectors}, "")
+        }
+        closeModal() {
+            $$(".modal.modal-open").forEach(element =>
+                element.classList.remove("modal-open"))
+            if (history.state && history.state.modalOpen)
+                history.back()
+        }
+    }
 
     class KtvData {
+        static toArray(obj) {
+            return Array.isArray(obj) ? obj : [obj]
+        }
         static allCompanies(songs) {
             let res = new Set()
             for (const song of songs) {
@@ -303,9 +421,7 @@ p, pre {
                 for (const key of keys) {
                     if (!(key in song))
                         continue
-                    let values = song[key]
-                    if (!Array.isArray(values))
-                        values = [values]
+                    const values = KtvData.toArray(song[key])
                     if (values.some(v => v.includes(keyword))) {
                         res.push(song)
                         break
@@ -347,12 +463,8 @@ p, pre {
             const [nameSet, singerTable] = favSongsTable
             if (!("name" in song) || !("singer" in song))
                 return false
-            let names = song.name
-            let singers = song.singer
-            if (!Array.isArray(names))
-                names = [names]
-            if (!Array.isArray(singers))
-                singers = [singers]
+            const names = KtvData.toArray(song.name)
+            const singers = KtvData.toArray(song.singer)
             for (const name of names)
                 if (nameSet.has(name) && singers.some(
                     singer => singerTable[name].has(singer)))
@@ -362,12 +474,8 @@ p, pre {
         static matchFavSong(song, favSong) {
             if (!("name" in song) || !("singer" in song))
                 return false
-            let names = song.name
-            let singers = song.singer
-            if (!Array.isArray(names))
-                names = [names]
-            if (!Array.isArray(singers))
-                singers = [singers]
+            const names = KtvData.toArray(song.name)
+            const singers = KtvData.toArray(song.singer)
             const [name, singer] = favSong
             return names.includes(name) && singers.includes(singer)
         }
@@ -378,12 +486,8 @@ p, pre {
         static addFavSong(song, favSongs) {
             if (!("name" in song) || !("singer" in song))
                 return
-            let names = song.name
-            let singers = song.singer
-            if (!Array.isArray(names))
-                names = [names]
-            if (!Array.isArray(singers))
-                singers = [singers]
+            const names = KtvData.toArray(song.name)
+            const singers = KtvData.toArray(song.singer)
             return favSongs.concat([[names[0], singers[0]]])
         }
         static toggleFavSong(song, favSongs) {
@@ -395,11 +499,235 @@ p, pre {
         }
     }
 
+    class PlayerWidget {
+        constructor(ktvApp, urlPrefix="https://ytppap.alwaysdata.net/ytap") {
+            this.ktvApp = ktvApp
+            this.urlPrefix = urlPrefix
+
+            this.token = null
+            this.playing = false
+            this.mode = "one"
+
+            $on("click", "#playerMode", e => {
+                const modes = ["one", "all", "shuffle", "repeat"]
+                const icons = ["looks_one", "repeat", "shuffle", "repeat_one"]
+                const icon = $("#playerMode .material-symbols-outlined")
+                let idx = icons.indexOf(icon.innerText)
+                idx = (idx + 1) % icons.length
+                icon.innerText = icons[idx]
+                this.mode = modes[idx]
+            })
+            $on("click", "#playerPrev", e => this.onPrev())
+            $on("click", "#playerNext", e => this.onNext())
+            $on("click", "#playerLink", e => this.onLink())
+            $on("click", "#playerPlay", e => this.playPause())
+
+            $on("play", "#player audio", e => this.onPlay())
+            $on("pause", "#player audio", e => this.onPause())
+            $on("ended", "#player audio", e => this.onEnd())
+            $on("error", "#player audio", e => this.onEnd())
+            $on("canplay", "#player audio", e => e.currentTarget.play())
+
+            $on("click", "#playerRewind", e => $("#player audio").currentTime -= 10)
+            $on("click", "#playerForward", e => {
+                $("#player audio").currentTime = Math.min(
+                    $("#player audio").currentTime + 10,
+                    $("#player audio").duration - 0.1)
+            })
+            $on("click", "#playerMinimize", e => {
+                if ($("#player").classList.contains("player-minimize")) {
+                    $("#player").classList.remove("player-minimize")
+                    $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_down"
+                }
+                else {
+                    $("#player").classList.add("player-minimize")
+                    $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_up"
+                }
+            })
+
+            $on("load", "#player track", e => $("#player").classList.remove("player-no-captions"))
+            $on("error", "#player track", e => $("#player").classList.add("player-no-captions"))
+            $on("cuechange", $("#player audio").textTracks[0], e => {
+                const cues = e.currentTarget.activeCues
+                if (cues.length === 0)
+                    $("#playerCaptions").classList.add("v-hidden")
+                else {
+                    $("#playerCaptions").classList.remove("v-hidden")
+                    $("#playerCaptions").innerText = cues[0].text
+                }
+            })
+        }
+
+        async request(urlPostfix) {
+            try {
+                const resp = await fetch(this.urlPrefix + urlPostfix)
+                if (!resp.ok) {
+                    console.log("fetch error: ServerError:", urlPostfix,
+                        `${resp.status} ${resp.statusText}`, resp)
+                    return [null, "ServerError"]
+                }
+                const res = await resp.json()
+                return [res, null]
+            } catch (e) {
+                console.log("fetch error: NetworkError:", urlPostfix, e)
+                return [null, "NetworkError"]
+            }
+        }
+        async getToken() {
+            function notifyError(err) {
+                alert({
+                    "ServerError": "伺服器錯誤，請稍後再試。",
+                    "NetworkError": "網路錯誤，請檢查網路連線。",
+                }[err])
+            }
+
+            let token = this.ktvApp.load().ytapToken
+            if (token) {
+                const [res, err] = await this.request("/token/" + token)
+                if (err) {
+                    notifyError(err)
+                    return null
+                }
+                if (res.status)
+                    return token
+            }
+
+            const [res, err] = await this.request("/token")
+            if (err) {
+                notifyError(err)
+                return null
+            }
+            let code
+            ({code, token} = res)
+            const data = this.ktvApp.load()
+            data.ytapToken = token
+            this.ktvApp.save(data)
+            $("#ytapApproveModal .modal-body span").innerText = code
+            this.ktvApp.modal.openModal("#ytapApproveModal")
+            return null
+        }
+        async playPauseSong(song, newSongList=false) {
+            function shuffle(arr, inplace=false) {
+                const res = inplace ? arr : Array.from(arr)
+                for (let i=res.length-1; i>=0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [res[i], res[j]] = [res[j], res[i]]
+                }
+                return res
+            }
+
+            const ytid = KtvData.toArray(song.youtubeID)[0]
+            const ktvAppState = this.ktvApp.currentState()
+            const songs = this.ktvApp.filterSong()
+            if (ytid === this.ytid) {
+                this.playPause()
+                return
+            }
+
+            this.token = this.token ?? (await this.getToken())
+            if (this.token === null)
+                return
+
+            this.song = song
+            this.ytid = ytid
+            if (newSongList) {
+                this.ktvAppState = ktvAppState
+                this.songs = songs
+                this.shuffled = shuffle(songs)
+            }
+
+            let langs = new Set(navigator.languages)
+            for (const lang of navigator.languages)
+                langs.add(lang.split("-")[0])
+            langs = Array.from(langs).join("_")
+
+            $("#playerSong").innerText = ("name" in song) ? KtvData.toArray(song.name)[0] : ""
+            $("#playerSinger").innerText = ("singer" in song) ? KtvData.toArray(song.singer)[0] : ""
+            $("#player audio").src = this.urlPrefix + `/audio/${this.token}/${this.ytid}`
+            $("#player track").src = this.urlPrefix + `/vtt/${this.token}/${this.ytid}/${langs}`
+            $("#player").classList.add("player-open")
+        }
+
+        onPlay() {
+            this.playing = true
+            $("#playerPlay .material-symbols-outlined").innerText = "pause"
+            this.updatePlayIcons()
+        }
+        onPause() {
+            this.playing = false
+            $("#playerPlay .material-symbols-outlined").innerText = "play_arrow"
+            this.updatePlayIcons()
+        }
+        playPause() {
+            if (this.playing)
+                $("#player audio").pause()
+            else
+                $("#player audio").play()
+        }
+
+        matchSong(song, ytid) {
+            return ("youtubeID" in song) && KtvData.toArray(song.youtubeID)[0] === ytid
+        }
+        indexOf(songs, ytid) {
+            return Array.from(songs.entries())
+                .filter(([i, song]) => this.matchSong(song, ytid))
+                .map(([i, song]) => i)[0]
+        }
+        updatePlayIcons() {
+            const icons = $$("#items .play-btn .material-symbols-outlined")
+            for (const [i, song] of this.ktvApp.filterSong().entries()) {
+                if (i >= icons.length)
+                    break
+                if (this.matchSong(song, this.ytid))
+                    icons[i].innerText = this.playing ? "pause" : "play_arrow"
+                else
+                    icons[i].innerText = "play_arrow"
+            }
+        }
+        nextSong(songs, diff=1) {
+            songs = KtvData.filterSong(songs, "", ["youtubeID"])
+            let idx = this.indexOf(songs, this.ytid)
+            idx = (idx + diff + songs.length) % songs.length
+            return songs[idx]
+        }
+        onLink() {
+            if (this.mode === "one" || this.mode === "repeat") {
+                this.ktvApp.showDetail(this.song)
+                return
+            }
+            this.ktvApp.navigate(this.ktvAppState)
+            const idx = this.indexOf(this.ktvApp.filterSong(), this.ytid)
+            const items = $$("#items > div")
+            if (idx < items.length)
+                items[idx].scrollIntoView(true)
+            else
+                this.ktvApp.showDetail(this.song)
+        }
+
+        onEnd() {
+            if (this.mode === "repeat")
+                this.playPause()
+            else if (this.mode === "all")
+                this.playPauseSong(this.nextSong(this.songs))
+            else if (this.mode === "shuffle")
+                this.playPauseSong(this.nextSong(this.shuffled))
+        }
+        onPrev() {
+            this.playPauseSong(this.nextSong(
+                (this.mode === "shuffle") ? this.shuffled : this.songs, -1))
+        }
+        onNext() {
+            this.playPauseSong(this.nextSong(
+                (this.mode === "shuffle") ? this.shuffled : this.songs))
+        }
+    }
+
     class KtvApp {
         constructor(localStorageKey="kirksud_ktv_kkbox") {
             this.localStorageKey = localStorageKey
             
             $on("click", "#back", e => history.back())
+            $on("click", "#singerButton", e => this.navigate({singer: ""}))
             $on("change", "#company", e => this.onCompany())
             $on("change", "#search", e => this.onChange())
             $on("change", "#favCheckbox", e => this.onChange())
@@ -407,24 +735,16 @@ p, pre {
             $on("change", "#selectEnd", e => this.onChange())
             $on("popstate", window, e => this.onPopState())
 
-            $("#company").innerHTML = `<option value="">未選擇</option>`
-            for (const company of KtvData.allCompanies(ktvData.songs))
-                $("#company").insertAdjacentHTML("beforeend", `
-                    <option value="${company}">${company}</option>`)
-            $("#company").value = this.load().company
-
-            for (let y=new Date().getFullYear(); y>=1960; y--) {
-                const h = `<option value="${y}">${y}</option>`
-                $("#selectStart").insertAdjacentHTML("beforeend", h)
-                $("#selectEnd").insertAdjacentHTML("beforeend", h)
-            }
-
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
             this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
 
+            this.modal = new Modal(() => this.saveState())
+            this.player = new PlayerWidget(this)
             this.singer = null
-            this.initDataList()
+            this.initCompany()
+            this.initYear()
+            this.setDataList()
             this.show()
             this.sync()
         }
@@ -435,6 +755,7 @@ p, pre {
                 company: "",
                 favSongs: [],
                 favSingers: [],
+                ytapToken: null,
                 doSync: false,
             }
             return data
@@ -461,30 +782,34 @@ p, pre {
             this.save(data)
             this.show()
         }
-        saveState() {
-            history.replaceState({
+        currentState() {
+            return {
                 singer: this.singer,
                 search: $("#search").value,
                 fav: $("#favCheckbox").checked,
                 start: $("#selectStart").value,
                 end: $("#selectEnd").value,
                 scroll: $("#items").scrollTop,
-            }, "")
+            }
+        }
+        saveState() {
+            history.replaceState(this.currentState(), "")
         }
         onChange() {
             this.show()
             this.saveState()
         }
-        navigate(singer) {
+        navigate(state) {
             this.saveState()
 
-            this.singer = singer
-            $("#search").value = ""
-            $("#favCheckbox").checked = false
-            $("#selectStart").value = ""
-            $("#selectEnd").value = ""
+            this.singer = state.singer
+            $("#search").value = state.search ?? ""
+            $("#favCheckbox").checked = state.fav ?? false
+            $("#selectStart").value = state.start ?? ""
+            $("#selectEnd").value = state.end ?? ""
 
             history.pushState({}, "")
+            this.setDataList()
             this.show()
             this.saveState()
         }
@@ -498,61 +823,75 @@ p, pre {
             $("#selectStart").value = s.start
             $("#selectEnd").value = s.end
 
+            this.setDataList()
             this.show()
             $("#items").scrollTop = s.scroll
         }
 
         filterSinger() {
+            const state = this.currentState()
             let singers = ktvData.singers
-            if ($("#favCheckbox").checked) {
+            if (state.fav) {
                 const favSingers = this.load().favSingers
                 singers = singers.filter(singer => KtvData.isFavSinger(singer, favSingers))
             }
 
-            let startYear = $("#selectStart").value
-            let endYear = $("#selectEnd").value
-            if (startYear === "" && endYear === "")
-                return singers
-            startYear = (startYear === "") ? -Infinity : Number(startYear)
-            endYear = (endYear === "") ? Infinity : Number(endYear)
+            if (state.start !== "" || state.end !== "") {
+                state.start = (state.start === "") ? -Infinity : Number(state.start)
+                state.end = (state.end === "") ? Infinity : Number(state.end)
 
-            const res = []
-            for (const singer of singers) {
-                const singerYear = ("first" in singer) ?
-                    new Date(singer.first).getFullYear() :
-                    (singer.album ?? singer.guessAlbum ?? 0)
-                if (singerYear >= startYear && singerYear <= endYear)
-                    res.push(singer)
+                singers = singers.filter(singer => {
+                    const singerYear = ("first" in singer) ?
+                        new Date(singer.first).getFullYear() :
+                        (singer.album ?? singer.guessAlbum ?? 0)
+                    return singerYear >= state.start && singerYear <= state.end
+                })
             }
-            return res
+            singers = KtvData.filterSinger(singers, state.search)
+            return singers
         }
         filterSong() {
+            const state = this.currentState()
             let songs = ktvData.songs
-            if ($("#favCheckbox").checked) {
+            if (state.fav) {
                 const favSongsTable = KtvData.favSongsTable(this.load().favSongs)
                 songs = songs.filter(song => KtvData.isFavSong(song, favSongsTable))
             }
 
-            let startYear = $("#selectStart").value
-            let endYear = $("#selectEnd").value
-            if (startYear === "" && endYear === "")
-                return songs
-            startYear = (startYear === "") ? -Infinity : Number(startYear)
-            endYear = (endYear === "") ? Infinity : Number(endYear)
+            if (state.start !== "" || state.end !== "") {
+                state.start = (state.start === "") ? -Infinity : Number(state.start)
+                state.end = (state.end === "") ? Infinity : Number(state.end)
 
-            const res = []
-            for (const song of songs) {
-                const songDate = ("rankings" in song) ?
-                    song.rankings.first :
-                    (song.releaseDate ?? song.albumDate)
-                const songYear = songDate ? new Date(songDate).getFullYear() : 0
-                if (songYear >= startYear && songYear <= endYear)
-                    res.push(song)
+                songs = songs.filter(song => {
+                    const songDate = ("rankings" in song) ?
+                        song.rankings.first :
+                        (song.releaseDate ?? song.albumDate)
+                    const songYear = songDate ? new Date(songDate).getFullYear() : 0
+                    return songYear >= state.start && songYear <= state.end
+                })
             }
-            return res
+
+            if (this.singer)
+                songs = KtvData.filterSong(songs, this.singer, ["singer"])
+            songs = KtvData.filterSong(songs, state.search)
+            return songs
         }
 
-        initDataList() {
+        initCompany() {
+            $("#company").innerHTML = `<option value="">未選擇</option>`
+            for (const company of KtvData.allCompanies(ktvData.songs))
+                $("#company").insertAdjacentHTML("beforeend", `
+                    <option value="${company}">${company}</option>`)
+            $("#company").value = this.load().company
+        }
+        initYear() {
+            for (let y=new Date().getFullYear(); y>=1960; y--) {
+                const h = `<option value="${y}">${y}</option>`
+                $("#selectStart").insertAdjacentHTML("beforeend", h)
+                $("#selectEnd").insertAdjacentHTML("beforeend", h)
+            }
+        }
+        setDataList() {
             let values
             if (this.singer === "")
                 values = ktvData.singers.map(singer => singer.name)
@@ -561,15 +900,20 @@ p, pre {
                 if (this.singer !== null)
                     songs = KtvData.filterSong(songs, this.singer, ["singer"])
                 values = songs.filter(song => "name" in song)
-                    .map(song => Array.isArray(song.name) ? song.name[0] : song.name)
+                    .map(song => KtvData.toArray(song.name)[0])
             }
+            $("#searchList").innerHTML = ""
             for (const v of values)
                 $("#searchList").insertAdjacentHTML("beforeend", `
                     <option value="${v}"></option>`)
         }
+
         show() {
-            if (this.singer === null)
+            $("#singerButton").classList.remove("d-flex")
+            if (this.singer === null) {
+                $("#singerButton").classList.add("d-flex")
                 this.showSongs()
+            }
             else if (this.singer === "")
                 this.showSingers()
             else
@@ -579,41 +923,34 @@ p, pre {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
-
+            this.appendSongs(this.filterSong())
             if (search === "dosynk") {
                 const data = this.load()
                 data.doSync = !data.doSync
                 this.save(data)
             }
-            $("#items").appendChild(
-                this.simpleItem("arrow_forward", "所有歌手",
-                    e => this.navigate("")))
-
-            const songs = this.filterSong()
-            this.appendSongs(KtvData.filterSong(songs, search))
         }
         showSingers() {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌手" : `歌手「${search}」`
-            const singers = this.filterSinger()
-            this.appendSingers(KtvData.filterSinger(singers, search))
+            this.appendSingers(this.filterSinger())
         }
         showSingerSongs() {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (
                 search === "") ? `「${this.singer}」的歌曲` : `「${this.singer}」的「${search}」`
-            const songs = this.filterSong()
-            const singerSongs = KtvData.filterSong(songs, this.singer, ["singer"])
-            this.appendSongs(KtvData.filterSong(singerSongs, search))
+            this.appendSongs(this.filterSong())
         }
 
         simpleItem(icon, text, click) {
             const element = $html(`
                 <div>
                     <div class="d-flex">
-                        <i class="material-symbols-outlined opacity-half">${icon}</i>
+                        <button class="icon-button">
+                            <i class="material-symbols-outlined">${icon}</i>
+                        </button>
                         <p class="font-large">${text}</p>
                     </div>
                 </div>`)
@@ -635,15 +972,9 @@ p, pre {
             $("#title").innerText = `(${songs.length}首) ` + $("#title").innerText
 
             for (const song of songs.slice(0, maxItems)) {
-                let name = ""
-                let singer = ""
-                let lang = ""
-                if ("name" in song)
-                    name = Array.isArray(song.name) ? song.name[0] : song.name
-                if ("singer" in song)
-                    singer = Array.isArray(song.singer) ? song.singer[0] : song.singer
-                if ("lang" in song)
-                    lang = Array.isArray(song.lang) ? song.lang[0] : song.lang
+                const name = ("name" in song) ? KtvData.toArray(song.name)[0] : ""
+                const singer = ("singer" in song) ? KtvData.toArray(song.singer)[0] : ""
+                const lang = ("lang" in song) ? KtvData.toArray(song.lang)[0] : ""
 
                 let code = ""
                 if ("code" in song && selectedCompany === "")
@@ -653,7 +984,7 @@ p, pre {
                     code = song.code
                         .filter(([company, code]) => company === selectedCompany)
                         .map(([company, code]) => code)
-                    code = (code.length === 1) ? code[0] : code.join(" / ")
+                    code = (code.length <= 2) ? code.join(" / ") : `${code[0]} / 共${code.length}個`
                 }
                 let company = ""
                 if ("code" in song && code !== "")
@@ -662,16 +993,20 @@ p, pre {
                 if (code === "")
                     code = "無"
                 const isFavSong = KtvData.isFavSong(song, favSongsTable)
+                const hasYoutube = ("youtubeID" in song)
 
                 let html = `
                     <div class="d-flex font-large">
-                        <button class="icon-button ${isFavSong ? "font-fill" : ""}">
+                        <button class="fav-btn icon-button ${isFavSong ? "font-fill" : ""}">
                             <i class="material-symbols-outlined">star</i>
                         </button>
                         <p class="flex-1">${escapeHtml(name)}</p>
                         <p>${code}</p>
                     </div>
                     <div class="d-flex">
+                        <button class="play-btn icon-button font-fill ${hasYoutube ? "" : "v-hidden"}">
+                            <i class="material-symbols-outlined">play_arrow</i>
+                        </button>
                         <p class="flex-1">${escapeHtml(singer)}</p>
                         <p>${lang} / ${company}</p>
                     </div>`
@@ -685,14 +1020,14 @@ p, pre {
                         </div>`
                 }
                 else if ("releaseDate" in song) {
-                    const d = Array.isArray(song.releaseDate) ? song.releaseDate[0] : song.releaseDate
+                    const d = KtvData.toArray(song.releaseDate)[0]
                     html += `
                         <div class="d-flex font-small">
                             <p class="flex-1">發行 ${d}</p>
                         </div>`
                 }
                 else if ("albumDate" in song) {
-                    const d = Array.isArray(song.albumDate) ? song.albumDate[0] : song.albumDate
+                    const d = KtvData.toArray(song.albumDate)[0]
                     html += `
                         <div class="d-flex font-small">
                             <p class="flex-1">專輯發行 ${d}</p>
@@ -700,13 +1035,18 @@ p, pre {
                 }
 
                 const element = $html(`<div>${html}</div>`)
-                $on("click", $("button", element), e => this.toggleFavSong(e, song))
+                $on("click", $("button.fav-btn", element), e => this.toggleFavSong(e, song))
+                $on("click", $("button.play-btn", element), event => {
+                    event.stopPropagation()
+                    this.player.playPauseSong(song, true)
+                })
                 $on("click", element, e => this.showDetail(song))
                 $("#items").appendChild(element)
             }
             if (songs.length === 0)
                 $("#items").appendChild(
                     this.simpleItem("close", "無結果", e => this.clearSearch()))
+            this.player.updatePlayIcons()
         }
 
         appendSingers(singers) {
@@ -744,7 +1084,7 @@ p, pre {
                 }
                 const element = $html(`<div>${html}</div>`)
                 $on("click", $("button", element), e => this.toggleFavSinger(e, singer))
-                $on("click", element, e => this.navigate(singer.name))
+                $on("click", element, e => this.navigate({singer: singer.name}))
                 $("#items").appendChild(element)
             }
             if (singers.length === 0)
@@ -781,9 +1121,7 @@ p, pre {
             function addInfoBlock(key, title, formatter=null) {
                 if (!(key in song))
                     return
-                let values = song[key]
-                if (!Array.isArray(values))
-                    values = [values]
+                const values = KtvData.toArray(song[key])
                 if (key === "code")
                     values.sort()
                 if ($("#detail").innerHTML !== "")
@@ -848,7 +1186,7 @@ p, pre {
             for (const [key, [title, linkPrefix]] of Object.entries(linkFields))
                 addInfoBlock(key, title,
                     value => `<p><a target="_blank" href="${linkPrefix}${value}">${value}</a></p>`)
-            openModal("#detailModal")
+            this.modal.openModal("#detailModal")
             $("#detail").scrollTop = 0
         }
     }
