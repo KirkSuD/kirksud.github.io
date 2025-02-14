@@ -1,5 +1,5 @@
 // must update cache name on any web page change
-const cacheName = "kirksud_sw_cache_20250210_0800"
+const cacheName = "kirksud_sw_cache_20250211_0000"
 
 self.addEventListener("fetch", event => {
     event.respondWith((async () => {
@@ -8,7 +8,12 @@ self.addEventListener("fetch", event => {
         if (response)
             return response
         response = await fetch(request)
-        if (request.destination !== "" && response.status < 400) {
+        if (
+            request.destination !== ""
+            && new URL(request.url).protocol === "https:"
+            && response.status < 400
+            && response.status !== 206
+        ) {
             const cache = await caches.open(cacheName)
             cache.put(request, response.clone())
         }
