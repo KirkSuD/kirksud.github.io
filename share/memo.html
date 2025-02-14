@@ -205,7 +205,7 @@ main p {
 
   <script>
 
-if ("serviceWorker" in navigator)
+if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
   navigator.serviceWorker.register("service_worker.js")
 
 const localStorage_key = "kirksud_memo_app_data";

@@ -275,7 +275,7 @@ p {
 
 (function() {
 
-    if ("serviceWorker" in navigator)
+    if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
         navigator.serviceWorker.register("service_worker.js")
 
     function $(selectors, element=document) {
@@ -302,23 +302,21 @@ p {
         return template.content.children[0]
     }
 
-    function openModal(modalElement) {
-        if (typeof modalElement === "string")
-            modalElement = $(modalElement)
-        modalElement.classList.add("modal-open")
+    function openModal(selectors) {
+        $(selectors).classList.add("modal-open")
         if (!history.state || !history.state.modalOpen)
-            history.pushState({modalOpen: true}, "")
+            history.pushState({modalOpen: selectors}, "")
     }
     function closeModal() {
-        $$(".modal.modal-open").forEach(element => {
-            element.classList.remove("modal-open")
-        })
+        $$(".modal.modal-open").forEach(element =>
+            element.classList.remove("modal-open"))
         if (history.state && history.state.modalOpen)
             history.back()
     }
-    history.replaceState({modalClose: true}, "")
-    window.addEventListener("popstate", e => {
-        if (e.state && e.state.modalClose)
+    $on("popstate", window, e => {
+        if (history.state && history.state.modalOpen)
+            openModal(history.state.modalOpen)
+        else
             closeModal()
     })
     $on("click",

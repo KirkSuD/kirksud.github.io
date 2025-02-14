@@ -4,7 +4,7 @@
     "start_url": "../ktv.html",
     "scope": "../ktv.html",
     "display": "standalone",
-    "description": "KTV code with KKBOX rankings.",
+    "description": "KTV號碼查詢、KKBOX華語單曲週榜、音樂播放器",
     "categories": ["entertainment", "music"],
     "icons": [
         {

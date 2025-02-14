@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant-TW">
 <head>
     <meta charset="utf-8">
     <title>KTV KKBOX</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
 
-    <meta name="description" content="KTV code with KKBOX rankings.">
+    <meta name="description" content="KTV號碼查詢、KKBOX華語單曲週榜、音樂播放器">
     <meta property="og:title" content="KTV KKBOX">
-    <meta property="og:description" content="KTV code with KKBOX rankings.">
+    <meta property="og:description" content="KTV號碼查詢、KKBOX華語單曲週榜、音樂播放器">
     <meta property="og:url" content="https://kirksud.github.io/share/ktv.html">
     <meta name="twitter:card" content="summary">
     <meta property="og:site_name" content="kirksud.github.io">
@@ -220,7 +220,7 @@ p, pre {
 
 (function() {
 
-    if ("serviceWorker" in navigator)
+    if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
         navigator.serviceWorker.register("service_worker.js")
 
     function $(selectors, element=document) {
@@ -246,36 +246,27 @@ p, pre {
         template.innerHTML = html
         return template.content.children[0]
     }
-
-    function getSearchParam(k) {
-        return new URL(location.href).searchParams.get(k)
-    }
-    function redirectSearchParams(params) {
-        location.href = "?" + new URLSearchParams(params).toString()
-    }
     function escapeHtml(unsafe) {
         return unsafe.replace(/&/g, "&amp;")
             .replace(/</g, "&lt;").replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;").replace(/'/g, "&#039;")
     }
 
-    function openModal(modalElement) {
-        if (typeof modalElement === "string")
-            modalElement = $(modalElement)
-        modalElement.classList.add("modal-open")
+    function openModal(selectors) {
+        $(selectors).classList.add("modal-open")
         if (!history.state || !history.state.modalOpen)
-            history.pushState({modalOpen: true}, "")
+            history.pushState({modalOpen: selectors}, "")
     }
     function closeModal() {
-        $$(".modal.modal-open").forEach(element => {
-            element.classList.remove("modal-open")
-        })
+        $$(".modal.modal-open").forEach(element =>
+            element.classList.remove("modal-open"))
         if (history.state && history.state.modalOpen)
             history.back()
     }
-    history.replaceState({modalClose: true}, "")
-    window.addEventListener("popstate", e => {
-        if (e.state && e.state.modalClose)
+    $on("popstate", window, e => {
+        if (history.state && history.state.modalOpen)
+            openModal(history.state.modalOpen)
+        else
             closeModal()
     })
     $on("click",
@@ -409,11 +400,12 @@ p, pre {
             this.localStorageKey = localStorageKey
             
             $on("click", "#back", e => history.back())
-            $on("change", "#company", e => this.company())
-            $on("change", "#search", e => this.show())
-            $on("change", "#favCheckbox", e => this.show())
-            $on("change", "#selectStart", e => this.show())
-            $on("change", "#selectEnd", e => this.show())
+            $on("change", "#company", e => this.onCompany())
+            $on("change", "#search", e => this.onChange())
+            $on("change", "#favCheckbox", e => this.onChange())
+            $on("change", "#selectStart", e => this.onChange())
+            $on("change", "#selectEnd", e => this.onChange())
+            $on("popstate", window, e => this.onPopState())
 
             $("#company").innerHTML = `<option value="">未選擇</option>`
             for (const company of KtvData.allCompanies(ktvData.songs))
@@ -431,10 +423,12 @@ p, pre {
             // const synkServer = "https://kirksud.pythonanywhere.com"
             this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
 
+            this.singer = null
             this.initDataList()
             this.show()
             this.sync()
         }
+
         load() {
             const data = JSON.parse(localStorage.getItem(this.localStorageKey) ?? "null") ?? {
                 version: "0.1",
@@ -442,13 +436,6 @@ p, pre {
                 favSongs: [],
                 favSingers: [],
                 doSync: false,
-            }
-            if (!("version" in data)) {
-                // no version to version 0.1
-                data.version = "0.1"
-                data.favSongs = data.favorites
-                data.favSingers = []
-                delete data.favorites
             }
             return data
         }
@@ -467,11 +454,52 @@ p, pre {
                 this.show()
             })
         }
-        company() {
+
+        onCompany() {
             const data = this.load()
             data.company = $("#company").value
             this.save(data)
             this.show()
+        }
+        saveState() {
+            history.replaceState({
+                singer: this.singer,
+                search: $("#search").value,
+                fav: $("#favCheckbox").checked,
+                start: $("#selectStart").value,
+                end: $("#selectEnd").value,
+                scroll: $("#items").scrollTop,
+            }, "")
+        }
+        onChange() {
+            this.show()
+            this.saveState()
+        }
+        navigate(singer) {
+            this.saveState()
+
+            this.singer = singer
+            $("#search").value = ""
+            $("#favCheckbox").checked = false
+            $("#selectStart").value = ""
+            $("#selectEnd").value = ""
+
+            history.pushState({}, "")
+            this.show()
+            this.saveState()
+        }
+        onPopState() {
+            const s = history.state
+            if (!s || !("singer" in s))
+                return
+            this.singer = s.singer
+            $("#search").value = s.search
+            $("#favCheckbox").checked = s.fav
+            $("#selectStart").value = s.start
+            $("#selectEnd").value = s.end
+
+            this.show()
+            $("#items").scrollTop = s.scroll
         }
 
         filterSinger() {
@@ -525,14 +553,13 @@ p, pre {
         }
 
         initDataList() {
-            const querySinger = getSearchParam("singer")
             let values
-            if (querySinger === "")
+            if (this.singer === "")
                 values = ktvData.singers.map(singer => singer.name)
             else {
                 let songs = ktvData.songs
-                if (querySinger !== null)
-                    songs = KtvData.filterSong(songs, querySinger, ["singer"])
+                if (this.singer !== null)
+                    songs = KtvData.filterSong(songs, this.singer, ["singer"])
                 values = songs.filter(song => "name" in song)
                     .map(song => Array.isArray(song.name) ? song.name[0] : song.name)
             }
@@ -541,48 +568,44 @@ p, pre {
                     <option value="${v}"></option>`)
         }
         show() {
-            const querySinger = getSearchParam("singer")
-            if (querySinger === "")
-                this.showSingers()
-            else if (querySinger !== null)
-                this.showSingerSongs()
-            else
+            if (this.singer === null)
                 this.showSongs()
+            else if (this.singer === "")
+                this.showSingers()
+            else
+                this.showSingerSongs()
         }
         showSongs() {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
 
-            if (search === "" && !$("#favCheckbox").checked &&
-                $("#selectStart").value === "" && $("#selectEnd").value === "")
-                $("#items").appendChild(
-                    this.simpleItem("arrow_forward", "所有歌手",
-                    e => redirectSearchParams({"singer": ""})))
-            else if (search === "dosynk") {
+            if (search === "dosynk") {
                 const data = this.load()
                 data.doSync = !data.doSync
                 this.save(data)
             }
+            $("#items").appendChild(
+                this.simpleItem("arrow_forward", "所有歌手",
+                    e => this.navigate("")))
 
-            const songs = this.filterSong(ktvData.songs)
+            const songs = this.filterSong()
             this.appendSongs(KtvData.filterSong(songs, search))
         }
         showSingers() {
             const search = $("#search").value
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌手" : `歌手「${search}」`
-            const singers = this.filterSinger(ktvData.singers)
+            const singers = this.filterSinger()
             this.appendSingers(KtvData.filterSinger(singers, search))
         }
         showSingerSongs() {
             const search = $("#search").value
-            const singer = getSearchParam("singer")
             $("#items").innerHTML = ""
             $("#title").innerText = (
-                search === "") ? `「${singer}」的歌曲` : `「${singer}」的「${search}」`
-            const songs = this.filterSong(ktvData.songs)
-            const singerSongs = KtvData.filterSong(songs, singer, ["singer"])
+                search === "") ? `「${this.singer}」的歌曲` : `「${this.singer}」的「${search}」`
+            const songs = this.filterSong()
+            const singerSongs = KtvData.filterSong(songs, this.singer, ["singer"])
             this.appendSongs(KtvData.filterSong(singerSongs, search))
         }
 
@@ -721,7 +744,7 @@ p, pre {
                 }
                 const element = $html(`<div>${html}</div>`)
                 $on("click", $("button", element), e => this.toggleFavSinger(e, singer))
-                $on("click", element, e => redirectSearchParams({"singer": singer.name}))
+                $on("click", element, e => this.navigate(singer.name))
                 $("#items").appendChild(element)
             }
             if (singers.length === 0)

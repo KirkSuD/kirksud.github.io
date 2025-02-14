@@ -333,7 +333,7 @@
         crossorigin="anonymous"></script>
     <script>
 
-        if ("serviceWorker" in navigator)
+        if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
             navigator.serviceWorker.register("service_worker.js")
 
         let autoPlay, autoPlayN;
