@@ -508,17 +508,9 @@ p, pre {
             this.playing = false
             this.mode = "one"
 
-            $on("click", "#playerMode", e => {
-                const modes = ["one", "all", "shuffle", "repeat"]
-                const icons = ["looks_one", "repeat", "shuffle", "repeat_one"]
-                const icon = $("#playerMode .material-symbols-outlined")
-                let idx = icons.indexOf(icon.innerText)
-                idx = (idx + 1) % icons.length
-                icon.innerText = icons[idx]
-                this.mode = modes[idx]
-            })
-            $on("click", "#playerPrev", e => this.onPrev())
-            $on("click", "#playerNext", e => this.onNext())
+            $on("click", "#playerMode", e => this.switchNextMode())
+            $on("click", "#playerPrev", e => this.prev())
+            $on("click", "#playerNext", e => this.next())
             $on("click", "#playerLink", e => this.onLink())
             $on("click", "#playerPlay", e => this.playPause())
 
@@ -528,12 +520,8 @@ p, pre {
             $on("error", "#player audio", e => this.onEnd())
             $on("canplay", "#player audio", e => e.currentTarget.play())
 
-            $on("click", "#playerRewind", e => $("#player audio").currentTime -= 10)
-            $on("click", "#playerForward", e => {
-                $("#player audio").currentTime = Math.min(
-                    $("#player audio").currentTime + 10,
-                    $("#player audio").duration - 0.1)
-            })
+            $on("click", "#playerRewind", e => this.seekBackward())
+            $on("click", "#playerForward", e => this.seekForward())
             $on("click", "#playerMinimize", e => {
                 if ($("#player").classList.contains("player-minimize")) {
                     $("#player").classList.remove("player-minimize")
@@ -556,6 +544,19 @@ p, pre {
                     $("#playerCaptions").innerText = cues[0].text
                 }
             })
+
+            $on("keydown", document, e => this.onKeyDown(e))
+            if ("mediaSession" in navigator) {
+                const actionTypes = [
+                    "play", "pause", "stop",
+                    "previoustrack", "nexttrack",
+                    "seekbackward", "seekforward", "seekto",
+                ]
+                for (const actionType of actionTypes)
+                    navigator.mediaSession.setActionHandler(actionType,
+                        (action, fastSeek, seekOffset, seekTime) => this.onMediaAction(
+                            action, fastSeek, seekOffset, seekTime))
+            }
         }
 
         async request(urlPostfix) {
@@ -641,8 +642,17 @@ p, pre {
                 langs.add(lang.split("-")[0])
             langs = Array.from(langs).join("_")
 
-            $("#playerSong").innerText = ("name" in song) ? KtvData.toArray(song.name)[0] : ""
-            $("#playerSinger").innerText = ("singer" in song) ? KtvData.toArray(song.singer)[0] : ""
+            const name = KtvData.toArray(song.name ?? [""])[0]
+            const singer = KtvData.toArray(song.singer ?? [""])[0]
+            const album = KtvData.toArray(song.album ?? [""])[0]
+            if ("mediaSession" in navigator)
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: name,
+                    artist: singer,
+                    album: album,
+                })
+            $("#playerSong").innerText = name
+            $("#playerSinger").innerText = singer
             $("#player audio").src = this.urlPrefix + `/audio/${this.token}/${this.ytid}`
             $("#player track").src = this.urlPrefix + `/vtt/${this.token}/${this.ytid}/${langs}`
             $("#player").classList.add("player-open")
@@ -663,6 +673,27 @@ p, pre {
                 $("#player audio").pause()
             else
                 $("#player audio").play()
+        }
+        playReplay() {
+            if (this.playing)
+                $("#player audio").currentTime = 0
+            else
+                $("#player audio").play()
+        }
+        switchMode(mode) {
+            this.mode = mode
+            $("#playerMode .material-symbols-outlined").innerText = {
+                "one": "looks_one",
+                "all": "repeat",
+                "shuffle": "shuffle",
+                "repeat": "repeat_one",
+            }[mode]
+        }
+        switchNextMode() {
+            const modes = ["one", "all", "shuffle", "repeat"]
+            let idx = modes.indexOf(this.mode)
+            idx = (idx + 1) % modes.length
+            this.switchMode(modes[idx])
         }
 
         matchSong(song, ytid) {
@@ -712,13 +743,91 @@ p, pre {
             else if (this.mode === "shuffle")
                 this.playPauseSong(this.nextSong(this.shuffled))
         }
-        onPrev() {
+        prev() {
             this.playPauseSong(this.nextSong(
                 (this.mode === "shuffle") ? this.shuffled : this.songs, -1))
         }
-        onNext() {
+        next() {
             this.playPauseSong(this.nextSong(
                 (this.mode === "shuffle") ? this.shuffled : this.songs))
+        }
+        seekBackward(diff=null) {
+            diff = diff ?? 10
+            $("#player audio").currentTime -= diff
+        }
+        seekForward(diff=null) {
+            diff = diff ?? 10
+            $("#player audio").currentTime = Math.min(
+                $("#player audio").currentTime + diff,
+                $("#player audio").duration - 0.1)
+        }
+        volumeUp(diff=null) {
+            diff = diff ?? 0.1
+            $("#player audio").volume = Math.min(1, $("#player audio").volume + diff)
+        }
+        volumeDown(diff=null) {
+            diff = diff ?? 0.1
+            $("#player audio").volume = Math.max(0, $("#player audio").volume - diff)
+        }
+
+        onMediaAction(args) {
+            const action = args.action
+            if (action === "play")
+                $("#player audio").play()
+            else if (action === "pause")
+                $("#player audio").pause()
+            else if (action === "stop") {
+                $("#player audio").pause()
+                $("#player audio").currentTime = 0
+            }
+
+            else if (action === "previoustrack")
+                this.prev()
+            else if (action === "nexttrack")
+                this.next()
+
+            else if (action === "seekbackward")
+                this.seekBackward(args.seekOffset)
+            else if (action === "seekforward")
+                this.seekForward(args.seekOffset)
+            else if (action === "seekto")
+                $("#player audio").currentTime = args.seekTime
+        }
+        onKeyDown(event) {
+            if (event.target.nodeName !== "BODY")
+                return
+            if (!$("#player").classList.contains("player-open"))
+                return
+
+            const code = event.code
+            let handled = true
+            if (["Space", "KeyC"].includes(code))
+                this.playPause()
+            else if (["ArrowLeft"].includes(code))
+                this.seekBackward()
+            else if (["ArrowRight"].includes(code))
+                this.seekForward()
+            else if (["ArrowUp"].includes(code))
+                this.volumeUp()
+            else if (["ArrowDown"].includes(code))
+                this.volumeDown()
+            else if (["KeyZ", "KeyP"].includes(code))
+                this.prev()
+            else if (["KeyV", "KeyN"].includes(code))
+                this.next()
+            else if (["KeyX"].includes(code))
+                this.playReplay()
+            else if (["KeyR"].includes(code))
+                this.switchMode(this.mode === "shuffle" ? "all" : "shuffle")
+            else if (["KeyL"].includes(code))
+                this.switchMode(this.mode === "repeat" ? "one" : "repeat")
+            else
+                handled = false
+
+            if (handled) {
+                event.preventDefault()
+                event.stopPropagation()
+            }
         }
     }
 
