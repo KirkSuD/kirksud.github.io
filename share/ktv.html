@@ -13,9 +13,9 @@
     <meta name="twitter:card" content="summary">
     <meta property="og:site_name" content="kirksud.github.io">
 
-    <link rel="icon" href="icon/icon.svg" sizes="any" type="image/svg+xml">
-    <link rel="icon" href="icon/icon_512.png" sizes="512x512" type="image/png">
-    <link rel="icon" href="icon/icon_192.png" sizes="192x192" type="image/png">
+    <link rel="icon" href="icon/music.svg" sizes="any" type="image/svg+xml">
+    <link rel="icon" href="icon/music_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/music_192.png" sizes="192x192" type="image/png">
 
     <link rel="manifest" href="manifest/ktv.json">
 
@@ -40,17 +40,17 @@ p, pre {
 #main {
     width: 100%;
     max-width: 576px;
-    padding: 1vh 3vw 0;
+    padding-top: 1vh;
 }
-#nav, #search, #filterBar, #items {
-    margin: 1vmin;
+#nav, #search, #filterBar {
+    margin: 1vh 3vmin;
 }
 #singerButton {
     align-items: center;
 }
 #items {
     overflow: auto;
-    margin-bottom: 0;
+    margin-top: 1vh;
 }
 #items > div:nth-child(2n+1) {
     background-color: rgb(240, 240, 240);
@@ -60,7 +60,7 @@ p, pre {
 }
 #items > div {
     border-bottom: 1px solid rgb(200, 200, 200);
-    padding: 1vh 1vw;
+    padding: 1vh 3vmin;
     cursor: pointer;
     user-select: none;
 }
@@ -88,7 +88,6 @@ p, pre {
 
 #player {
     border-top: 1px solid rgb(200, 200, 200);
-    margin: 0 1vmin;
     display: none;
 }
 #player.player-open {
@@ -110,6 +109,9 @@ p, pre {
 }
 #player > * > button {
     padding: 1vh 1vw;
+}
+#playerCaptionsContainer, #playerTitleContainer, #playerButtons {
+    padding: 0 4vmin;
 }
 #playerCaptionsContainer {
     justify-content: center;
@@ -540,8 +542,8 @@ p, pre {
                 if (cues.length === 0)
                     $("#playerCaptions").classList.add("v-hidden")
                 else {
-                    $("#playerCaptions").classList.remove("v-hidden")
                     $("#playerCaptions").innerText = cues[0].text
+                    $("#playerCaptions").classList.remove("v-hidden")
                 }
             })
 
@@ -651,6 +653,7 @@ p, pre {
                     artist: singer,
                     album: album,
                 })
+            $("#playerCaptions").classList.add("v-hidden")
             $("#playerSong").innerText = name
             $("#playerSinger").innerText = singer
             $("#player audio").src = this.urlPrefix + `/audio/${this.token}/${this.ytid}`

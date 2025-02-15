@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1024mm"
+   height="1024mm"
+   viewBox="0 0 1024 1024"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
+   sodipodi:docname="music.svg"
+   inkscape:export-filename="icon.png"
+   inkscape:export-xdpi="12.7"
+   inkscape:export-ydpi="12.7"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.1767767"
+     inkscape:window-width="1920"
+     inkscape:window-height="986"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     inkscape:cx="1705.5416"
+     inkscape:cy="1779.0807" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path1"
+       d="M 816 116 L 752 131.42867 L 368 224 L 304 239.4288 L 304 351.42868 L 304 682.84049 A 112 112 0 0 0 256 672 A 112 112 0 0 0 144 784 A 112 112 0 0 0 256 896 A 112 112 0 0 0 368 784 L 368 336 L 752 243.42855 L 752 574.84036 A 112 112 0 0 0 704 564.0002 A 112 112 0 0 0 592 676 A 112 112 0 0 0 704 788 A 112 112 0 0 0 816 676 L 816 228 L 816 116 z"
+       style="fill:#ffffff;stroke:#000000;stroke-linejoin:round;stroke-width:10;stroke-dasharray:none" />
+  </g>
+</svg>
