@@ -232,8 +232,7 @@ p, pre {
             <p id="title" class="flex-1 font-large">載入中...</p>
             <select id="company"></select>
         </div>
-        <input id="search" list="searchList" type="search" placeholder="搜尋">
-        <datalist id="searchList"></datalist>
+        <input id="search" type="search" placeholder="搜尋">
         <div id="filterBar" class="d-flex">
             <label>
                 <input id="favCheckbox" type="checkbox">
@@ -417,13 +416,15 @@ p, pre {
                     res.push(singer)
             return res
         }
-        static filterSong(songs, keyword, keys=["name", "singer", "albumName"]) {
+        static filterSong(songs, keyword, keys=["name", "singer", "albumName", "code"]) {
             const res = []
             for (const song of songs) {
                 for (const key of keys) {
                     if (!(key in song))
                         continue
-                    const values = KtvData.toArray(song[key])
+                    let values = KtvData.toArray(song[key])
+                    if (key === "code")
+                        values = values.map(([company, code]) => code)
                     if (values.some(v => v.includes(keyword))) {
                         res.push(song)
                         break
@@ -524,28 +525,11 @@ p, pre {
 
             $on("click", "#playerRewind", e => this.seekBackward())
             $on("click", "#playerForward", e => this.seekForward())
-            $on("click", "#playerMinimize", e => {
-                if ($("#player").classList.contains("player-minimize")) {
-                    $("#player").classList.remove("player-minimize")
-                    $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_down"
-                }
-                else {
-                    $("#player").classList.add("player-minimize")
-                    $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_up"
-                }
-            })
+            $on("click", "#playerMinimize", e => this.toggleMinimize())
 
             $on("load", "#player track", e => $("#player").classList.remove("player-no-captions"))
             $on("error", "#player track", e => $("#player").classList.add("player-no-captions"))
-            $on("cuechange", $("#player audio").textTracks[0], e => {
-                const cues = e.currentTarget.activeCues
-                if (cues.length === 0)
-                    $("#playerCaptions").classList.add("v-hidden")
-                else {
-                    $("#playerCaptions").innerText = cues[0].text
-                    $("#playerCaptions").classList.remove("v-hidden")
-                }
-            })
+            $on("cuechange", $("#player audio").textTracks[0], e => this.onCueChange())
 
             $on("keydown", document, e => this.onKeyDown(e))
             if ("mediaSession" in navigator) {
@@ -683,6 +667,7 @@ p, pre {
             else
                 $("#player audio").play()
         }
+
         switchMode(mode) {
             this.mode = mode
             $("#playerMode .material-symbols-outlined").innerText = {
@@ -697,6 +682,25 @@ p, pre {
             let idx = modes.indexOf(this.mode)
             idx = (idx + 1) % modes.length
             this.switchMode(modes[idx])
+        }
+        toggleMinimize() {
+            if ($("#player").classList.contains("player-minimize")) {
+                $("#player").classList.remove("player-minimize")
+                $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_down"
+            }
+            else {
+                $("#player").classList.add("player-minimize")
+                $("#playerMinimize .material-symbols-outlined").innerText = "keyboard_arrow_up"
+            }
+        }
+        onCueChange() {
+            const cues = $("#player audio").textTracks[0].activeCues
+            if (cues.length === 0)
+                $("#playerCaptions").classList.add("v-hidden")
+            else {
+                $("#playerCaptions").innerText = cues[0].text
+                $("#playerCaptions").classList.remove("v-hidden")
+            }
         }
 
         matchSong(song, ytid) {
@@ -747,10 +751,12 @@ p, pre {
                 this.playPauseSong(this.nextSong(this.shuffled))
         }
         prev() {
+            $("#player audio").pause()
             this.playPauseSong(this.nextSong(
                 (this.mode === "shuffle") ? this.shuffled : this.songs, -1))
         }
         next() {
+            $("#player audio").pause()
             this.playPauseSong(this.nextSong(
                 (this.mode === "shuffle") ? this.shuffled : this.songs))
         }
@@ -851,12 +857,11 @@ p, pre {
             // const synkServer = "https://kirksud.pythonanywhere.com"
             this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
 
-            this.modal = new Modal(() => this.saveState())
+            this.modal = new Modal(() => this.saveState(true))
             this.player = new PlayerWidget(this)
             this.singer = null
             this.initCompany()
             this.initYear()
-            this.setDataList()
             this.show()
             this.sync()
         }
@@ -904,8 +909,11 @@ p, pre {
                 scroll: $("#items").scrollTop,
             }
         }
-        saveState() {
-            history.replaceState(this.currentState(), "")
+        saveState(modalClose=false) {
+            const s = this.currentState()
+            if (modalClose)
+                s.modalClose = true
+            history.replaceState(s, "")
         }
         onChange() {
             this.show()
@@ -921,13 +929,16 @@ p, pre {
             $("#selectEnd").value = state.end ?? ""
 
             history.pushState({}, "")
-            this.setDataList()
             this.show()
             this.saveState()
         }
         onPopState() {
             const s = history.state
-            if (!s || !("singer" in s))
+            if (s && s.modalClose) {
+                delete s.modalClose
+                return
+            }
+            if (!(s && "singer" in s))
                 return
             this.singer = s.singer
             $("#search").value = s.search
@@ -935,7 +946,6 @@ p, pre {
             $("#selectStart").value = s.start
             $("#selectEnd").value = s.end
 
-            this.setDataList()
             this.show()
             $("#items").scrollTop = s.scroll
         }
@@ -1002,22 +1012,6 @@ p, pre {
                 $("#selectStart").insertAdjacentHTML("beforeend", h)
                 $("#selectEnd").insertAdjacentHTML("beforeend", h)
             }
-        }
-        setDataList() {
-            let values
-            if (this.singer === "")
-                values = ktvData.singers.map(singer => singer.name)
-            else {
-                let songs = ktvData.songs
-                if (this.singer !== null)
-                    songs = KtvData.filterSong(songs, this.singer, ["singer"])
-                values = songs.filter(song => "name" in song)
-                    .map(song => KtvData.toArray(song.name)[0])
-            }
-            $("#searchList").innerHTML = ""
-            for (const v of values)
-                $("#searchList").insertAdjacentHTML("beforeend", `
-                    <option value="${v}"></option>`)
         }
 
         show() {
