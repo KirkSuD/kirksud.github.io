@@ -125,6 +125,7 @@ p, pre {
     background-color: rgb(80, 80, 80);
     padding: 0.4em;
     border-radius: 0.4em;
+    cursor: pointer;
 }
 
 .v-hidden {
@@ -322,6 +323,19 @@ p, pre {
                 <span class="font-bold"></span>
                 」（代碼 10 分鐘內有效）
             </div>
+        </div>
+    </div>
+
+    <div id="lyricsModal" class="modal">
+        <div class="backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header d-flex">
+                <p class="flex-1">歌詞</p>
+                <button class="icon-button">
+                    <i class="material-symbols-outlined modal-close-button">close</i>
+                </button>
+            </div>
+            <div id="lyrics" class="modal-body"></div>
         </div>
     </div>
 
@@ -530,6 +544,7 @@ p, pre {
             $on("load", "#player track", e => $("#player").classList.remove("player-no-captions"))
             $on("error", "#player track", e => $("#player").classList.add("player-no-captions"))
             $on("cuechange", $("#player audio").textTracks[0], e => this.onCueChange())
+            $on("click", $("#playerCaptions"), e => this.onClickCaptions())
 
             $on("keydown", document, e => this.onKeyDown(e))
             if ("mediaSession" in navigator) {
@@ -698,9 +713,33 @@ p, pre {
             if (cues.length === 0)
                 $("#playerCaptions").classList.add("v-hidden")
             else {
-                $("#playerCaptions").innerText = cues[0].text
+                $("#playerCaptions").innerHTML = ""
+                $("#playerCaptions").appendChild(cues[0].getCueAsHTML().cloneNode(true))
                 $("#playerCaptions").classList.remove("v-hidden")
             }
+        }
+        onClickCaptions() {
+            const cues = $("#player audio").textTracks[0].cues
+            const lyrics = $("#lyrics")
+            lyrics.innerHTML = ""
+
+            let lastText = ""
+            let lastEnd = Infinity
+            for (const cue of cues) {
+                const p = document.createElement("p")
+                p.appendChild(cue.getCueAsHTML().cloneNode(true))
+                const text = p.innerText.replace(/\p{C}/gu, "")
+                // \p{C} matches invisible control characters and unused code points
+                // because "Zero-width space" was found in a vtt before
+                if (text === lastText)
+                    continue
+                if (cue.startTime - lastEnd > 10)
+                    lyrics.insertAdjacentHTML("beforeend", `<br />`)
+                lyrics.appendChild(p)
+                lastText = text
+                lastEnd = cue.endTime
+            }
+            this.ktvApp.modal.openModal("#lyricsModal")
         }
 
         matchSong(song, ytid) {
@@ -716,10 +755,9 @@ p, pre {
             for (const [i, song] of this.ktvApp.filterSong().entries()) {
                 if (i >= icons.length)
                     break
-                if (this.matchSong(song, this.ytid))
-                    icons[i].innerText = this.playing ? "pause" : "play_arrow"
-                else
-                    icons[i].innerText = "play_arrow"
+                const playing = this.playing && this.matchSong(song, this.ytid)
+                if ((icons[i].innerText !== "pause") === playing)
+                    icons[i].innerText = playing ? "pause" : "play_arrow"
             }
         }
         nextSong(songs, diff=1) {
@@ -873,7 +911,6 @@ p, pre {
                 favSongs: [],
                 favSingers: [],
                 ytapToken: null,
-                doSync: false,
             }
             return data
         }
@@ -882,8 +919,6 @@ p, pre {
             this.sync()
         }
         sync() {
-            if (!this.load().doSync)
-                return
             const localData = localStorage.getItem(this.localStorageKey) ?? "null"
             this.synk.run(localData, data => {
                 if (data === null || data === localData)
@@ -1030,11 +1065,6 @@ p, pre {
             $("#items").innerHTML = ""
             $("#title").innerText = (search === "") ? "所有歌曲" : `歌曲「${search}」`
             this.appendSongs(this.filterSong())
-            if (search === "dosynk") {
-                const data = this.load()
-                data.doSync = !data.doSync
-                this.save(data)
-            }
         }
         showSingers() {
             const search = $("#search").value
@@ -1110,8 +1140,11 @@ p, pre {
                         <p>${code}</p>
                     </div>
                     <div class="d-flex">
-                        <button class="play-btn icon-button font-fill ${hasYoutube ? "" : "v-hidden"}">
+                        <button class="play-btn icon-button font-fill ${hasYoutube ? "" : "d-none"}">
                             <i class="material-symbols-outlined">play_arrow</i>
+                        </button>
+                        <button class="search-btn icon-button ${hasYoutube ? "d-none" : ""}">
+                            <i class="material-symbols-outlined">search</i>
                         </button>
                         <p class="flex-1">${escapeHtml(singer)}</p>
                         <p>${lang} / ${company}</p>
@@ -1145,6 +1178,12 @@ p, pre {
                 $on("click", $("button.play-btn", element), event => {
                     event.stopPropagation()
                     this.player.playPauseSong(song, true)
+                })
+                $on("click", $("button.search-btn", element), event => {
+                    event.stopPropagation()
+                    const ytSearchURL = new URL("https://www.youtube.com/results")
+                    ytSearchURL.searchParams.set("search_query", name + " " + singer)
+                    window.open(ytSearchURL.href)
                 })
                 $on("click", element, e => this.showDetail(song))
                 $("#items").appendChild(element)
