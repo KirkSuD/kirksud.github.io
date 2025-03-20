@@ -431,7 +431,7 @@ p {
 
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
-            this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+            this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
             this.load()
             this.sync()
         }
@@ -476,13 +476,7 @@ p {
             this.sync()
         }
         sync() {
-            const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-            this.synk.run(localData, data => {
-                if (data === null || data === localData)
-                    return
-                localStorage.setItem(this.localStorageKey, data)
-                this.load()
-            })
+            this.synk.run(() => this.load())
         }
         onExportData(event) {
             const text = localStorage.getItem(this.localStorageKey)

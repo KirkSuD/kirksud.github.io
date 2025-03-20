@@ -153,9 +153,13 @@ if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:"
 function $(selectors, element=document) {
     return element.querySelector(selectors)
 }
-
 function $$(selectors, element=document) {
     return Array.from(element.querySelectorAll(selectors))
+}
+function $html(html) {
+    const template = document.createElement("template")
+    template.innerHTML = html
+    return template.content.children[0]
 }
 
 class DateUtil {
@@ -424,16 +428,14 @@ class TimerWidget {
         app.save()
     }
     static newElement() {
-        const template = document.createElement("template")
-        template.innerHTML = `
+        return $html(`
             <div class="timer">
                 <pre></pre>
                 <pre></pre>
                 <pre class="grow"></pre>
                 <button class="icon-button"><i class="material-icons">mode_edit</i></button>
                 <button class="icon-button"><i class="material-icons">delete</i></button>
-            </div>`
-        return template.content.children[0]
+            </div>`)
     }
 }
 
@@ -471,7 +473,7 @@ class DayTimerApp {
         }
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
-        this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+        this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
         this.updateIntervalId = null
         this.load()
         this.sync()
@@ -539,13 +541,7 @@ class DayTimerApp {
         this.sync()
     }
     sync() {
-        const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(localData, data => {
-            if (data === null || data === localData)
-                return
-            localStorage.setItem(this.localStorageKey, data)
-            this.load()
-        })
+        this.synk.run(() => this.load())
     }
     update() {
         this.elements.day.value = DateUtil.formatDate()

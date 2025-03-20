@@ -2,753 +2,740 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <title>Memo</title>
+    <meta charset="UTF-8" />
+    <title>Memo</title>
 
-  <meta name="description" content="Responsive memo app with folder, backup and more features." />
-  <meta property="og:title" content="Memo app">
-  <meta property="og:description" content="Responsive memo app with folder, backup and more features.">
-  <meta property="og:url" content="https://kirksud.github.io/share/memo.html">
-  <meta name="twitter:card" content="summary_large_image">
+    <meta name="description" content="Responsive memo app with folder, backup and more features." />
+    <meta property="og:title" content="Memo app">
+    <meta property="og:description" content="Responsive memo app with folder, backup and more features.">
+    <meta property="og:url" content="https://kirksud.github.io/share/memo.html">
+    <meta name="twitter:card" content="summary_large_image">
 
-  <link rel="icon" href="icon/edit_350.png" sizes="350x350" type="image/png">
-  <link rel="icon" href="icon/edit_512.png" sizes="512x512" type="image/png">
-  <link rel="icon" href="icon/edit_192.png" sizes="192x192" type="image/png">
+    <link rel="icon" href="icon/edit_350.png" sizes="350x350" type="image/png">
+    <link rel="icon" href="icon/edit_512.png" sizes="512x512" type="image/png">
+    <link rel="icon" href="icon/edit_192.png" sizes="192x192" type="image/png">
 
-  <link rel="manifest" href="manifest/memo.json">
+    <link rel="manifest" href="manifest/memo.json">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-  <link rel="stylesheet" crossorigin="anonymous"
-    href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="stylesheet" crossorigin="anonymous"
-    href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <link rel="stylesheet"
-    href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
-    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
-    crossorigin="anonymous">
+    <link rel="stylesheet" crossorigin="anonymous"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" crossorigin="anonymous"
+        href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous">
 
-  <style>
+    <style>
 main {
-  margin: 3% 8%;
+    margin: 3% 8%;
 }
 main p {
-  white-space: pre-wrap;
-  margin-bottom: 0;
+    white-space: pre-wrap;
+    margin-bottom: 0;
 }
 .card {
-  /* border: 2px solid rgb(223,223,223); */
-  border-width: 2px;
-  user-select: none;
+    /* border: 2px solid rgb(223,223,223); */
+    border-width: 2px;
+    user-select: none;
 }
 .card-text {
-  font-size: 1.2rem;  /* firefox: p=1rem */
-  max-height: 50vh;
-  overflow-y: auto;
+    font-size: 1.2rem;  /* firefox: p=1rem */
+    max-height: 50vh;
+    overflow-y: auto;
 }
 .card-body > small {
-  font-size: 0.96rem;  /* firefox: small~0.8rem */
-  display: block;
-  margin-bottom: 5px;
+    font-size: 0.96rem;  /* firefox: small~0.8rem */
+    display: block;
+    margin-bottom: 5px;
 }
 .card-body > textarea {
-  max-height: 50vh;
-  overflow-y: auto;
+    max-height: 50vh;
+    overflow-y: auto;
 }
 .checked-memo {
-  text-decoration: line-through;
-  text-decoration-thickness: 0.08em;
+    text-decoration: line-through;
+    text-decoration-thickness: 0.08em;
 }
 #import-memo-btn {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 #memos .card-body button, #memos .card-body br {
-  display: none;
+    display: none;
 }
 #memos #add-memo-div button, #memos #add-memo-div br {
-  display: revert;
+    display: revert;
 }
 #memos .card-body:hover button, #memos .card-body:hover br {
-  display: revert;
+    display: revert;
 }
 @media (any-pointer: coarse) {
-  #memos .card-body button, #memos .card-body br {
-    display: revert;
-  }
+    #memos .card-body button, #memos .card-body br {
+        display: revert;
+    }
 }
 
 #folder-btn-text, #col-btn-text {
-  display: inline-block;
+    display: inline-block;
 }
 #folder-modal-title::before {
-  content: "Folder: ";
+    content: "Folder: ";
 }
 #folder-modal-div-head > div, #folder-modal-div > div {
-  padding: 5px 0;
-  border-bottom: 1px solid #dee2e6;
-  /* box-shadow: 0 2px 1px -1px black; */
+    padding: 5px 0;
+    border-bottom: 1px solid #dee2e6;
+    /* box-shadow: 0 2px 1px -1px black; */
 }
 #folder-modal-div > div > p {
-  cursor: pointer;
-  user-select: none;
+    cursor: pointer;
+    user-select: none;
 }
-  </style>
+    </style>
 
-  <script src="synk.js"></script>
+    <script src="synk.js"></script>
 
 </head>
 
 <body>
-  <main>
+    <main>
 
-    <div class="row">
-      <div class="w-100 px-1 mb-2">
-        <div class="card">
-          <div class="card-body">
-            <button id="export-memo-btn" class="close float-left mr-1">
-              <i class="material-icons">save</i>
-            </button>
-            <label id="import-memo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
-              <i class="material-icons">folder_open</i>
-            </label>
-            <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
+        <div class="row">
+            <div class="w-100 px-1 mb-2">
+                <div class="card">
+                    <div class="card-body">
+                        <button id="export-memo-btn" class="close float-left mr-1">
+                            <i class="material-icons">save</i>
+                        </button>
+                        <label id="import-memo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
+                            <i class="material-icons">folder_open</i>
+                        </label>
+                        <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
 
-            <button id="export-copy-memo-btn" class="close float-left mr-1">
-              <i class="material-icons">content_copy</i>
-            </button>
-            <button id="import-paste-memo-btn" class="close float-left">
-              <i class="material-icons">content_paste</i>
-            </button>
-            <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
+                        <button id="export-copy-memo-btn" class="close float-left mr-1">
+                            <i class="material-icons">content_copy</i>
+                        </button>
+                        <button id="import-paste-memo-btn" class="close float-left">
+                            <i class="material-icons">content_paste</i>
+                        </button>
+                        <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
 
-            <br class="d-sm-none">
-            <br class="d-sm-none">
+                        <br class="d-sm-none">
+                        <br class="d-sm-none">
 
-            <button id="folder-btn" class="close ml-3">
-              <i class="material-icons">folder_open</i> <p id="folder-btn-text"></p>
-            </button>
-            <button id="col-btn" class="close ml-3">
-              <i class="material-icons">border_all</i> <p id="col-btn-text"></p>
-            </button>
-            <button id="clear-memo-btn" class="close">
-              <i class="material-icons">delete_sweep</i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="memos" class="row">
-      <div id="add-memo-div" class="memo p-1">
-        <div class="card">
-          <div class="card-body">
-            <button id="add-memo-btn" class="close"><i class="material-icons">add</i></button>
-            <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return
-              input delete create cancel add_box add_circle -->
-            <br><br>
-            <textarea id="add-memo-txt" class="form-control" placeholder="Type something..."></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal" id="folder-modal" role="dialog" aria-label="Folder" aria-hidden="false">
-      <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-
-          <div class="modal-header">
-            <h5 id="folder-modal-title" class="modal-title"></h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close folder modal">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-
-          <div class="modal-body">
-            <div id="folder-modal-div-head">
-              <div class="row">
-                <p class="col">Name</p>
-                <p class="col">Last used</p>
-                <p class="col">Memos</p>
-
-                <div class="col-12 d-sm-none"></div>
-
-                <div class="col pr-0">
-                  <input id="add-folder-input" class="form-control" placeholder="Add"></input>
+                        <button id="folder-btn" class="close ml-3">
+                            <i class="material-icons">folder_open</i> <p id="folder-btn-text"></p>
+                        </button>
+                        <button id="col-btn" class="close ml-3">
+                            <i class="material-icons">border_all</i> <p id="col-btn-text"></p>
+                        </button>
+                        <button id="clear-memo-btn" class="close">
+                            <i class="material-icons">delete_sweep</i>
+                        </button>
+                    </div>
                 </div>
-                <button id="add-folder-btn" type="button" class="close pl-2 pr-2">
-                  <i class="material-icons">create_new_folder</i>
-                </button>
-              </div>
             </div>
-            <div id="folder-modal-div"></div>
-          </div>
-
         </div>
-      </div>
-    </div>
 
-  </main>
+        <div id="memos" class="row">
+            <div id="add-memo-div" class="memo p-1">
+                <div class="card">
+                    <div class="card-body">
+                        <button id="add-memo-btn" class="close"><i class="material-icons">add</i></button>
+                        <!-- file_upload note_add ? undo navigate_before save mode_edit keyboard_return
+                            input delete create cancel add_box add_circle -->
+                        <br><br>
+                        <textarea id="add-memo-txt" class="form-control" placeholder="Type something..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
-    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-    crossorigin="anonymous"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-    crossorigin="anonymous"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
-    integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
-    crossorigin="anonymous"></script>
+        <div class="modal" id="folder-modal" role="dialog" aria-label="Folder" aria-hidden="false">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
 
-  <script>
+                    <div class="modal-header">
+                        <h5 id="folder-modal-title" class="modal-title"></h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close folder modal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="folder-modal-div-head">
+                            <div class="row">
+                                <p class="col">Name</p>
+                                <p class="col">Last used</p>
+                                <p class="col">Memos</p>
+
+                                <div class="col-12 d-sm-none"></div>
+
+                                <div class="col pr-0">
+                                    <input id="add-folder-input" class="form-control" placeholder="Add"></input>
+                                </div>
+                                <button id="add-folder-btn" type="button" class="close pl-2 pr-2">
+                                    <i class="material-icons">create_new_folder</i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="folder-modal-div"></div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+        integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+        integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+        crossorigin="anonymous"></script>
+
+    <script>
 
 if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
-  navigator.serviceWorker.register("service_worker.js")
+    navigator.serviceWorker.register("service_worker.js")
 
 const localStorage_key = "kirksud_memo_app_data";
 const export_filename_prefix = "memo_export_";
 
 const synkServer = "https://kirk.alwaysdata.net";
 // const synkServer = "https://kirksud.pythonanywhere.com";
-const synk = new Synk(synkServer, "1MB", localStorage_key + "_synk");
+const synk = new Synk(synkServer, "1MB", localStorage_key);
 
 let current_folder, current_folder_data;
 
 // run when document ready
 $(function() {
-  $("#memos").sortable({stop: save_current_folder});
-  $("#export-memo-btn").on("click", export_memo_btn);
-  $("#import-file-selector").on("change", import_file_selected);
-  $("#export-copy-memo-btn").on("click", export_copy_memo_btn);
-  $("#import-paste-memo-btn").on("click", import_paste_memo_btn);
-  $("#import-paste-input").on("paste", import_pasted);
-  $("#import-paste-input").on("blur", done_import_paste);
-  $("#clear-memo-btn").on("click", clear_memo_btn);
-  $("#col-btn").on("click", col_btn);
-  $("#folder-btn").on("click", folder_btn);
-  $("#add-folder-btn").on("click", add_folder_btn);
-  $("#add-folder-input").on("keydown", key_listener(add_folder_btn));
-  $("#add-memo-btn").on("click", add_memo_btn);
-  $("#add-memo-txt").on("keydown", key_listener(add_memo_btn, "Enter", true));
-  $("#add-memo-txt").on("input", resize_textarea);
-  resize_textarea(null, $("#add-memo-txt"));
-  $(window).resize(resize_col);
-  resize_col();
-  load_from_storage();
+    $("#memos").sortable({stop: save_current_folder});
+    $("#export-memo-btn").on("click", export_memo_btn);
+    $("#import-file-selector").on("change", import_file_selected);
+    $("#export-copy-memo-btn").on("click", export_copy_memo_btn);
+    $("#import-paste-memo-btn").on("click", import_paste_memo_btn);
+    $("#import-paste-input").on("paste", import_pasted);
+    $("#import-paste-input").on("blur", done_import_paste);
+    $("#clear-memo-btn").on("click", clear_memo_btn);
+    $("#col-btn").on("click", col_btn);
+    $("#folder-btn").on("click", folder_btn);
+    $("#add-folder-btn").on("click", add_folder_btn);
+    $("#add-folder-input").on("keydown", key_listener(add_folder_btn));
+    $("#add-memo-btn").on("click", add_memo_btn);
+    $("#add-memo-txt").on("keydown", key_listener(add_memo_btn, "Enter", true));
+    $("#add-memo-txt").on("input", resize_textarea);
+    resize_textarea(null, $("#add-memo-txt"));
+    $(window).resize(resize_col);
+    resize_col();
+    load_from_storage();
 
-  const localData = localStorage.getItem(localStorage_key) ?? "null";
-  synk.run(localData, data => {
-    if (data !== null && data !== localData) {
-      localStorage.setItem(localStorage_key, data);
-      load_from_storage();
-    }
-  });
-
+    synk.run(load_from_storage);
 });
 
 // ui manipulation functions
 function add_memo(txt, time_str, checked=false) {
-  const new_memo_div = $(
-    `<div class="memo p-1">
-      <div class="card">
-        <div class="card-body">
-          <button class="close close-memo"><i class="material-icons">close</i></button>
-          <button class="close check-memo float-left mr-2"><i class="material-icons">check</i></button>
-          <button class="close cancel-edit-memo float-left d-none mr-2">
-            <i class="material-icons">undo</i> </button>
-          <button class="close edit-memo float-left mr-2"><i class="material-icons">mode_edit</i></button>
-          <button class="close copy-memo float-left mr-2"><i class="material-icons">content_copy</i></button>
-          <button class="close up-memo float-left mr-2"><i class="material-icons">arrow_upward</i></button>
-          <button class="close down-memo float-left mr-2"><i class="material-icons">arrow_downward</i></button>
-          <br><br>
-          <small></small>
-          <p class="card-text"></p>
-          <textarea class="form-control d-none"></textarea>
-        </div>
-      </div>
-    </div>`);
-  new_memo_div.find("small").text(time_str);
-  new_memo_div.find("p").text(txt);
-  if (checked) {
-    new_memo_div.find("p").addClass("checked-memo");
-  }
-  new_memo_div.find(".close-memo").on("click", close_memo);
-  new_memo_div.find(".check-memo").on("click", check_memo);
-  new_memo_div.find(".copy-memo").on("click", copy_memo);
-  new_memo_div.find(".cancel-edit-memo").on("click", toggle_edit_memo);
-  new_memo_div.find(".edit-memo").on("click", edit_memo);
-  new_memo_div.find(".up-memo").on("click", up_memo);
-  new_memo_div.find(".down-memo").on("click", down_memo);
-  new_memo_div.find("textarea").on("keydown", key_listener(function() {
-    new_memo_div.find(".edit-memo").click(); }, "Enter", true));
-  new_memo_div.find("textarea").on("keydown", key_listener(function() {
-    new_memo_div.find(".cancel-edit-memo").click(); }, "Escape"));
-  new_memo_div.find("textarea").on("input", resize_textarea);
-  new_memo_div.insertAfter($("#add-memo-div"));
+    const new_memo_div = $(
+        `<div class="memo p-1">
+            <div class="card">
+                <div class="card-body">
+                    <button class="close close-memo"><i class="material-icons">close</i></button>
+                    <button class="close check-memo float-left mr-2"><i class="material-icons">check</i></button>
+                    <button class="close cancel-edit-memo float-left d-none mr-2">
+                        <i class="material-icons">undo</i> </button>
+                    <button class="close edit-memo float-left mr-2"><i class="material-icons">mode_edit</i></button>
+                    <button class="close copy-memo float-left mr-2"><i class="material-icons">content_copy</i></button>
+                    <button class="close up-memo float-left mr-2"><i class="material-icons">arrow_upward</i></button>
+                    <button class="close down-memo float-left mr-2"><i class="material-icons">arrow_downward</i></button>
+                    <br><br>
+                    <small></small>
+                    <p class="card-text"></p>
+                    <textarea class="form-control d-none"></textarea>
+                </div>
+            </div>
+        </div>`);
+    new_memo_div.find("small").text(time_str);
+    new_memo_div.find("p").text(txt);
+    if (checked) {
+        new_memo_div.find("p").addClass("checked-memo");
+    }
+    new_memo_div.find(".close-memo").on("click", close_memo);
+    new_memo_div.find(".check-memo").on("click", check_memo);
+    new_memo_div.find(".copy-memo").on("click", copy_memo);
+    new_memo_div.find(".cancel-edit-memo").on("click", toggle_edit_memo);
+    new_memo_div.find(".edit-memo").on("click", edit_memo);
+    new_memo_div.find(".up-memo").on("click", up_memo);
+    new_memo_div.find(".down-memo").on("click", down_memo);
+    new_memo_div.find("textarea").on("keydown", key_listener(function() {
+        new_memo_div.find(".edit-memo").click(); }, "Enter", true));
+    new_memo_div.find("textarea").on("keydown", key_listener(function() {
+        new_memo_div.find(".cancel-edit-memo").click(); }, "Escape"));
+    new_memo_div.find("textarea").on("input", resize_textarea);
+    new_memo_div.insertAfter($("#add-memo-div"));
 }
 
 function clear_memo() {
-  $("#memos").children().each(function(i, element) {
-    if(i!=0) {
-      $(element).remove();
-    }
-  });
+    $("#memos").children().each(function(i, element) {
+        if(i!=0) {
+            $(element).remove();
+        }
+    });
 }
 
 // data <-> ui functions
 function ui_to_data() {
-  $("#add-memo-div").prependTo("#memos"); // keep it always first
-  const memos = $("#memos").find(".card-body").map((i, element) =>
-    [[
-      $(element).find("p").hasClass("checked-memo"),
-      $(element).find("small").text(),
-      $(element).find("p").text()
-    ]]
-  ).toArray().slice(1);
-  current_folder_data[current_folder] = {time: pretty_time(), data: memos};
-  resize_col(null, -1);
+    $("#add-memo-div").prependTo("#memos"); // keep it always first
+    const memos = $("#memos").find(".card-body").map((i, element) =>
+        [[
+            $(element).find("p").hasClass("checked-memo"),
+            $(element).find("small").text(),
+            $(element).find("p").text()
+        ]]
+    ).toArray().slice(1);
+    current_folder_data[current_folder] = {time: pretty_time(), data: memos};
+    resize_col(null, -1);
 }
 function data_to_json() {
-  return JSON.stringify({
-    version: "0.3",
-    time: pretty_time(),
-    using_folder: current_folder,
-    folders: current_folder_data});
+    return JSON.stringify({
+        version: "0.3",
+        time: pretty_time(),
+        using_folder: current_folder,
+        folders: current_folder_data});
 }
 
 function data_to_ui(data, folder=null) {
-  if (typeof data.version === "undefined") { return false; }
-  if (data.version === '0.1') { // upgrade data from 0.1 to 0.2
-    let time_str = pretty_time();
-    data.data = data.data.map(item => [item[0], time_str, item[1]]);
-    data.version = '0.2';
-    data.time = time_str;
-  }
-  if (data.version === '0.2') { // upgrade data from 0.2 to 0.3
-    let time_str = pretty_time();
-    data = {
-      version: "0.3",
-      time: time_str,
-      using_folder: "Default",
-      folders: {
-        "Default": {
-          time: data.time,
-          data: data.data
-        }}};
-    console.log("Upgraded data from 0.2 to 0.3:", data);
-  }
-  if (data.version === '0.3') {
-    if (folder === null) {
-      folder = data.using_folder;
-      console.log("Using folder:", folder);
+    if (typeof data.version === "undefined") { return false; }
+    if (data.version === '0.1') { // upgrade data from 0.1 to 0.2
+        let time_str = pretty_time();
+        data.data = data.data.map(item => [item[0], time_str, item[1]]);
+        data.version = '0.2';
+        data.time = time_str;
     }
-    current_folder = folder;
-    current_folder_data = data.folders;
-    clear_memo();
-    data.folders[folder].data.slice().reverse().forEach(function(element) {
-      add_memo(element[2], element[1], element[0]); // .slice() for copy, not reverse in-place
-    });
-    resize_col(null, -1);
-    $("#folder-btn-text").text(folder);
-    return true;
-  }
-  else {
-    return false;
-  }
+    if (data.version === '0.2') { // upgrade data from 0.2 to 0.3
+        let time_str = pretty_time();
+        data = {
+            version: "0.3",
+            time: time_str,
+            using_folder: "Default",
+            folders: {
+                "Default": {
+                    time: data.time,
+                    data: data.data
+                }}};
+        console.log("Upgraded data from 0.2 to 0.3:", data);
+    }
+    if (data.version === '0.3') {
+        if (folder === null) {
+            folder = data.using_folder;
+            console.log("Using folder:", folder);
+        }
+        current_folder = folder;
+        current_folder_data = data.folders;
+        clear_memo();
+        data.folders[folder].data.slice().reverse().forEach(function(element) {
+            add_memo(element[2], element[1], element[0]); // .slice() for copy, not reverse in-place
+        });
+        resize_col(null, -1);
+        $("#folder-btn-text").text(folder);
+        return true;
+    }
+    else {
+        return false;
+    }
 }
 
 // input, textarea keydown helper
 function key_listener(func, key="Enter", alt=false) {
-  return function(event) {
-    // https://stackoverflow.com/questions/30467263
-    if (event.defaultPrevented) {
-      return;
+    return function(event) {
+        // https://stackoverflow.com/questions/30467263
+        if (event.defaultPrevented) {
+            return;
+        }
+        if (event.key === key && (!alt || event.altKey)) {
+            func(this);
+            event.preventDefault();
+        }
     }
-    if (event.key === key && (!alt || event.altKey)) {
-      func(this);
-      event.preventDefault();
-    }
-  }
 }
 
 function resize_textarea(event=null, textarea=null) {
-  textarea = textarea ?? $(this);
-  textarea.css("height", "auto");  // shrink
-  textarea.css("height", (textarea.get(0).scrollHeight + 1) + "px");
+    textarea = textarea ?? $(this);
+    textarea.css("height", "auto");  // shrink
+    textarea.css("height", (textarea.get(0).scrollHeight + 1) + "px");
 }
 
 // window resize col
 function resize_col(evt, cur_col=0) {
-  // original: col-lg-3 col-md-4 col-sm-6 col-12
-  // now: 275px per column
-  for (let i=1; i<=4; i++) {
-    $(".memo").removeClass("col-"+(12/i));
-  }
-  if (cur_col === 0) {  // max column
-    if (window.matchMedia('(min-width: 1100px)').matches) {
-      cur_col = 4;
+    // original: col-lg-3 col-md-4 col-sm-6 col-12
+    // now: 275px per column
+    for (let i=1; i<=4; i++) {
+        $(".memo").removeClass("col-"+(12/i));
     }
-    else if (window.matchMedia('(min-width: 825px)').matches) {
-      cur_col = 3;
+    if (cur_col === 0) {  // max column
+        if (window.matchMedia('(min-width: 1100px)').matches) {
+            cur_col = 4;
+        }
+        else if (window.matchMedia('(min-width: 825px)').matches) {
+            cur_col = 3;
+        }
+        else if (window.matchMedia('(min-width: 550px)').matches) {
+            cur_col = 2;
+        }
+        else {
+            cur_col = 1;
+        }
     }
-    else if (window.matchMedia('(min-width: 550px)').matches) {
-      cur_col = 2;
+    else if (cur_col === -1) {  // current column
+        cur_col = parseInt($("#col-btn-text").text());
     }
-    else {
-      cur_col = 1;
-    }
-  }
-  else if (cur_col === -1) {  // current column
-    cur_col = parseInt($("#col-btn-text").text());
-  }
-  $(".memo").addClass("col-"+(12/cur_col));
-  $("#col-btn-text").text(cur_col);
+    $(".memo").addClass("col-"+(12/cur_col));
+    $("#col-btn-text").text(cur_col);
 }
 
 
 // onclick functions
 function col_btn() {
-  resize_col(null, parseInt($("#col-btn-text").text()) - 1);
+    resize_col(null, parseInt($("#col-btn-text").text()) - 1);
 }
 
 function add_memo_btn() {
-  console.log("#add-memo-btn clicked");
-  const memo_txt = $("#add-memo-txt").val();
-  $("#add-memo-txt").val("");
-  add_memo(memo_txt, pretty_time());
-  save_current_folder();
+    console.log("#add-memo-btn clicked");
+    const memo_txt = $("#add-memo-txt").val();
+    $("#add-memo-txt").val("");
+    add_memo(memo_txt, pretty_time());
+    save_current_folder();
 }
 
 function folder_btn() {
-  $("#folder-modal-title").text(current_folder);
-  $("#add-folder-input").val("");
-  $("#folder-modal-div").empty();
-  const folders = [];
-  for (const k in current_folder_data) {
-    folders.push([k, current_folder_data[k].time, current_folder_data[k].data.length]);
-  }
-  folders.sort(function(a, b) {
-    return b[1].localeCompare(a[1]);
-  });
-  for (const folder of folders) {
-    const folder_row = $(`
-      <div class="row">
-        <p class="col"></p>
-        <p class="col"></p>
-        <p class="col"></p>
+    $("#folder-modal-title").text(current_folder);
+    $("#add-folder-input").val("");
+    $("#folder-modal-div").empty();
+    const folders = [];
+    for (const k in current_folder_data) {
+        folders.push([k, current_folder_data[k].time, current_folder_data[k].data.length]);
+    }
+    folders.sort(function(a, b) {
+        return b[1].localeCompare(a[1]);
+    });
+    for (const folder of folders) {
+        const folder_row = $(`
+            <div class="row">
+                <p class="col"></p>
+                <p class="col"></p>
+                <p class="col"></p>
 
-        <div class="col-12 d-sm-none"></div>
+                <div class="col-12 d-sm-none"></div>
 
-        <div class="col pr-0">
-          <input class="form-control" placeholder="Rename">
-        </div>
-        <button type="button" class="close px-2">
-          <i class="material-icons">delete</i>
-        </button>
-      </div>
-    `);
-    folder_row.children("p").eq(0).text(folder[0]);
-    folder_row.children("p").eq(1).text(folder[1]);
-    folder_row.children("p").eq(2).text(folder[2]);
-    folder_row.find("input").val(folder[0]);
-    $("#folder-modal-div").append(folder_row);
-  }
-  $("#folder-modal-div > div > p").on("click", open_folder_btn);
-  $("#folder-modal-div input").on("keydown", key_listener(rename_folder_keydown));
-  $("#folder-modal-div button").on("click", delete_folder_btn);
-  $("#folder-modal").modal("show");
+                <div class="col pr-0">
+                    <input class="form-control" placeholder="Rename">
+                </div>
+                <button type="button" class="close px-2">
+                    <i class="material-icons">delete</i>
+                </button>
+            </div>
+        `);
+        folder_row.children("p").eq(0).text(folder[0]);
+        folder_row.children("p").eq(1).text(folder[1]);
+        folder_row.children("p").eq(2).text(folder[2]);
+        folder_row.find("input").val(folder[0]);
+        $("#folder-modal-div").append(folder_row);
+    }
+    $("#folder-modal-div > div > p").on("click", open_folder_btn);
+    $("#folder-modal-div input").on("keydown", key_listener(rename_folder_keydown));
+    $("#folder-modal-div button").on("click", delete_folder_btn);
+    $("#folder-modal").modal("show");
 }
 
 function add_folder_btn() {
-  const new_folder_name = $("#add-folder-input").val();
-  console.log("add folder btn:", new_folder_name);
-  if (new_folder_name in current_folder_data) {
-    popcorn($("#add-folder-input"), "top", "Folder name exists!");
-    return;
-  }
-  if (new_folder_name.length === 0) {
-    popcorn($("#add-folder-input"), "top", "Please type folder name!");
-    return;
-  }
-  current_folder_data[new_folder_name] = {time: pretty_time(), data: []};
-  current_folder = new_folder_name; // push then set as using
-  save_to_storage();
-  load_from_storage(); // save then load
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
+    const new_folder_name = $("#add-folder-input").val();
+    console.log("add folder btn:", new_folder_name);
+    if (new_folder_name in current_folder_data) {
+        popcorn($("#add-folder-input"), "top", "Folder name exists!");
+        return;
+    }
+    if (new_folder_name.length === 0) {
+        popcorn($("#add-folder-input"), "top", "Please type folder name!");
+        return;
+    }
+    current_folder_data[new_folder_name] = {time: pretty_time(), data: []};
+    current_folder = new_folder_name; // push then set as using
+    save_to_storage();
+    load_from_storage(); // save then load
+    $("#folder-modal").modal("hide");
+    $("#folder-btn").click(); // reopen modal
 }
 
 function open_folder_btn() {
-  const folder_name = $(this).parent().children("p").eq(0).text();
-  load_from_storage(folder_name);
-  current_folder_data[folder_name].time = pretty_time();
-  save_to_storage();
-  $("#folder-modal").modal("hide");
+    const folder_name = $(this).parent().children("p").eq(0).text();
+    load_from_storage(folder_name);
+    current_folder_data[folder_name].time = pretty_time();
+    save_to_storage();
+    $("#folder-modal").modal("hide");
 }
 
 function rename_folder_keydown(self) {
-  const new_folder_name = $(self).val();
-  if (new_folder_name in current_folder_data) {
-    popcorn($(self), "top", "Folder name exists!");
-    return;
-  }
-  if (new_folder_name.length === 0) {
-    popcorn($(self), "top", "Please type folder name!");
-    return;
-  }
-  const original_folder_name = $(self).parent().siblings("p").eq(0).text();
-  current_folder_data[new_folder_name] = current_folder_data[original_folder_name];
-  delete current_folder_data[original_folder_name];
-  if (original_folder_name === current_folder) {
-    current_folder = new_folder_name;
-    save_to_storage();
-    load_from_storage();
-  }
-  else {
-    save_to_storage();
-  }
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
+    const new_folder_name = $(self).val();
+    if (new_folder_name in current_folder_data) {
+        popcorn($(self), "top", "Folder name exists!");
+        return;
+    }
+    if (new_folder_name.length === 0) {
+        popcorn($(self), "top", "Please type folder name!");
+        return;
+    }
+    const original_folder_name = $(self).parent().siblings("p").eq(0).text();
+    current_folder_data[new_folder_name] = current_folder_data[original_folder_name];
+    delete current_folder_data[original_folder_name];
+    if (original_folder_name === current_folder) {
+        current_folder = new_folder_name;
+        save_to_storage();
+        load_from_storage();
+    }
+    else {
+        save_to_storage();
+    }
+    $("#folder-modal").modal("hide");
+    $("#folder-btn").click(); // reopen modal
 }
 
 function delete_folder_btn() {
-  if (Object.keys(current_folder_data).length === 1) {
-    popcorn($(this), "right", "Can't delete only folder!");
-    return;
-  }
-  if (!confirm("Sure to delete?")) {
-    return;
-  }
-  const folder_name = $(this).siblings("p").eq(0).text();
-  delete current_folder_data[folder_name];
-  if (folder_name === current_folder) { // delete using folder -> open latest folder
-    let latest_time="1970/01/01 00:00:00";
-    for (const k in current_folder_data) {
-      if (current_folder_data[k].time.localeCompare(latest_time) > 0) { // later
-        latest_time = current_folder_data[k].time;
-        current_folder = k;
-      }
+    if (Object.keys(current_folder_data).length === 1) {
+        popcorn($(this), "right", "Can't delete only folder!");
+        return;
     }
-    console.log("Use last used folder:", current_folder);
-  }
-  save_to_storage();
-  load_from_storage(); // save then load
-  $("#folder-modal").modal("hide");
-  $("#folder-btn").click(); // reopen modal
+    if (!confirm("Sure to delete?")) {
+        return;
+    }
+    const folder_name = $(this).siblings("p").eq(0).text();
+    delete current_folder_data[folder_name];
+    if (folder_name === current_folder) { // delete using folder -> open latest folder
+        let latest_time="1970/01/01 00:00:00";
+        for (const k in current_folder_data) {
+            if (current_folder_data[k].time.localeCompare(latest_time) > 0) { // later
+                latest_time = current_folder_data[k].time;
+                current_folder = k;
+            }
+        }
+        console.log("Use last used folder:", current_folder);
+    }
+    save_to_storage();
+    load_from_storage(); // save then load
+    $("#folder-modal").modal("hide");
+    $("#folder-btn").click(); // reopen modal
 }
 
 function clear_memo_btn() {
-  if (!confirm("Sure to clear?")) {
-    return;
-  }
-  clear_memo();
-  save_current_folder();
+    if (!confirm("Sure to clear?")) {
+        return;
+    }
+    clear_memo();
+    save_current_folder();
 }
 
 function close_memo() {
-  if (!confirm("Sure to delete?")) {
-    return;
-  }
-  console.log(".close-memo clicked");
-  $(this).parentsUntil("#memos").remove();
-  save_current_folder();
+    if (!confirm("Sure to delete?")) {
+        return;
+    }
+    console.log(".close-memo clicked");
+    $(this).parentsUntil("#memos").remove();
+    save_current_folder();
 }
 
 function up_memo() {
-  const memo_div = $(this).parentsUntil("#memos").last();
-  if (memo_div.prev().attr("id") === "add-memo-div") {
-    return;
-  }
-  memo_div.prev().insertAfter(memo_div);
-  save_current_folder();
+    const memo_div = $(this).parentsUntil("#memos").last();
+    if (memo_div.prev().attr("id") === "add-memo-div") {
+        return;
+    }
+    memo_div.prev().insertAfter(memo_div);
+    save_current_folder();
 }
 
 function down_memo() {
-  const memo_div = $(this).parentsUntil("#memos").last();
-  if (memo_div.next().length === 0) {
-    return;
-  }
-  memo_div.next().insertBefore(memo_div);
-  save_current_folder();
+    const memo_div = $(this).parentsUntil("#memos").last();
+    if (memo_div.next().length === 0) {
+        return;
+    }
+    memo_div.next().insertBefore(memo_div);
+    save_current_folder();
 }
 
 function copy_memo() {
-  console.log(".copy-memo clicked");
-  const txt = $(this).parent().find("p").text();
-  set_clip(txt);
-  popcorn($(this), "top", "Copied!");
+    console.log(".copy-memo clicked");
+    const txt = $(this).parent().find("p").text();
+    set_clip(txt);
+    popcorn($(this), "top", "Copied!");
 }
 
 function edit_memo() {
-  console.log(".edit-memo clicked");
-  const parent = $(this).parent();
-  parent.find(".cancel-edit-memo").click();
-  if (parent.find("p").hasClass("d-none")) {
-    parent.find("textarea").val(parent.find("p").text());
-    resize_textarea(null, parent.find("textarea"));
-    parent.find("textarea").focus();
-  }
-  else {
-    parent.find("p").text(parent.find("textarea").val());
-    save_current_folder();
-  }
+    console.log(".edit-memo clicked");
+    const parent = $(this).parent();
+    parent.find(".cancel-edit-memo").click();
+    if (parent.find("p").hasClass("d-none")) {
+        parent.find("textarea").val(parent.find("p").text());
+        resize_textarea(null, parent.find("textarea"));
+        parent.find("textarea").focus();
+    }
+    else {
+        parent.find("p").text(parent.find("textarea").val());
+        save_current_folder();
+    }
 }
 
 function toggle_edit_memo() {
-  console.log("toggle edit");
-  const parent = $(this).parent();
-  parent.find(".check-memo").toggleClass("d-none");
-  parent.find(".copy-memo").toggleClass("d-none");
-  parent.find(".cancel-edit-memo").toggleClass("d-none");
-  parent.find("p").toggleClass("d-none");
-  parent.find("textarea").toggleClass("d-none");
+    console.log("toggle edit");
+    const parent = $(this).parent();
+    parent.find(".check-memo").toggleClass("d-none");
+    parent.find(".copy-memo").toggleClass("d-none");
+    parent.find(".cancel-edit-memo").toggleClass("d-none");
+    parent.find("p").toggleClass("d-none");
+    parent.find("textarea").toggleClass("d-none");
 }
 
 function check_memo() {
-  console.log(".check-memo clicked");
-  $(this).parent().find("p").toggleClass("checked-memo");
-  save_current_folder();
+    console.log(".check-memo clicked");
+    $(this).parent().find("p").toggleClass("checked-memo");
+    save_current_folder();
 }
 
 function export_memo_btn() {
-  console.log("export memo btn");
-  const json_data = data_to_json();
-  const file = new Blob([json_data], {type: "application/json"});
-  const tmp = $('<a>export</a>')
-    .attr("href", URL.createObjectURL(file))
-    .attr("download", export_filename_prefix + get_time_str() + ".json");
-  $("body").append(tmp);
-  tmp[0].click();
-  tmp.remove();
-  console.log("exported file");
+    console.log("export memo btn");
+    const json_data = data_to_json();
+    const file = new Blob([json_data], {type: "application/json"});
+    const tmp = $('<a>export</a>')
+        .attr("href", URL.createObjectURL(file))
+        .attr("download", export_filename_prefix + get_time_str() + ".json");
+    $("body").append(tmp);
+    tmp[0].click();
+    tmp.remove();
+    console.log("exported file");
 }
 
 function import_file_selected() {
-  const file = $("#import-file-selector")[0].files[0];
-  const file_reader = new FileReader();
-  file_reader.onload = function(evt) {
-    const data = JSON.parse(evt.target.result);
-    data_to_ui(data);
-    save_current_folder();
-  }
-  file_reader.readAsText(file);
+    const file = $("#import-file-selector")[0].files[0];
+    const file_reader = new FileReader();
+    file_reader.onload = function(evt) {
+        const data = JSON.parse(evt.target.result);
+        data_to_ui(data);
+        save_current_folder();
+    }
+    file_reader.readAsText(file);
 }
 
 function export_copy_memo_btn() {
-  set_clip(data_to_json());
-  popcorn($("#export-copy-memo-btn"), "bottom", "Copied!");
+    set_clip(data_to_json());
+    popcorn($("#export-copy-memo-btn"), "bottom", "Copied!");
 }
 
 function import_paste_memo_btn() {
-  console.log("open input");
-  $("#import-paste-memo-btn").toggleClass("d-none");
-  $("#import-paste-input").toggleClass("d-none").val("").focus();
+    console.log("open input");
+    $("#import-paste-memo-btn").toggleClass("d-none");
+    $("#import-paste-input").toggleClass("d-none").val("").focus();
 }
 function done_import_paste() {
-  console.log("close input");
-  $("#import-paste-memo-btn").toggleClass("d-none");
-  $("#import-paste-input").val("").toggleClass("d-none");
+    console.log("close input");
+    $("#import-paste-memo-btn").toggleClass("d-none");
+    $("#import-paste-input").val("").toggleClass("d-none");
 }
 function import_pasted(evt) {
-  console.log("pasted");
-  let data;
-  try {
-    data = JSON.parse(evt.originalEvent.clipboardData.getData('text'));
-  } catch(err) {
+    console.log("pasted");
+    let data;
+    try {
+        data = JSON.parse(evt.originalEvent.clipboardData.getData('text'));
+    } catch(err) {
+        $("#import-paste-input").blur();
+        // ^ don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
+        popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
+        return;
+    }
+    const success = data_to_ui(data);
     $("#import-paste-input").blur();
-    // ^ don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
-    popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
-    return;
-  }
-  const success = data_to_ui(data);
-  $("#import-paste-input").blur();
-  if (success) {
-    save_current_folder();
-  }
-  else { // Failed? Don't worry, just have some popcorn!
-    popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
-  }
+    if (success) {
+        save_current_folder();
+    }
+    else { // Failed? Don't worry, just have some popcorn!
+        popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
+    }
 }
 
 // popover
 function popcorn(jq, placement, content, ms=2000, fadeMs=150) {
-  jq.popover({content: content, placement: placement}).popover("show");
-  const tip = $("#" + jq.attr("aria-describedby"));
-  setTimeout(function(){ tip.fadeOut(fadeMs); }, ms);
-  // below is the old way to fade out popover, would fail when jq is removed
-  // setTimeout(function(){ jq.popover("hide"); }, ms); // fade .15s
-  setTimeout(function(){ jq.popover("dispose"); }, ms+150);
+    jq.popover({content: content, placement: placement}).popover("show");
+    const tip = $("#" + jq.attr("aria-describedby"));
+    setTimeout(function(){ tip.fadeOut(fadeMs); }, ms);
+    // below is the old way to fade out popover, would fail when jq is removed
+    // setTimeout(function(){ jq.popover("hide"); }, ms); // fade .15s
+    setTimeout(function(){ jq.popover("dispose"); }, ms+150);
 }
 
 // string format time
 function get_time_str() {
-  function pad_zero(s) {
-    return ('0'+s).slice(-2);
-  }
-  const d = new Date();
-  return d.getFullYear() + pad_zero(d.getMonth()+1) + pad_zero(d.getDate()) + '_' +
-    pad_zero(d.getHours()) + pad_zero(d.getMinutes()) + pad_zero(d.getSeconds());
+    function pad_zero(s) {
+        return ('0'+s).slice(-2);
+    }
+    const d = new Date();
+    return d.getFullYear() + pad_zero(d.getMonth()+1) + pad_zero(d.getDate()) + '_' +
+        pad_zero(d.getHours()) + pad_zero(d.getMinutes()) + pad_zero(d.getSeconds());
 }
 
 function pretty_time() {
-  function pad_zero(s) {
-    return ('0'+s).slice(-2);
-  }
-  const d = new Date();
-  return d.getFullYear() + '/' + pad_zero(d.getMonth()+1) + '/' + pad_zero(d.getDate()) + ' ' +
-    pad_zero(d.getHours()) + ':' + pad_zero(d.getMinutes()) + ':' + pad_zero(d.getSeconds());
+    function pad_zero(s) {
+        return ('0'+s).slice(-2);
+    }
+    const d = new Date();
+    return d.getFullYear() + '/' + pad_zero(d.getMonth()+1) + '/' + pad_zero(d.getDate()) + ' ' +
+        pad_zero(d.getHours()) + ':' + pad_zero(d.getMinutes()) + ':' + pad_zero(d.getSeconds());
 }
 
 // set clipboard
 function set_clip(txt) {
-  const tmp = $('<textarea>');
-  $("body").append(tmp);
-  tmp.val(txt).select();
-  document.execCommand("copy");
-  tmp.remove();
+    const tmp = $('<textarea>');
+    $("body").append(tmp);
+    tmp.val(txt).select();
+    document.execCommand("copy");
+    tmp.remove();
 }
 
 // load, save storage functions
 function load_from_storage(folder=null) {
-  console.log("load from storage");
-  let data = localStorage.getItem(localStorage_key);
-  if (data === null) { // no data, create an empty one
-    const time_str = pretty_time();
-    data = {
-      version: "0.3",
-      time: time_str,
-      using_folder: "Default",
-      folders: { "Default": { time: time_str, data: [] } }
+    console.log("load from storage");
+    let data = localStorage.getItem(localStorage_key);
+    if (data === null) { // no data, create an empty one
+        const time_str = pretty_time();
+        data = {
+            version: "0.3",
+            time: time_str,
+            using_folder: "Default",
+            folders: { "Default": { time: time_str, data: [] } }
+        }
     }
-  }
-  else {
-    data = JSON.parse(data);
-  }
-  data_to_ui(data, folder);
+    else {
+        data = JSON.parse(data);
+    }
+    data_to_ui(data, folder);
 }
 function save_to_storage() {
-  console.log("save to storage");
-  const json_data = data_to_json();
-  localStorage.setItem(localStorage_key, json_data);
+    console.log("save to storage");
+    const json_data = data_to_json();
+    localStorage.setItem(localStorage_key, json_data);
 
-  const localData = json_data;
-  synk.run(localData, data => {
-    if (data !== null && data !== localData) {
-      localStorage.setItem(localStorage_key, data);
-      load_from_storage();
-    }
-  });
+    synk.run(load_from_storage);
 }
 function save_current_folder() {
-  console.log("save current folder");
-  ui_to_data();
-  save_to_storage();
+    console.log("save current folder");
+    ui_to_data();
+    save_to_storage();
 }
 
-  </script>
+    </script>
 </body>
 
 </html>

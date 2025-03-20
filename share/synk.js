@@ -231,7 +231,8 @@ class Synk {
         server, quota, localStorageKey, expire=300_000,
         dialogTimeout=5_000, style=null, i18n=null,
     ) {
-        this.client = new SynkClient(server, quota, localStorageKey, expire)
+        this.client = new SynkClient(server, quota, localStorageKey + "_synk", expire)
+        this.localStorageKey = localStorageKey
         this.dialogTimeout = dialogTimeout
         this.nextRun = 0
         this.running = 0
@@ -440,9 +441,9 @@ class Synk {
         return element.querySelector(selectors)
     }
     $$(selectors, element=document) {
-        return element.querySelectorAll(selectors)
+        return Array.from(element.querySelectorAll(selectors))
     }
-    newElement(html) {
+    $html(html) {
         const template = document.createElement("template")
         template.innerHTML = html
         return template.content.children[0]
@@ -460,7 +461,7 @@ class Synk {
     }
     showDialog(title, text, click=null, callback=null, timeout=0) {
         this.removeDialogModal()
-        const dialog = this.newElement(`
+        const dialog = this.$html(`
             <div id="synk_dialog">
                 <p>${title}</p>
                 <hr>
@@ -489,7 +490,7 @@ class Synk {
     }
     showModal(title, text, input, buttons) {
         this.removeDialogModal()
-        const modal = this.newElement(`
+        const modal = this.$html(`
             <div id="synk_modal">
                 <p>${title}</p>
                 <hr>
@@ -497,7 +498,7 @@ class Synk {
             </div>
         `)
         if (input) {
-            const input = this.newElement(`<input id="synk_input" type="text">`)
+            const input = this.$html(`<input id="synk_input" type="text">`)
             if (buttons.length)
                 input.onkeydown = evt => {
                     if (evt.key === "Enter")
@@ -506,7 +507,7 @@ class Synk {
             modal.insertAdjacentElement("beforeend", input)
         }
         for (const [text, click] of buttons) {
-            const button = this.newElement(`<button>${text}</button>`)
+            const button = this.$html(`<button>${text}</button>`)
             button.onclick = click
             modal.insertAdjacentElement("beforeend", button)
         }
@@ -522,23 +523,32 @@ class Synk {
             await this.sleep(ms)
     }
 
-    async run(data, callback) {
+    async run(callback) {
+        const data = localStorage.getItem(this.localStorageKey) ?? "null"
+        callback = syncData => {
+            if (syncData === null || syncData === data)
+                return
+            localStorage.setItem(this.localStorageKey, syncData)
+            callback(syncData)
+        }
+
         await this.waitRun()
         const cb = ((self, callback) => function(...args) {
             self.running++
             callback(...args)
         })(this, callback)
-        if (this.client.id === null) {
-            if (this.shownSignupDialog)
-                cb(null)
-            else {
-                this.shownSignupDialog = true
-                this.showDialog(
-                    this.i18n.synk, this.i18n.clickToSync, () => this.modalSignup(data, cb), cb)
-            }
-        }
-        else
+
+        if (this.client.id !== null) {
             await this.sync(data, "", cb)
+            return
+        }
+        if (this.shownSignupDialog) {
+            cb(null)
+            return
+        }
+        this.shownSignupDialog = true
+        this.showDialog(
+            this.i18n.synk, this.i18n.clickToSync, () => this.modalSignup(data, cb), cb)
     }
     async sync(data, force, callback) {
         this.showDialog(this.i18n.synk, this.i18n.syncing, () => {})

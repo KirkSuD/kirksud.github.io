@@ -130,14 +130,9 @@ class TimeRecordApp {
 
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
-        this.synk = new Synk(synkServer, "4KB", this.localStorageKey + "_synk")
+        this.synk = new Synk(synkServer, "4KB", this.localStorageKey)
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(localData, data => {
-            if (data === null || data === localData)
-                return
-            localStorage.setItem(this.localStorageKey, data)
-            this.load()
-        })
+        this.synk.run(() => this.load())
     }
     load() {
         const data = localStorage.getItem(this.localStorageKey) ?? "[]"
@@ -148,12 +143,7 @@ class TimeRecordApp {
         localStorage.setItem(this.localStorageKey, JSON.stringify(this.records))
 
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(localData, data => {
-            if (data === null || data === localData)
-                return
-            localStorage.setItem(this.localStorageKey, data)
-            this.load()
-        })
+        this.synk.run(() => this.load())
     }
     undo(quiet=false) {
         if (this.records.length === 0)

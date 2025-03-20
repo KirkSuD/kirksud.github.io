@@ -893,7 +893,7 @@ p, pre {
 
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
-            this.synk = new Synk(synkServer, "1MB", this.localStorageKey + "_synk")
+            this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
 
             this.modal = new Modal(() => this.saveState(true))
             this.player = new PlayerWidget(this)
@@ -919,13 +919,7 @@ p, pre {
             this.sync()
         }
         sync() {
-            const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-            this.synk.run(localData, data => {
-                if (data === null || data === localData)
-                    return
-                localStorage.setItem(this.localStorageKey, data)
-                this.show()
-            })
+            this.synk.run(() => this.show())
         }
 
         onCompany() {

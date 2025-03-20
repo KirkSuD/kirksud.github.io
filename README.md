@@ -1,6 +1,6 @@
 ## KirkSuD GitHub Pages
 
-Currently, this site only shares some single page HTML little app.
+Currently, this site only shares some single page HTML little apps.
 
 ## Shared HTMLs
 
@@ -8,9 +8,7 @@ Links to useful / fun html page:
 
 * [[App] Memo](https://kirksud.github.io/share/memo.html) (PWA, Sync)
 
-A responsive memo web app that saves memos in local storage
-with backup & restore features  
-using bootstrap, jquery, jquery-ui, material icons.  
+A responsive memo web app using bootstrap, jquery, jquery-ui, material icons.  
 You can organize your thoughts, plan your todos using the folder functionality.
 
 * [[App] Day timer](https://kirksud.github.io/share/day_timer.html) (PWA, Sync)
