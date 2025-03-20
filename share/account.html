@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Account Book</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
@@ -199,6 +199,7 @@ p {
             </div>
             <div class="d-flex">
                 <select id="selectCategory"></select>
+                <div class="flex-1"></div>
                 <button id="toggleVisibility" class="icon-button">
                     <i class="material-icons">visibility_off</i>
                 </button>
@@ -207,17 +208,10 @@ p {
         </div>
         <div id="actions" class="d-flex">
             <select id="selectMonth"></select>
+            <div class="flex-1"></div>
             <button id="addRecord" class="icon-button">
                 <i class="material-icons">add</i>
             </button>
-            <div class="flex-1"></div>
-            <button id="exportData" class="icon-button">
-                <i class="material-icons">save</i>
-            </button>
-            <label for="importData" class="icon-button">
-                <i class="material-icons">folder_open</i>
-                <input id="importData" class="d-none" type="file" accept=".json,.txt">
-            </label>
         </div>
         <div id="records" class="flex-1 overflow-auto"></div>
     </div>
@@ -352,14 +346,13 @@ p {
                 ["#categoryInput", "#locationInput", "#contentInput"],
                 e => this.setDataList(e))
 
-            $on("click", "#exportData", e => this.onExportData(e))
-            $on("change", "#importData", e => this.onImportData(e))
-
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
-            this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
+            this.synk = new Synk(
+                synkServer, "1MB", this.localStorageKey,
+                "account_book", () => this.load())
             this.load()
-            this.sync()
+            this.synk.run()
         }
         load(data=null, keepValue=false) {
             if (data === null) {
@@ -394,31 +387,7 @@ p {
                     data[i].push(record[c])
             }
             localStorage.setItem(this.localStorageKey, JSON.stringify(data))
-            this.sync()
-        }
-        sync() {
-            this.synk.run(() => this.load())
-        }
-        onExportData(event) {
-            const text = localStorage.getItem(this.localStorageKey)
-            const file = new Blob([text], {type: "application/json"})
-            const fileUrl = URL.createObjectURL(file)
-            const timestamp = this.formatDate(new Date()).replaceAll("-", "")
-            const fileName = `account_book_${timestamp}.json`
-            const exportLink = $html(`
-                <a href="${fileUrl}" download="${fileName}"></a>`)
-            document.body.insertAdjacentElement("beforeend", exportLink)
-            exportLink.click()
-            exportLink.remove()
-        }
-        onImportData(event) {
-            const file = event.currentTarget.files[0]
-            const file_reader = new FileReader()
-            file_reader.onload = evt => {
-                this.load(JSON.parse(evt.target.result))
-                this.save()
-            }
-            file_reader.readAsText(file)
+            this.synk.run()
         }
         pad2(n) {
             return (n < 10) ? `0${n}` : `${n}`

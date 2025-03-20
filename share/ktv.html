@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant-TW">
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>KTV KKBOX</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
@@ -893,7 +893,9 @@ p, pre {
 
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
-            this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
+            this.synk = new Synk(
+                synkServer, "1MB", this.localStorageKey,
+                "ktv_kkbox", () => this.show())
 
             this.modal = new Modal(() => this.saveState(true))
             this.player = new PlayerWidget(this)
@@ -901,7 +903,7 @@ p, pre {
             this.initCompany()
             this.initYear()
             this.show()
-            this.sync()
+            this.synk.run()
         }
 
         load() {
@@ -916,10 +918,7 @@ p, pre {
         }
         save(data) {
             localStorage.setItem(this.localStorageKey, JSON.stringify(data))
-            this.sync()
-        }
-        sync() {
-            this.synk.run(() => this.show())
+            this.synk.run()
         }
 
         onCompany() {

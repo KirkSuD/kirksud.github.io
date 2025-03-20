@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Day Timer</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
@@ -70,13 +70,6 @@ body {
 #date > pre {
     text-align: center;
 }
-#add > label {
-    padding: 0;
-    margin: 0;
-}
-#fileInput {
-    display: none;
-}
 .timer {
     cursor: pointer;
 }
@@ -135,12 +128,6 @@ body {
             <select class="grow" disabled></select>
         </div>
         <div id="add">
-            <button class="icon-button"><i class="material-icons">save</i></button>
-            <label for="fileInput" class="icon-button">
-                <i class="material-icons">folder_open</i>
-                <input id="fileInput" type="file" accept=".json,.txt">
-            </label>
-            <button class="icon-button"><i class="material-icons">delete</i></button>
             <input type="text" class="grow", placeholder="new timer">
         </div>
     </div>
@@ -455,28 +442,24 @@ class DayTimerApp {
             transferS: $$("#transfer > select")[3],
             transferTo: $$("#transfer > select")[4],
 
-            export: $$("#add > button")[0],
-            import: $("#fileInput"),
-            clear: $$("#add > button")[1],
             add: $("#add > input"),
         }
         this.elements.day.onchange = evt => this.onDay()
         this.elements.ddayInput.onchange = evt => this.onDday()
         this.elements.transferFrom.onchange = evt => this.onTransferFrom()
         this.elements.transferTo.onchange = evt => this.onTransfer()
-        this.elements.export.onclick = evt => this.onExport()
-        this.elements.import.onchange = evt => this.onImport()
-        this.elements.clear.onclick = evt => this.onClear()
         this.elements.add.onkeydown = evt => {
             if (evt.key === "Enter")
                 this.onAdd()
         }
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
-        this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
+        this.synk = new Synk(
+            synkServer, "1MB", this.localStorageKey,
+            "day_timer", () => this.load())
         this.updateIntervalId = null
         this.load()
-        this.sync()
+        this.synk.run()
     }
     load(data=null) {
         if (data === null) {
@@ -538,10 +521,7 @@ class DayTimerApp {
             timing: this.dayTimer.timing,
             history: this.history,
         }))
-        this.sync()
-    }
-    sync() {
-        this.synk.run(() => this.load())
+        this.synk.run()
     }
     update() {
         this.elements.day.value = DateUtil.formatDate()
@@ -668,37 +648,6 @@ class DayTimerApp {
         this.elements.transferTo.disabled = true
         this.update()
         this.save()
-    }
-    onExport() {
-        const text = localStorage.getItem(this.localStorageKey)
-        const file = new Blob([text], {type: "application/json"})
-        const fileUrl = URL.createObjectURL(file)
-        const timestamp = DateUtil.formatDate().replaceAll("-", "")
-        const fileName = `day_timer_${timestamp}.json`
-
-        const template = document.createElement("template")
-        template.innerHTML = `
-            <a id="export" href=${fileUrl} download=${fileName}>export</a>`
-        const exportLink = template.content.children[0]
-
-        document.body.insertAdjacentElement("beforeend", exportLink)
-        exportLink.click()
-        exportLink.remove()
-    }
-    onImport() {
-        const file = this.elements.import.files[0]
-        const file_reader = new FileReader()
-        file_reader.onload = evt => {
-            this.load(JSON.parse(evt.target.result))
-        }
-        file_reader.readAsText(file)
-    }
-    onClear() {
-        if (confirm("Confirm to CLEAR ALL DATA?") &&
-            confirm("Confirm again to CLEAR ALL DATA!")) {
-            localStorage.removeItem(this.localStorageKey)
-            this.load()
-        }
     }
     onAdd() {
         const name = this.elements.add.value

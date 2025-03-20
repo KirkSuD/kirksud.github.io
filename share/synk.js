@@ -228,12 +228,17 @@ class SynkClient {
 
 class Synk {
     constructor(
-        server, quota, localStorageKey, expire=300_000,
-        dialogTimeout=5_000, style=null, i18n=null,
+        server, quota, localStorageKey,
+        exportFilePrefix="export", syncCallback=null,
+        expire=300_000, dialogTimeout=5_000,
+        style=null, i18n=null,
     ) {
         this.client = new SynkClient(server, quota, localStorageKey + "_synk", expire)
         this.localStorageKey = localStorageKey
+        this.exportFilePrefix = exportFilePrefix
+        this.syncCallback = syncCallback ?? (() => {})
         this.dialogTimeout = dialogTimeout
+
         this.nextRun = 0
         this.running = 0
         this.shownSignupDialog = false
@@ -295,6 +300,21 @@ class Synk {
 #synk_modal > input, #synk_modal > button {
     padding: 0.63em;
 }
+
+#synk_modal > #synk_file_button {
+    padding: 0;
+}
+#synk_file_button label {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    padding: 0.63em;
+    margin: 0;
+    box-sizing: border-box;
+}
+#synk_file_button input {
+    display: none;
+}
 </style>
         `
         document.head.insertAdjacentHTML("beforeend", style)
@@ -306,7 +326,7 @@ class Synk {
                 syncing: "Syncing...",
                 networkServerErrorShort: "Network/Server Error!",
                 synced: "Synced",
-                errorIs: "Error:",
+                errorIs: "Error: ",
                 ok: "OK",
 
                 NetworkServerError: "Network or server error. Try again later.",
@@ -321,9 +341,9 @@ class Synk {
 
                 dataConflict: "Data conflict",
                 bothLocalServerDataChanged: "Both local & server data have changed since last sync.",
-                localLastSync: "Local last sync:",
-                serverLastSync: "Server last sync:",
-                nowTime: "Now:",
+                localLastSync: "Local last sync: ",
+                serverLastSync: "Server last sync: ",
+                currentTime: "Current time: ",
                 whichOneToKeep: "Which one to keep?",
 
                 local: "Local",
@@ -332,12 +352,15 @@ class Synk {
 
                 syncDataUsingSynk: "Sync data using Synk",
                 noAccountIsRequired: "No account is required.",
-                dataIsEncrypted: "Data is encrypted before transmission.",
-                serverIs: "Server:",
+                usingE2EE: "Using end-to-end encryption.",
+                serverIs: "Server: ",
 
                 signup: "Sign up",
                 login: "Log in",
-                noLater: "No / Later",
+                importData: "Import data",
+                exportData: "Export data",
+                clearData: "Clear data",
+                clearDataConfirm: "Confirm to clear all data?",
 
                 enterSyncCode: "Enter sync code:",
                 continue: "Continue",
@@ -345,9 +368,9 @@ class Synk {
 
                 verifyCode: "Verify code:",
                 manageSynk: "Manage Synk",
-                idIs: "ID:",
-                deviceIs: "Device:",
-                lastSync: "Last sync:",
+                idIs: "ID: ",
+                deviceIs: "Device: ",
+                lastSync: "Last sync: ",
 
                 logout: "Log out",
                 loggedOut: "Logged out",
@@ -384,7 +407,7 @@ class Synk {
                 bothLocalServerDataChanged: "本地和伺服器的資料在上次同步後都有變更。",
                 localLastSync: "本地資料上次同步：",
                 serverLastSync: "伺服器資料上次同步：",
-                nowTime: "現在時間：",
+                currentTime: "現在時間：",
                 whichOneToKeep: "保留哪一份資料？",
 
                 local: "本地",
@@ -393,12 +416,15 @@ class Synk {
 
                 syncDataUsingSynk: "使用 Synk 同步資料",
                 noAccountIsRequired: "不需要帳號。",
-                dataIsEncrypted: "資料在傳輸前經過加密。",
+                usingE2EE: "使用端對端加密。",
                 serverIs: "伺服器：",
 
                 signup: "註冊",
                 login: "登入",
-                noLater: "不要 / 稍後",
+                importData: "匯入資料",
+                exportData: "匯出資料",
+                clearData: "清除資料",
+                clearDataConfirm: "確認清除所有資料？",
 
                 enterSyncCode: "輸入同步碼：",
                 continue: "繼續",
@@ -507,8 +533,21 @@ class Synk {
             modal.insertAdjacentElement("beforeend", input)
         }
         for (const [text, click] of buttons) {
-            const button = this.$html(`<button>${text}</button>`)
-            button.onclick = click
+            let button
+            if (text === "importData") {
+                button = this.$html(`
+                    <button id="synk_file_button">
+                        <label>
+                            ${this.i18n[text]}
+                            <input type="file" accept=".json,.txt">
+                        </label>
+                    </button>`)
+                this.$("input", button).onchange = click
+            }
+            else {
+                button = this.$html(`<button>${text}</button>`)
+                button.onclick = click
+            }
             modal.insertAdjacentElement("beforeend", button)
         }
         document.body.insertAdjacentElement("beforeend", modal)
@@ -523,20 +562,18 @@ class Synk {
             await this.sleep(ms)
     }
 
-    async run(callback) {
+    async run(callback=null) {
         const data = localStorage.getItem(this.localStorageKey) ?? "null"
-        callback = syncData => {
+        callback = callback ?? this.syncCallback
+
+        await this.waitRun()
+        const cb = syncData => {
+            this.running++
             if (syncData === null || syncData === data)
                 return
             localStorage.setItem(this.localStorageKey, syncData)
             callback(syncData)
         }
-
-        await this.waitRun()
-        const cb = ((self, callback) => function(...args) {
-            self.running++
-            callback(...args)
-        })(this, callback)
 
         if (this.client.id !== null) {
             await this.sync(data, "", cb)
@@ -571,7 +608,7 @@ class Synk {
     }
     modalError(err, callback=null, click=null) {
         this.showModal(
-            `${this.i18n.errorIs} ${err}`,
+            `${this.i18n.errorIs}${err}`,
             this.i18n[err] ?? this.i18n.UnexpectedError,
             false, [
             [this.i18n.ok, () => this.removeDialogModal(click)]
@@ -584,14 +621,17 @@ class Synk {
             this.i18n.dataConflict,
             `${this.i18n.bothLocalServerDataChanged}
 
-            ${this.i18n.localLastSync} ${new Date(this.client.time).toLocaleString()}
-            ${this.i18n.serverLastSync} ${new Date(res.time).toLocaleString()}
-            ${this.i18n.nowTime} ${new Date().toLocaleString()}
+            ${this.i18n.localLastSync}${new Date(this.client.time).toLocaleString()}
+            ${this.i18n.serverLastSync}${new Date(res.time).toLocaleString()}
+            ${this.i18n.currentTime}${new Date().toLocaleString()}
 
             ${this.i18n.whichOneToKeep}`,
             false, [
             [this.i18n.local, () => this.sync(data, "client", callback)],
             [this.i18n.server, () => this.sync(data, "server", callback)],
+            ["importData", () => this.importData(callback)],
+            [this.i18n.exportData, () => this.exportData(callback)],
+            [this.i18n.clearData, () => this.clearData(callback)],
             [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
@@ -600,8 +640,8 @@ class Synk {
         this.showModal(
             this.i18n.syncDataUsingSynk,
             `${this.i18n.noAccountIsRequired}
-            ${this.i18n.dataIsEncrypted}
-            ${this.i18n.serverIs} ${this.client.server}`,
+            ${this.i18n.usingE2EE}
+            ${this.i18n.serverIs}${this.client.server}`,
             false, [
             [this.i18n.signup, async () => {
                 const [success, err] = await this.client.signup(data)
@@ -619,7 +659,10 @@ class Synk {
                 else
                     this.modalLoginSetPubkey(data, code, privkey, callback)
             }],
-            [this.i18n.noLater, () => this.removeDialogModal(callback)],
+            ["importData", () => this.importData(callback)],
+            [this.i18n.exportData, () => this.exportData(callback)],
+            [this.i18n.clearData, () => this.clearData(callback)],
+            [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
     modalLoginSetPubkey(data, code, privkey, callback) {
@@ -658,10 +701,10 @@ class Synk {
         const callback = () => this.running++
         this.showModal(
             this.i18n.manageSynk,
-            `${this.i18n.serverIs} ${this.client.server}
-            ${this.i18n.idIs} ${this.client.id}
-            ${this.i18n.deviceIs} ${this.client.device}
-            ${this.i18n.lastSync} ${new Date(this.client.time).toLocaleString()}`,
+            `${this.i18n.serverIs}${this.client.server}
+            ${this.i18n.idIs}${this.client.id}
+            ${this.i18n.deviceIs}${this.client.device}
+            ${this.i18n.lastSync}${new Date(this.client.time).toLocaleString()}`,
             false, [
             [this.i18n.loginOnAnotherDevice, () => this.modalLoginGetPubkey(callback)],
             [this.i18n.logout, async () => {
@@ -687,6 +730,9 @@ class Synk {
                     callback(null)
                 }
             }],
+            ["importData", () => this.importData(callback)],
+            [this.i18n.exportData, () => this.exportData(callback)],
+            [this.i18n.clearData, () => this.clearData(callback)],
             [this.i18n.doNothing, () => this.removeDialogModal(callback)],
         ])
     }
@@ -719,5 +765,45 @@ class Synk {
             false, [
             [this.i18n.ok, () => this.removeDialogModal(callback)]
         ])
+    }
+
+    importData(callback) {
+        const file = this.$("#synk_file_button input").files[0]
+        const file_reader = new FileReader()
+        file_reader.onload = event => {
+            // save to storage, call app callback to show new data, run sync
+            const data = event.target.result
+            localStorage.setItem(this.localStorageKey, data)
+            this.syncCallback(data)
+            this.run()
+        }
+        file_reader.readAsText(file)
+        this.removeDialogModal(callback)
+    }
+    exportData(callback) {
+        const pad2 = (n => ((n < 10) ? `0${n}` : `${n}`))
+        const d = new Date()
+        const timestamp = `${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}` +
+            `_${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`
+
+        const text = localStorage.getItem(this.localStorageKey)
+        const file = new Blob([text], {type: "application/json"})
+        const fileUrl = URL.createObjectURL(file)
+        const fileName = `${this.exportFilePrefix}_${timestamp}.json`
+
+        const exportLink = this.$html(`<a href=${fileUrl} download=${fileName}></a>`)
+        document.body.insertAdjacentElement("beforeend", exportLink)
+        exportLink.click()
+        exportLink.remove()
+        this.removeDialogModal(callback)
+    }
+    clearData(callback) {
+        // remove from storage, call app callback to show, run sync
+        if (!confirm(this.i18n.clearDataConfirm))
+            return
+        localStorage.removeItem(this.localStorageKey)
+        this.syncCallback("null")
+        this.run()
+        this.removeDialogModal(callback)
     }
 }

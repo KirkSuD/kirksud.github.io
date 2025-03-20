@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Progress Tracker</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
@@ -190,15 +190,6 @@ p {
             <button id="addTracker" class="icon-button">
                 <i class="material-icons">add</i>
             </button>
-
-            <div class="flex-1"></div>
-            <button id="exportData" class="icon-button">
-                <i class="material-icons">save</i>
-            </button>
-            <label for="importData" class="icon-button">
-                <i class="material-icons">folder_open</i>
-                <input id="importData" class="d-none" type="file" accept=".json,.txt">
-            </label>
         </div>
         <div>
             <div id="progressDisplay" class="d-flex">
@@ -410,9 +401,6 @@ p {
             $on("click", "#footer button", e => this.onAddValue(e))
             $on("click", "#footer div", e => this.onAddRecord(e))
 
-            $on("click", "#exportData", e => this.onExportData(e))
-            $on("change", "#importData", e => this.onImportData(e))
-
             $on("click",
                 "#trackerModal .modal-submit-button",
                 e => this.onTrackerModal(e))
@@ -431,9 +419,11 @@ p {
 
             const synkServer = "https://kirk.alwaysdata.net"
             // const synkServer = "https://kirksud.pythonanywhere.com"
-            this.synk = new Synk(synkServer, "1MB", this.localStorageKey)
+            this.synk = new Synk(
+                synkServer, "1MB", this.localStorageKey,
+                "progress_tracker", () => this.load())
             this.load()
-            this.sync()
+            this.synk.run()
         }
         load(data=null) {
             if (data === null) {
@@ -473,31 +463,7 @@ p {
             usingTracker = usingTracker ?? $("#selectTracker").value
             const data = {trackers: this.trackers, usingTracker}
             localStorage.setItem(this.localStorageKey, JSON.stringify(data))
-            this.sync()
-        }
-        sync() {
-            this.synk.run(() => this.load())
-        }
-        onExportData(event) {
-            const text = localStorage.getItem(this.localStorageKey)
-            const file = new Blob([text], {type: "application/json"})
-            const fileUrl = URL.createObjectURL(file)
-            const timestamp = DateUtil.formatDate(new Date()).replaceAll("-", "")
-            const fileName = `progress_tracker_${timestamp}.json`
-            const exportLink = $html(`
-                <a href="${fileUrl}" download="${fileName}"></a>`)
-            document.body.insertAdjacentElement("beforeend", exportLink)
-            exportLink.click()
-            exportLink.remove()
-        }
-        onImportData(event) {
-            const file = event.currentTarget.files[0]
-            const file_reader = new FileReader()
-            file_reader.onload = evt => {
-                this.load(JSON.parse(evt.target.result))
-                this.save()
-            }
-            file_reader.readAsText(file)
+            this.synk.run()
         }
 
         onSelectTracker(event=null, keepDateTimeValue=false) {

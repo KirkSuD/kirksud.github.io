@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>紀錄時間</title>
     <meta name="viewport"
         content="width=device-width, initial-scale=1, shrink-to-fit=no, maximum-scale=1, user-scalable=no">
@@ -130,9 +130,11 @@ class TimeRecordApp {
 
         const synkServer = "https://kirk.alwaysdata.net"
         // const synkServer = "https://kirksud.pythonanywhere.com"
-        this.synk = new Synk(synkServer, "4KB", this.localStorageKey)
+        this.synk = new Synk(
+            synkServer, "4KB", this.localStorageKey,
+            "time_record", () => this.load())
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(() => this.load())
+        this.synk.run()
     }
     load() {
         const data = localStorage.getItem(this.localStorageKey) ?? "[]"
@@ -143,7 +145,7 @@ class TimeRecordApp {
         localStorage.setItem(this.localStorageKey, JSON.stringify(this.records))
 
         const localData = localStorage.getItem(this.localStorageKey) ?? "null"
-        this.synk.run(() => this.load())
+        this.synk.run()
     }
     undo(quiet=false) {
         if (this.records.length === 0)

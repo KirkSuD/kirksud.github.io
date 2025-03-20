@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <title>Memo</title>
 
     <meta name="description" content="Responsive memo app with folder, backup and more features." />
@@ -59,9 +59,6 @@ main p {
     text-decoration: line-through;
     text-decoration-thickness: 0.08em;
 }
-#import-memo-btn {
-    cursor: pointer;
-}
 
 #memos .card-body button, #memos .card-body br {
     display: none;
@@ -106,25 +103,6 @@ main p {
             <div class="w-100 px-1 mb-2">
                 <div class="card">
                     <div class="card-body">
-                        <button id="export-memo-btn" class="close float-left mr-1">
-                            <i class="material-icons">save</i>
-                        </button>
-                        <label id="import-memo-btn" for="import-file-selector" class="close float-left m-0 mr-3">
-                            <i class="material-icons">folder_open</i>
-                        </label>
-                        <input id="import-file-selector" type="file" accept=".json,.txt" class="d-none">
-
-                        <button id="export-copy-memo-btn" class="close float-left mr-1">
-                            <i class="material-icons">content_copy</i>
-                        </button>
-                        <button id="import-paste-memo-btn" class="close float-left">
-                            <i class="material-icons">content_paste</i>
-                        </button>
-                        <input id="import-paste-input" type="text" placeholder="Paste here..." size="7" class="d-none">
-
-                        <br class="d-sm-none">
-                        <br class="d-sm-none">
-
                         <button id="folder-btn" class="close ml-3">
                             <i class="material-icons">folder_open</i> <p id="folder-btn-text"></p>
                         </button>
@@ -208,24 +186,19 @@ main p {
 if ("serviceWorker" in navigator && new URL(location.href).protocol === "https:")
     navigator.serviceWorker.register("service_worker.js")
 
-const localStorage_key = "kirksud_memo_app_data";
-const export_filename_prefix = "memo_export_";
+const localStorageKey = "kirksud_memo_app_data";
 
 const synkServer = "https://kirk.alwaysdata.net";
 // const synkServer = "https://kirksud.pythonanywhere.com";
-const synk = new Synk(synkServer, "1MB", localStorage_key);
+const synk = new Synk(
+    synkServer, "1MB", localStorageKey,
+    "memo_export", () => load_from_storage());
 
 let current_folder, current_folder_data;
 
 // run when document ready
 $(function() {
     $("#memos").sortable({stop: save_current_folder});
-    $("#export-memo-btn").on("click", export_memo_btn);
-    $("#import-file-selector").on("change", import_file_selected);
-    $("#export-copy-memo-btn").on("click", export_copy_memo_btn);
-    $("#import-paste-memo-btn").on("click", import_paste_memo_btn);
-    $("#import-paste-input").on("paste", import_pasted);
-    $("#import-paste-input").on("blur", done_import_paste);
     $("#clear-memo-btn").on("click", clear_memo_btn);
     $("#col-btn").on("click", col_btn);
     $("#folder-btn").on("click", folder_btn);
@@ -239,7 +212,7 @@ $(function() {
     resize_col();
     load_from_storage();
 
-    synk.run(load_from_storage);
+    synk.run();
 });
 
 // ui manipulation functions
@@ -606,66 +579,6 @@ function check_memo() {
     save_current_folder();
 }
 
-function export_memo_btn() {
-    console.log("export memo btn");
-    const json_data = data_to_json();
-    const file = new Blob([json_data], {type: "application/json"});
-    const tmp = $('<a>export</a>')
-        .attr("href", URL.createObjectURL(file))
-        .attr("download", export_filename_prefix + get_time_str() + ".json");
-    $("body").append(tmp);
-    tmp[0].click();
-    tmp.remove();
-    console.log("exported file");
-}
-
-function import_file_selected() {
-    const file = $("#import-file-selector")[0].files[0];
-    const file_reader = new FileReader();
-    file_reader.onload = function(evt) {
-        const data = JSON.parse(evt.target.result);
-        data_to_ui(data);
-        save_current_folder();
-    }
-    file_reader.readAsText(file);
-}
-
-function export_copy_memo_btn() {
-    set_clip(data_to_json());
-    popcorn($("#export-copy-memo-btn"), "bottom", "Copied!");
-}
-
-function import_paste_memo_btn() {
-    console.log("open input");
-    $("#import-paste-memo-btn").toggleClass("d-none");
-    $("#import-paste-input").toggleClass("d-none").val("").focus();
-}
-function done_import_paste() {
-    console.log("close input");
-    $("#import-paste-memo-btn").toggleClass("d-none");
-    $("#import-paste-input").val("").toggleClass("d-none");
-}
-function import_pasted(evt) {
-    console.log("pasted");
-    let data;
-    try {
-        data = JSON.parse(evt.originalEvent.clipboardData.getData('text'));
-    } catch(err) {
-        $("#import-paste-input").blur();
-        // ^ don't call done_import_paste() directly! that'll cause a focus problem, not knowing why.
-        popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
-        return;
-    }
-    const success = data_to_ui(data);
-    $("#import-paste-input").blur();
-    if (success) {
-        save_current_folder();
-    }
-    else { // Failed? Don't worry, just have some popcorn!
-        popcorn($("#import-paste-memo-btn"), "bottom", "Import failed!");
-    }
-}
-
 // popover
 function popcorn(jq, placement, content, ms=2000, fadeMs=150) {
     jq.popover({content: content, placement: placement}).popover("show");
@@ -707,7 +620,7 @@ function set_clip(txt) {
 // load, save storage functions
 function load_from_storage(folder=null) {
     console.log("load from storage");
-    let data = localStorage.getItem(localStorage_key);
+    let data = localStorage.getItem(localStorageKey);
     if (data === null) { // no data, create an empty one
         const time_str = pretty_time();
         data = {
@@ -725,9 +638,9 @@ function load_from_storage(folder=null) {
 function save_to_storage() {
     console.log("save to storage");
     const json_data = data_to_json();
-    localStorage.setItem(localStorage_key, json_data);
+    localStorage.setItem(localStorageKey, json_data);
 
-    synk.run(load_from_storage);
+    synk.run();
 }
 function save_current_folder() {
     console.log("save current folder");
