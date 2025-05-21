@@ -1,5 +1,5 @@
 // must update cache name on any web page change
-const cacheName = "kirksud_sw_cache_20250320_2000"
+const cacheName = "kirksud_sw_cache_20250521_1600"
 
 self.addEventListener("fetch", event => {
     event.respondWith((async () => {
