@@ -430,22 +430,24 @@ p, pre {
                     res.push(singer)
             return res
         }
-        static filterSong(songs, keyword, keys=["name", "singer", "albumName", "code"]) {
-            const res = []
-            for (const song of songs) {
-                for (const key of keys) {
-                    if (!(key in song))
-                        continue
-                    let values = KtvData.toArray(song[key])
-                    if (key === "code")
-                        values = values.map(([company, code]) => code)
-                    if (values.some(v => v.includes(keyword))) {
-                        res.push(song)
-                        break
-                    }
-                }
+        static filterSong(songs, keyword, keys, split=false) {
+            function songKeyIncludes(song, key, keyword) {
+                if (!(key in song))
+                    return false
+                let values = KtvData.toArray(song[key])
+                if (key === "code")
+                    values = values.map(([company, code]) => code)
+                return values.some(v => v.includes(keyword))
             }
-            return res
+
+            const keywords = split ? keyword.split(" ") : [keyword]
+            return songs.filter(
+                song => keywords.every(
+                    word => keys.some(
+                        key => songKeyIncludes(song, key, word)
+                    )
+                )
+            )
         }
 
         static isFavSinger(singer, favSingers) {
@@ -1023,7 +1025,8 @@ p, pre {
 
             if (this.singer)
                 songs = KtvData.filterSong(songs, this.singer, ["singer"])
-            songs = KtvData.filterSong(songs, state.search)
+            songs = KtvData.filterSong(
+                songs, state.search, ["name", "singer", "albumName", "code"], true)
             return songs
         }
 
