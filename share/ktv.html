@@ -537,7 +537,7 @@ p, pre {
             $on("pause", "#player audio", e => this.onPause())
             $on("ended", "#player audio", e => this.onEnd())
             $on("error", "#player audio", e => this.onEnd())
-            $on("canplay", "#player audio", e => e.currentTarget.play())
+            // $on("canplay", "#player audio", e => e.currentTarget.play())
 
             $on("click", "#playerRewind", e => this.seekBackward())
             $on("click", "#playerForward", e => this.seekForward())
@@ -660,6 +660,7 @@ p, pre {
             $("#player audio").src = this.urlPrefix + `/audio/${this.token}/${this.ytid}`
             $("#player track").src = this.urlPrefix + `/vtt/${this.token}/${this.ytid}/${langs}`
             $("#player").classList.add("player-open")
+            $("#player audio").play()
         }
 
         onPlay() {
