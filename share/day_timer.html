@@ -33,9 +33,22 @@ body {
     display: flex;
     flex-direction: column;
 }
+@media not all and (min-resolution:.001dpcm) {
+    @media {
+        /*
+        To apply CSS only to Safari, a hack from: 
+        https://stackoverflow.com/questions/16348489/
+        */
+        select {
+            -webkit-appearance: none;
+            /* to apply <select> padding */
+        }
+    }
+}
 #root {
     padding: 20px;
     overflow-y: auto;
+    -webkit-user-select: none;
     user-select: none;
 
     display: grid;

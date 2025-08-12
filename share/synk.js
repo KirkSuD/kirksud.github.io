@@ -250,19 +250,20 @@ class Synk {
     right: 0;
     bottom: 0;
 
-    margin: 0.63em;
-    padding: 0.63em;
+    margin: 0.63rem;
+    padding: 0.63rem;
 
     background: white;
     border: thin solid black;
-    border-radius: 0.63em;
+    border-radius: 0.63rem;
 
+    -webkit-user-select: none;
     user-select: none;
     cursor: pointer;
 }
 #synk_dialog > p {
     margin: 0;
-    padding: 0.63em;
+    padding: 0.63rem;
 }
 #synk_dialog > hr {
     margin: 0;
@@ -275,30 +276,30 @@ class Synk {
     left: 0;
     right: 0;
 
-    margin: 0.63em;
-    padding: 0.63em;
+    margin: 0.63rem;
+    padding: 0.63rem;
 
     background: white;
     border: thin solid black;
-    border-radius: 0.63em;
+    border-radius: 0.63rem;
 
     display: flex;
     flex-direction: column;
 }
 #synk_modal > * {
-    margin: 0.63em;
+    margin: 0.63rem;
 }
 #synk_modal > p {
     white-space: pre-line;
 }
 #synk_modal > p > strong {
     display: block;
-    margin: 0.95em;
+    margin: 0.95rem;
     text-align: center;
     font-size: x-large;
 }
 #synk_modal > input, #synk_modal > button {
-    padding: 0.63em;
+    padding: 0.63rem;
 }
 
 #synk_modal > #synk_file_button {
@@ -308,7 +309,7 @@ class Synk {
     display: inline-block;
     width: 100%;
     height: 100%;
-    padding: 0.63em;
+    padding: 0.63rem;
     margin: 0;
     box-sizing: border-box;
 }

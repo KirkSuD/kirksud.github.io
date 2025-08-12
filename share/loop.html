@@ -29,6 +29,7 @@ body {
     height: 100%;
     overflow: hidden;
 
+    -webkit-user-select: none;
     user-select: none;
     position: relative;
     font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
@@ -404,7 +405,8 @@ class LoopGameApp {
                         <line class="edge3" x1="50" y1="50" x2="50" y2="100" />
                     </svg>
                 `)
-                $$("#game-div svg").at(-1).addEventListener("click", () => {
+                const elements = $$("#game-div svg")
+                elements[elements.length - 1].addEventListener("click", () => {
                     if (this.editing)
                         this.edit(i, j)
                     else
@@ -467,7 +469,7 @@ class LoopGameApp {
         this.update(row, col)
     }
     update(row, col) {
-        const elem = $$("#game-div svg").at(row * this.puzzle[0].length + col)
+        const elem = $$("#game-div svg")[row * this.puzzle[0].length + col]
         for (let i=0; i<6; i++)
             if (elem.classList.contains(`cell${i}`))
                 elem.classList.remove(`cell${i}`)

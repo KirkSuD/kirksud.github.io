@@ -35,6 +35,18 @@ body {
 p {
     margin: 0;
 }
+@media not all and (min-resolution:.001dpcm) {
+    @media {
+        /*
+        To apply CSS only to Safari, a hack from: 
+        https://stackoverflow.com/questions/16348489/
+        */
+        select {
+            -webkit-appearance: none;
+            /* to apply <select> padding */
+        }
+    }
+}
 
 #main {
     width: 100%;
@@ -87,6 +99,7 @@ p {
     padding: 2vh 0;
 }
 #main, .modal {
+    -webkit-user-select: none;
     user-select: none;
     font-family: Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, monospace, serif;
 }
@@ -151,8 +164,11 @@ p {
 .modal-content > div {
     gap: 1.5vw;
 }
-.modal-content input, .modal-content select, .modal-content button {
+.modal-content input, .modal-content select {
     padding: 1vh 1vw;
+}
+.modal-content button {
+    padding: 1vh 2vw;
 }
 
 .icon-button {
@@ -482,12 +498,12 @@ p {
                 for (const [time, value, comment] of tracker.records) {
                     const d = new Date(time)
                     const prettyTime = DateUtil.formatPeriod(d, tracker.period)
-                    if (recordsTimes.length === 0 || recordsTimes.at(-1) !== prettyTime)
+                    if (recordsTimes.length === 0 || recordsTimes[recordsTimes.length-1] !== prettyTime)
                         recordsTimes.push(prettyTime)
                 }
                 const d = new Date()
                 const prettyTime = DateUtil.formatPeriod(d, tracker.period)
-                if (recordsTimes.length === 0 || recordsTimes.at(-1) !== prettyTime)
+                if (recordsTimes.length === 0 || recordsTimes[recordsTimes.length-1] !== prettyTime)
                     recordsTimes.push(prettyTime)
                 recordsTimes.reverse()
 

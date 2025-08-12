@@ -35,6 +35,18 @@ body {
 p {
     margin: 0;
 }
+@media not all and (min-resolution:.001dpcm) {
+    @media {
+        /*
+        To apply CSS only to Safari, a hack from: 
+        https://stackoverflow.com/questions/16348489/
+        */
+        select {
+            -webkit-appearance: none;
+            /* to apply <select> padding */
+        }
+    }
+}
 
 #main {
     width: 100%;
@@ -98,6 +110,7 @@ p {
     flex: 1;
 }
 #records, .modal {
+    -webkit-user-select: none;
     user-select: none;
 }
 #main, .modal {
@@ -164,8 +177,11 @@ p {
 .modal-content > div {
     gap: 1.5vw;
 }
-.modal-content input, .modal-content select, .modal-content button {
+.modal-content input, .modal-content select {
     padding: 1vh 1vw;
+}
+.modal-content button {
+    padding: 1vh 2vw;
 }
 
 .icon-button {
