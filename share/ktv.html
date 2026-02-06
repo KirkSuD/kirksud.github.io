@@ -658,7 +658,16 @@ p, pre {
                 this.shuffled = shuffle(songs)
             }
 
-            let langs = new Set(navigator.languages)
+            let langs = new Set()
+            const altLangs = {
+                "zh-TW": "zh-Hant",
+                "zh-CN": "zh-Hans",
+            }
+            for (const lang of navigator.languages) {
+                langs.add(lang)
+                if (lang in altLangs)
+                    langs.add(altLangs[lang])
+            }
             for (const lang of navigator.languages)
                 langs.add(lang.split("-")[0])
             langs = Array.from(langs).join("_")
